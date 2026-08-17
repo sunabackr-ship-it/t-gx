@@ -36,6 +36,20 @@ select{background:#fff;border:none;border-radius:8px;padding:6px 8px;color:var(-
 #menu .sheet,#ysheet .sheet,#csheet .sheet{background:#fff;width:100%;max-width:560px;
  border-radius:18px 18px 0 0;max-height:88vh;overflow:auto;
  padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));animation:up .18s ease-out}
+/* ---- キャラクター選択 ---- */
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+.pcard{background:#fff;border:2px solid var(--line);border-radius:14px;padding:12px 10px;
+ text-align:center;position:relative;cursor:pointer;user-select:none}
+.pcard.on{border-color:var(--g);background:#F5FAEE}
+.pcard img{width:84px;height:96px;object-fit:contain}
+.pcard .pn{font-size:15px;font-weight:800;margin-top:4px}
+.pcard .pd{font-size:11px;color:var(--sub);line-height:1.5;margin-top:3px}
+.pcard u{position:absolute;top:8px;right:8px;background:var(--gd);color:#fff;font-style:normal;
+ font-size:13px;font-weight:800;border-radius:99px;width:26px;height:26px;line-height:26px}
+.pcount{text-align:center;font-size:14px;color:var(--sub);margin-top:16px}
+.ihead{display:flex;gap:16px;align-items:center;margin-top:10px}
+.ibig{width:120px;height:140px;object-fit:contain;background:#F6F4EA;border-radius:14px;flex:0 0 120px}
+.istep{text-align:center;font-size:13px;color:var(--sub);margin-top:20px}
 /* ---- キャラクター ---- */
 .cstrip{display:flex;gap:7px;margin-top:9px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
 .cstrip::-webkit-scrollbar{display:none}
@@ -57,9 +71,25 @@ select{background:#fff;border:none;border-radius:8px;padding:6px 8px;color:var(-
 .rollout{margin-top:14px;background:#26331C;color:#fff;border-radius:12px;padding:14px;text-align:center}
 .rollout.hide{display:none !important}
 .faces{display:flex;gap:8px;justify-content:center;margin-bottom:8px}
-.face{width:52px;height:52px;border-radius:10px;display:flex;align-items:center;justify-content:center;
- font-size:24px;font-weight:800;color:#fff;position:relative}
+.face{width:56px;height:56px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+ font-size:25px;font-weight:800;color:#fff;position:relative;
+ box-shadow:0 3px 0 rgba(0,0,0,.35), inset 0 2px 0 rgba(255,255,255,.22)}
 .face.ng{opacity:.42}
+.face.roll{animation:tumble .22s linear infinite}
+.face.land{animation:land .5s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes tumble{
+  0%  {transform:translateY(0)    rotate(-16deg) scale(.94)}
+  25% {transform:translateY(-10px) rotate(10deg)  scale(1.06)}
+  50% {transform:translateY(0)    rotate(22deg)  scale(.96)}
+  75% {transform:translateY(-6px) rotate(-8deg)  scale(1.04)}
+  100%{transform:translateY(0)    rotate(-16deg) scale(.94)}
+}
+@keyframes land{
+  0%  {transform:translateY(-16px) rotate(12deg) scale(1.15)}
+  60% {transform:translateY(3px)   rotate(0deg)  scale(.94)}
+  100%{transform:translateY(0)     rotate(0deg)  scale(1)}
+}
+.rres.rolling{opacity:.55;font-size:14px;font-weight:600}
 .rres{font-size:19px;font-weight:800}
 .rres small{display:block;font-size:12px;font-weight:600;opacity:.8;margin-top:2px}
 .skillbox{margin-top:12px;background:#FFF6E2;border:1px solid #EBD9AC;border-radius:12px;
@@ -204,6 +234,35 @@ label{display:block;font-size:13px;color:var(--sub);margin:14px 0 5px}
   <p class="link" id="goSolo">共有せずこの端末だけで使う</p>
 </div>
 
+<!-- ============ キャラクター選択 ============ -->
+<div id="pick" class="pane hide">
+  <h3>使うキャラクターを選ぶ</h3>
+  <p>あなたが動かすキャラクターをタップしてください。何人でも選べます。<br>
+     もう一度タップすると人数が増え、長く押すと外れます。</p>
+  <div class="pgrid" id="pgrid"></div>
+  <div class="pcount" id="pcount">0人</div>
+  <button class="btn" id="pickGo">この編成ではじめる</button>
+</div>
+
+<!-- ============ キャラクター説明 ============ -->
+<div id="intro" class="pane hide">
+  <div class="ihead">
+    <img id="iImg" class="ibig" alt="">
+    <div>
+      <span class="mtag" id="iTag"></span>
+      <div class="mt" id="iName"></div>
+      <div class="ms" id="iDice"></div>
+    </div>
+  </div>
+  <div class="dbox" style="margin-top:16px">
+    <div class="drow"><b>移動力</b><span id="iMove"></span></div>
+    <div class="drow"><b>推進</b><span id="iProj"></span></div>
+    <div class="drow"><b>特殊</b><span id="iSkill"></span></div>
+  </div>
+  <div class="istep" id="iStep"></div>
+  <button class="btn" id="iNext"></button>
+</div>
+
 <!-- ============ 参加者（チーム）画面 ============ -->
 <div id="app" class="hide">
 <header>
@@ -255,6 +314,7 @@ label{display:block;font-size:13px;color:var(--sub);margin:14px 0 5px}
     <button class="btn alt" id="setbase">いまの値を初期設定値にする</button>
     <button class="btn alt" id="reset">初期設定値に戻す</button>
     <button class="btn alt" id="snap">いまの数字を記録に残す</button>
+    <button class="btn alt" id="repick">キャラクターを選び直す</button>
     <button class="btn alt" id="menuClose" style="margin-top:18px">閉じる</button>
   </div>
 </div>
@@ -2786,7 +2846,7 @@ try{ const r=localStorage.getItem(KEY); if(r) S=Object.assign(S,JSON.parse(r)); 
 YEARS.forEach(y=>{ const c=S.data[y]; if(c){ fixOff(c.v); fixOff(c.b); } });
 const save = ()=>{ try{ localStorage.setItem(KEY, JSON.stringify(
   {mode:S.mode,wid:S.wid,wmeta:S.wmeta,team:S.team,year:S.year,view:S.view,
-   data:S.data,hist:S.hist,done:S.done,chars:S.chars,rolls:S.rolls})); }catch(e){} };
+   data:S.data,hist:S.hist,done:S.done,chars:S.chars,rolls:S.rolls,devId:S.devId})); }catch(e){} };
 
 let FB = null;                       // モジュール側から差し込む
 const cell0 = ()=> S.data[S.year] || (S.data[S.year]={v:blank(),b:blank()});
@@ -2907,16 +2967,66 @@ function drawHist(){
   $("#histTbl").innerHTML=h;
 }
 /* ================= キャラクター ================= */
-S.chars = S.chars || [{t:"red",lv:1},{t:"red",lv:1},{t:"green",lv:1},
-                      {t:"green",lv:1},{t:"blue",lv:1},{t:"black",lv:1}];
+S.chars = S.chars || [];
 S.chars.forEach(c=>{ c.used=c.used||{}; });
 S.rolls = S.rolls || [];
+S.devId = S.devId || Math.random().toString(36).slice(2,8);
+
+/* ---- 選択画面 ---- */
+let PICK = {red:0,green:0,blue:0,black:0};
+function drawPick(){
+  $("#pgrid").innerHTML = CORDER.map(t=>{
+    const c=CTYPE[t], n=PICK[t];
+    return `<div class="pcard ${n?"on":""}" data-t="${t}">
+      ${n?`<u>${n}</u>`:""}
+      <img src="${CIMG[t+"1"]}" alt="">
+      <div class="pn">${c.n1}</div>
+      <div class="pd">${DICE[t].nm}のサイコロ<br>移動 平均${(DICE[t].f.reduce((a,f)=>a+f.n,0)/6).toFixed(1)}／成功 ${DICE[t].f.filter(f=>f.o).length}/6</div>
+    </div>`;}).join("");
+  $("#pgrid").querySelectorAll("[data-t]").forEach(el=>{
+    let lp=null;
+    const add=()=>{ PICK[el.dataset.t]++; drawPick(); };
+    el.onclick=()=>{ if(el.dataset.skip){el.dataset.skip="";return;} add(); };
+    el.addEventListener("pointerdown",()=>{ lp=setTimeout(()=>{
+      PICK[el.dataset.t]=0; el.dataset.skip="1"; drawPick(); },550); });
+    ["pointerup","pointerleave","pointercancel"].forEach(ev=>
+      el.addEventListener(ev,()=>clearTimeout(lp)));
+  });
+  const total=CORDER.reduce((a,t)=>a+PICK[t],0);
+  $("#pcount").textContent = total ? `${total}人を選んでいます` : "まだ選ばれていません";
+  $("#pickGo").style.opacity = total?1:.45;
+}
+$("#pickGo").onclick=()=>{
+  const list=[];
+  CORDER.forEach(t=>{ for(let i=0;i<PICK[t];i++) list.push({t,lv:1,used:{}}); });
+  if(!list.length){ alert("1人以上選んでください"); return; }
+  S.chars=list; CI=0; save(); pushChars();
+  II=0; show("intro");
+};
+/* ---- 説明画面 ---- */
+let II=0;
+function drawIntro(){
+  const c=S.chars[II]; if(!c){ show("team"); return; }
+  const t=CTYPE[c.t];
+  $("#iImg").src=cimg(c);
+  $("#iTag").textContent="Normal";
+  $("#iName").textContent=cname(c);
+  $("#iDice").textContent=`${DICE[c.t].nm}色のサイコロ（移動 ${Math.min(...DICE[c.t].f.map(f=>f.n))}〜${Math.max(...DICE[c.t].f.map(f=>f.n))}／成功 ${DICE[c.t].f.filter(f=>f.o).length}/6）`;
+  $("#iMove").textContent=`${DICE[c.t].nm}の出目の範囲に移動できる`;
+  $("#iProj").textContent=`${DICE[c.t].nm}を振って、○が出たら1段階進む`;
+  $("#iSkill").textContent=t.s1||"なし（成長すると使えるようになります）";
+  $("#iStep").textContent=`${II+1} / ${S.chars.length}人目`;
+  $("#iNext").textContent = II+1<S.chars.length ? "次のキャラクター" : "スコアシートへ";
+}
+$("#iNext").onclick=()=>{ II++; if(II<S.chars.length) drawIntro(); else show("team"); };
+
 let CI = 0;                                  // 開いているキャラの番号
 const cimg = c=> CIMG[c.t + c.lv];
 const cname = c=> CTYPE[c.t][c.lv===2?"n2":"n1"];
-const pushChars = ()=> FB && FB.set("chars", S.chars);
+const pushChars = ()=> FB && FB.set(`chars/${S.devId}`, S.chars);
 
 function drawCStrip(){
+  $("#cstrip").classList.toggle("hide", !S.chars.length);
   $("#cstrip").innerHTML = S.chars.map((c,i)=>{
     const last = c.last ? `<u>${c.last.kind==="move"?c.last.sum:(c.last.ok?"○":"×")}</u>` : "";
     return `<button class="cav ${i===CI?"on":""}" data-c="${i}">
@@ -2944,7 +3054,7 @@ function openChar(){
     $("#skillTxt").innerHTML = done ? `${S.year}：<b>使用済み</b>` : `${S.year}：まだ使っていません`;
     $("#skillBtn").textContent = done ? "戻す" : "使った";
   }
-  $("#rollOut").classList.add("hide");
+  showLast();
   drawRollLog();
   $("#csheet").classList.remove("hide");
 }
@@ -2964,31 +3074,53 @@ function doRoll(kind){
   const sum = kind==="move" ? faces[0].n + (up?t.bonus:0) : 0;
   const ok  = kind==="proj" ? faces.some(f=>f.o) : false;
   const box=$("#rollOut"); box.classList.remove("hide");
-  // 移動ダイスは数字だけ、推進ダイスは○×だけを見せる
-  const faceHTML = fs=> `<div class="faces">${fs.map(f=>
-    kind==="move"
-      ? `<div class="face" style="background:${DICE[f.c].c}">${f.n}</div>`
-      : `<div class="face ${f.o?"":"ng"}" style="background:${DICE[f.c].c}">${f.o?"○":"×"}</div>`
-    ).join("")}</div>`;
-  let tick=0;
-  const spin=setInterval(()=>{
-    tick++;
+  const buzz = ms=>{ try{ navigator.vibrate && navigator.vibrate(ms); }catch(e){} };
+
+  // だんだん遅くなる（転がって止まる感じ）
+  const steps=[45,45,50,55,62,70,80,92,106,124,146,172,205,250,300];
+  let i=0;
+  (function spin(){
     const tmp=colors.map(col=>{const f=DICE[col].f[Math.floor(Math.random()*6)];return{c:col,n:f.n,o:f.o};});
-    box.innerHTML = faceHTML(tmp) + `<div class="rres">…</div>`;
-    if(tick>7){ clearInterval(spin); settle(); }
-  },70);
+    box.innerHTML = faceHTML(tmp,kind,"roll") + `<div class="rres rolling">転がっています…</div>`;
+    buzz(6);
+    if(i<steps.length){ setTimeout(spin, steps[i++]); } else settle();
+  })();
+
   function settle(){
-    box.innerHTML = faceHTML(faces) +
-      `<div class="rres">${kind==="move"
-        ? `${sum} マスまで移動できる` + (up?`<small>出目 ${faces[0].n} ＋ ${t.bonus}</small>`:"")
-        : (ok?"成功　プロジェクトを1段階進める":"失敗　今回は進まない")}</div>`;
+    box.innerHTML = faceHTML(faces,kind,"land") + `<div class="rres">${resText()}</div>`;
+    buzz([18,40,22]);
     const d=new Date();
     const rec={at:`${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`,
                who:cname(c), kind, faces, sum, ok};
-    c.last={kind,sum,ok}; S.rolls.push(rec); S.rolls=S.rolls.slice(-20);
+    c.last={kind,sum,ok,faces};                 // 画面に出したまま残す
+    S.rolls.push(rec); S.rolls=S.rolls.slice(-20);
     save(); pushChars(); FB&&FB.pushRoll(rec);
     drawCStrip(); drawRollLog();
   }
+  function resText(){
+    return kind==="move"
+      ? `${sum} マスまで移動できる` + (up?`<small>出目 ${faces[0].n} ＋ ${t.bonus}</small>`:"")
+      : (ok?"成功　プロジェクトを1段階進める":"失敗　今回は進まない");
+  }
+}
+function faceHTML(fs,kind,cls2){
+  return `<div class="faces">${fs.map((f,i)=>
+    kind==="move"
+      ? `<div class="face ${cls2}" style="background:${DICE[f.c].c};animation-delay:${i*60}ms">${f.n}</div>`
+      : `<div class="face ${f.o?"":"ng"} ${cls2}" style="background:${DICE[f.c].c};animation-delay:${i*60}ms">${f.o?"○":"×"}</div>`
+    ).join("")}</div>`;
+}
+/* 前回の出目をそのまま表示し続ける */
+function showLast(){
+  const c=S.chars[CI], box=$("#rollOut"), L=c.last;
+  if(!L || !L.faces){ box.classList.add("hide"); return; }
+  const t=CTYPE[c.t], up=c.lv===2;
+  box.classList.remove("hide");
+  box.innerHTML = faceHTML(L.faces, L.kind, "") +
+    `<div class="rres">${L.kind==="move"
+      ? `${L.sum} マスまで移動できる` + (up?`<small>出目 ${L.faces[0].n} ＋ ${t.bonus}</small>`:"")
+      : (L.ok?"成功　プロジェクトを1段階進める":"失敗　今回は進まない")}
+      <small>前回の出目</small></div>`;
 }
 $("#rollMove").onclick=()=>doRoll("move");
 $("#rollProj").onclick=()=>doRoll("proj");
@@ -3043,6 +3175,9 @@ function info(k){
 }
 $("#modal").onclick=e=>{ if(e.target.id==="modal"||e.target.id==="mClose") $("#modal").classList.add("hide"); };
 $("#more").onclick=()=>$("#menu").classList.remove("hide");
+$("#repick").onclick=()=>{ $("#menu").classList.add("hide");
+  PICK={red:0,green:0,blue:0,black:0};
+  S.chars.forEach(c=>PICK[c.t]++); show("pick"); };
 $("#menu").onclick=e=>{ if(e.target.id==="menu"||e.target.id==="menuClose") $("#menu").classList.add("hide"); };
 $("#ysNo").onclick=()=>$("#ysheet").classList.add("hide");
 $("#endYear").onclick=()=>{
@@ -3238,19 +3373,25 @@ $("#csv").onclick=()=>{
 function show(mode){
   S.mode=mode; save();
   $("#landing").classList.toggle("hide",mode!=="landing");
+  $("#pick").classList.toggle("hide",mode!=="pick");
+  $("#intro").classList.toggle("hide",mode!=="intro");
   $("#app").classList.toggle("hide",mode!=="team");
   $("#admin").classList.toggle("hide",mode!=="admin");
+  if(mode==="pick") drawPick();
+  if(mode==="intro") drawIntro();
   if(mode==="team") drawTeam();
   if(mode==="admin") drawAdmin();
 }
+// チームに入ったのにキャラ未選択なら、まず選択画面へ
+const toTeam = ()=> show(S.chars.length ? "team" : "pick");
 $("#goJoin").onclick=()=>{
   const w=$("#inW").value.trim(), t=$("#inT").value.trim();
   if(!t){alert("チーム名を入れてください");return;}
-  S.wid=w; S.team=t; save(); show("team");
+  S.wid=w; S.team=t; save(); toTeam();
   window.__connectTeam && window.__connectTeam(w,t);
 };
 $("#goAdmin").onclick=()=>{ show("admin"); if(!S.wid) $("#newWs").click(); };
-$("#goSolo").onclick=()=>{ S.wid=""; S.team="自チーム"; save(); show("team"); };
+$("#goSolo").onclick=()=>{ S.wid=""; S.team="自チーム"; save(); toTeam(); };
 
 window.__setFB = f=>{ FB=f; };
 window.__remote = d=>{
@@ -3260,7 +3401,8 @@ window.__remote = d=>{
   if(d.hist) S.hist=Object.values(d.hist);
   if(d.done){ S.done=d.done;
     const cu=YEARS.find(y=>!S.done[y]); if(cu && S.done[S.year]) S.year=cu; }
-  if(d.chars){ S.chars=d.chars.map(c=>Object.assign({t:"red",lv:1,used:{}},c)); }
+  if(d.chars && d.chars[S.devId]){
+    S.chars=d.chars[S.devId].map(c=>Object.assign({t:"red",lv:1,used:{}},c)); }
   if(d.rolls){ S.rolls=Object.values(d.rolls).slice(-20); }
   if(!$("#csheet").classList.contains("hide")) openChar();
   save(); if(S.mode==="team") drawTeam();
@@ -3273,10 +3415,10 @@ window.__S = ()=>S;
 
 const Q = new URLSearchParams(location.search);
 const qw = Q.get("w"), qt = Q.get("t"), qa = Q.get("admin");
-if(qw && qt){ S.wid=qw; S.team=qt; save(); show("team"); }
+if(qw && qt){ S.wid=qw; S.team=qt; save(); toTeam(); }
 else if(qw && qa){ S.wid=qw; save(); show("admin"); }
 else if(qa){ show("admin"); }
-else if(S.mode==="team" && (S.team||!SHARED)) show("team");
+else if((S.mode==="team"||S.mode==="pick"||S.mode==="intro") && (S.team||!SHARED)) toTeam();
 else if(S.mode==="admin") show("admin");
 else show(SHARED ? "landing" : "team");
 </script>
