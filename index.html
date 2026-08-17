@@ -233,14 +233,28 @@ label{display:block;font-size:13px;color:var(--sub);margin:14px 0 5px}
   <input id="inT" class="inp" placeholder="例：A" autocapitalize="off" autocomplete="off">
   <button class="btn" id="goJoin">参加する</button>
   <button class="btn alt" id="goAdmin">進行役の画面へ</button>
-  <p class="link" id="goSolo">共有せずこの端末だけで使う</p>
+  <button class="btn alt" id="goSolo">テストで開く（この端末だけ・同期なし）</button>
+  <p class="note" style="text-align:center">
+    ファイルをそのまま開いた状態でも、キャラクター選択からスコアシートまで一通り試せます。<br>
+    端末をまたぐ共有だけは、公開したURLからでないと動きません。</p>
 </div>
+
+<noscript>
+  <div class="pane">
+    <h3>このままでは動きません</h3>
+    <p>いま開いているアプリの中のビューアーは、ページの動作（JavaScript）を止めています。
+       画面が真っ白に見えるのはそのためです。</p>
+    <p><b>Chrome や Safari で開き直してください。</b>
+       チャットアプリやメールの「プレビュー」からではなく、公開されたURLを
+       ブラウザのアドレス欄に入れて開くと動きます。</p>
+  </div>
+</noscript>
 
 <!-- ============ キャラクター選択 ============ -->
 <div id="pick" class="pane hide">
   <h3>使うキャラクターを選ぶ</h3>
-  <p>あなたが動かすキャラクターをタップしてください。何人でも選べます。<br>
-     もう一度タップすると人数が増え、長く押すと外れます。</p>
+  <p>あなたが動かすキャラクターをタップしてください。複数選べます。<br>
+     もう一度タップすると外れます。</p>
   <div class="pgrid" id="pgrid"></div>
   <div class="pcount" id="pcount">0人</div>
   <button class="btn" id="pickGo">この編成ではじめる</button>
@@ -2984,32 +2998,24 @@ S.rolls = S.rolls || [];
 S.devId = S.devId || Math.random().toString(36).slice(2,8);
 
 /* ---- 選択画面 ---- */
-let PICK = {red:0,green:0,blue:0,black:0};
+let PICK = {red:false,green:false,blue:false,black:false};
 function drawPick(){
   $("#pgrid").innerHTML = CORDER.map(t=>{
-    const c=CTYPE[t], n=PICK[t];
-    return `<div class="pcard ${n?"on":""}" data-t="${t}">
-      ${n?`<u>${n}</u>`:""}
+    const c=CTYPE[t], on=PICK[t];
+    return `<div class="pcard ${on?"on":""}" data-t="${t}">
+      ${on?`<u>✓</u>`:""}
       <img src="${CIMG[t+"1"]}" alt="">
       <div class="pn">${c.n1}</div>
       <div class="pd">${DICE[t].nm}のサイコロ<br>移動 平均${(DICE[t].f.reduce((a,f)=>a+f.n,0)/6).toFixed(1)}／成功 ${DICE[t].f.filter(f=>f.o).length}/6</div>
     </div>`;}).join("");
-  $("#pgrid").querySelectorAll("[data-t]").forEach(el=>{
-    let lp=null;
-    const add=()=>{ PICK[el.dataset.t]++; drawPick(); };
-    el.onclick=()=>{ if(el.dataset.skip){el.dataset.skip="";return;} add(); };
-    el.addEventListener("pointerdown",()=>{ lp=setTimeout(()=>{
-      PICK[el.dataset.t]=0; el.dataset.skip="1"; drawPick(); },550); });
-    ["pointerup","pointerleave","pointercancel"].forEach(ev=>
-      el.addEventListener(ev,()=>clearTimeout(lp)));
-  });
-  const total=CORDER.reduce((a,t)=>a+PICK[t],0);
+  $("#pgrid").querySelectorAll("[data-t]").forEach(el=>
+    el.onclick=()=>{ PICK[el.dataset.t]=!PICK[el.dataset.t]; drawPick(); });
+  const total=CORDER.filter(t=>PICK[t]).length;
   $("#pcount").textContent = total ? `${total}人を選んでいます` : "まだ選ばれていません";
   $("#pickGo").style.opacity = total?1:.45;
 }
 $("#pickGo").onclick=()=>{
-  const list=[];
-  CORDER.forEach(t=>{ for(let i=0;i<PICK[t];i++) list.push({t,lv:1,used:{}}); });
+  const list=CORDER.filter(t=>PICK[t]).map(t=>({t,lv:1,used:{}}));
   if(!list.length){ alert("1人以上選んでください"); return; }
   S.chars=list; CI=0; save(); pushChars();
   II=0; show("intro");
@@ -3187,8 +3193,8 @@ function info(k){
 $("#modal").onclick=e=>{ if(e.target.id==="modal"||e.target.id==="mClose") $("#modal").classList.add("hide"); };
 $("#more").onclick=()=>$("#menu").classList.remove("hide");
 $("#repick").onclick=()=>{ $("#menu").classList.add("hide");
-  PICK={red:0,green:0,blue:0,black:0};
-  S.chars.forEach(c=>PICK[c.t]++); show("pick"); };
+  PICK={red:false,green:false,blue:false,black:false};
+  S.chars.forEach(c=>PICK[c.t]=true); show("pick"); };
 $("#menu").onclick=e=>{ if(e.target.id==="menu"||e.target.id==="menuClose") $("#menu").classList.add("hide"); };
 $("#ysNo").onclick=()=>$("#ysheet").classList.add("hide");
 $("#endYear").onclick=()=>{
@@ -3448,7 +3454,8 @@ window.__status=(on,txt)=>{ $("#roomBar").classList.remove("hide");
   $("#dot").className="dot "+(on?"on":"off"); $("#roomTxt").textContent=txt; };
 window.__S = ()=>S;
 
-if(qw && qt){ S.wid=qw; S.team=qt; save(); toTeam(); }
+if(Q.get("demo")){ S.wid=""; S.team="テスト"; S.chars=[]; save(); show("pick"); }
+else if(qw && qt){ S.wid=qw; S.team=qt; save(); toTeam(); }
 else if(qw && qa){ S.wid=qw; save(); show("admin"); }
 else if(qa){ show("admin"); }
 else if((S.mode==="team"||S.mode==="pick"||S.mode==="intro") && (S.team||!SHARED)) toTeam();
