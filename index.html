@@ -200,6 +200,8 @@ label{display:block;font-size:13px;color:var(--sub);margin:14px 0 5px}
 .qrcard .qs{font-size:11px;color:var(--sub);margin-bottom:6px}
 .qrcard svg{width:100%;height:auto;max-width:210px}
 .qrcard .qu{font-size:9px;color:#9A9788;word-break:break-all;margin-top:6px}
+.qbtns{display:flex;gap:8px;justify-content:center;margin-top:10px}
+.qbtns .tbtn{flex:1}
 .pill{display:inline-block;background:#F1F5E8;color:var(--g);border-radius:6px;padding:2px 8px;
  font-size:11px;font-weight:700;margin-left:6px}
 .wsrow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer}
@@ -412,6 +414,8 @@ label{display:block;font-size:13px;color:var(--sub);margin:14px 0 5px}
     <div class="card noprint">
       <p class="note" style="margin:0 0 10px">各チームの卓に1枚ずつ置いてください。読み取るとそのチームの画面が開きます。</p>
       <button class="btn" id="printQR">印刷する</button>
+      <button class="btn alt" id="copyAll">全チームのURLをまとめてコピー</button>
+      <textarea id="urlList" class="inp" style="margin-top:10px;height:104px;font-size:12px" readonly></textarea>
     </div>
     <div class="qrgrid" id="qrWrap"></div>
   </div>
@@ -2818,7 +2822,14 @@ const CORDER = ["red","green","blue","black"];
 const YEARS = ["1年目","2年目","3年目"];
 const PRESET = {s1:12,s2:15,c1:13,c2:3,c3:4,c4:8,c5:3,c6:2,c7:2,c8:2,
                 c9:6,c10:5,c11:18,c12:5,c13:2,c14:0,c15:0,off:0};
-const KEY = "trygx-ws-v1";
+/* 保存先はURLごとに分ける。
+   同じブラウザで「進行役」と「Aチーム」を別タブに開いても混ざらない */
+const Q  = new URLSearchParams(location.search);
+const qw = Q.get("w"), qt = Q.get("t"), qa = Q.get("admin");
+const BASE = "trygx-v2";
+const KEY = qa            ? BASE+":admin"
+          : (qw && qt)    ? `${BASE}:t:${qw}:${qt}`
+          : (localStorage.getItem(BASE+":last") || BASE+":solo");
 const SHARED = !!FIREBASE.databaseURL;
 
 const $ = s=>document.querySelector(s);
@@ -2844,7 +2855,7 @@ let S = {mode:"", wid:"", wmeta:null, team:"", year:YEARS[0], view:"single",
          data:yearsObj(), hist:[], all:{}, index:{}};
 try{ const r=localStorage.getItem(KEY); if(r) S=Object.assign(S,JSON.parse(r)); }catch(e){}
 YEARS.forEach(y=>{ const c=S.data[y]; if(c){ fixOff(c.v); fixOff(c.b); } });
-const save = ()=>{ try{ localStorage.setItem(KEY, JSON.stringify(
+const save = ()=>{ try{ localStorage.setItem(BASE+":last", KEY); localStorage.setItem(KEY, JSON.stringify(
   {mode:S.mode,wid:S.wid,wmeta:S.wmeta,team:S.team,year:S.year,view:S.view,
    data:S.data,hist:S.hist,done:S.done,chars:S.chars,rolls:S.rolls,devId:S.devId})); }catch(e){} };
 
@@ -3306,9 +3317,33 @@ function drawQR(){
     return `<div class="qrcard"><div class="qt">${t}</div>
       <div class="qs">${(S.wmeta&&S.wmeta.name)||""}</div>
       ${qr.createSvgTag({cellSize:4,margin:2,scalable:true})}
-      <div class="qu">${url}</div></div>`;
+      <div class="qu">${url}</div>
+      <div class="qbtns noprint">
+        <button class="tbtn" data-copy="${url}">URLをコピー</button>
+        <button class="tbtn" data-open="${url}">開く</button>
+      </div></div>`;
   }).join("") || `<p class="note">ワークショップを作るとQRが出ます。</p>`;
+  $("#qrWrap").querySelectorAll("[data-copy]").forEach(b=>
+    b.onclick=()=>copyText(b.dataset.copy, b));
+  $("#qrWrap").querySelectorAll("[data-open]").forEach(b=>
+    b.onclick=()=>window.open(b.dataset.open,"_blank"));
+  $("#urlList").value = teams.map(t=>`${t}: ${teamURL(S.wid,t)}`).join("\n")
+    + (teams.length?`\n進行役: ${adminURL(S.wid)}`:"");
 }
+function copyText(txt, btn){
+  const done=()=>{ if(!btn) return; const o=btn.textContent;
+    btn.textContent="コピーしました"; setTimeout(()=>btn.textContent=o,1400); };
+  if(navigator.clipboard&&location.protocol!=="file:"){
+    navigator.clipboard.writeText(txt).then(done,()=>fallback());
+  } else fallback();
+  function fallback(){
+    const ta=document.createElement("textarea"); ta.value=txt;
+    ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta);
+    ta.select(); try{ document.execCommand("copy"); done(); }catch(e){ alert(txt); }
+    document.body.removeChild(ta);
+  }
+}
+$("#copyAll").onclick=()=>copyText($("#urlList").value, $("#copyAll"));
 function drawPast(){
   const ids=Object.keys(S.index).sort().reverse();
   $("#pastWrap").innerHTML = ids.length ? ids.map(id=>{
@@ -3413,8 +3448,6 @@ window.__status=(on,txt)=>{ $("#roomBar").classList.remove("hide");
   $("#dot").className="dot "+(on?"on":"off"); $("#roomTxt").textContent=txt; };
 window.__S = ()=>S;
 
-const Q = new URLSearchParams(location.search);
-const qw = Q.get("w"), qt = Q.get("t"), qa = Q.get("admin");
 if(qw && qt){ S.wid=qw; S.team=qt; save(); toTeam(); }
 else if(qw && qa){ S.wid=qw; save(); show("admin"); }
 else if(qa){ show("admin"); }
