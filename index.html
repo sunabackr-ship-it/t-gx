@@ -752,6 +752,76 @@ body.manual .budman{display:flex}
 .skrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:2px}
 .skrow #skillTxt{flex:1 1 auto;min-width:0;line-height:1.6}
 .skrow .tbtn{flex:0 0 auto;white-space:nowrap}
+
+/* ================= 月内の手番と誘導（表示だけ。ルールには関係しない） ================= */
+/* ---- キャラ帯の「済」「あなたの番」 ---- */
+.cav{width:56px}
+.cav em.tflag{display:block;position:static;font-style:normal;font-size:9px;font-weight:800;
+ line-height:1.4;margin-top:2px;border-radius:4px;padding:1px 2px;text-align:center;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cav em.tflag.hid{visibility:hidden}
+.cav em.tflag.done{background:#E9F2DC;color:#2F5714}
+.cav em.tflag.now{background:#F4C542;color:#3A2E00}
+.cav.tdone i img{opacity:.45}
+.cav.tnow i img{opacity:1;filter:drop-shadow(0 2px 5px rgba(0,0,0,.5))}
+.cav.tnow::before{content:"";position:absolute;left:-1px;right:-1px;top:-3px;height:57px;
+ border:2px solid #F4C542;border-radius:11px;pointer-events:none;
+ animation:tnowp 1.3s ease-in-out infinite}
+@keyframes tnowp{0%,100%{opacity:.4}50%{opacity:1}}
+.cav.ghost i img{filter:grayscale(1) drop-shadow(0 1px 3px rgba(0,0,0,.4));opacity:.5}
+/* ---- 手番の一覧（いまの月のすぐ下） ---- */
+.tbox{margin:2px 0 12px;padding-bottom:11px;border-bottom:1px dashed var(--line)}
+.tbox:empty{display:none;border:none;padding:0;margin:0}
+.tbh{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tbt{font-size:13.5px;font-weight:800;color:var(--sub);flex:1 1 auto;min-width:0;line-height:1.5}
+.tbt.ok{color:#3F6B1B}
+.tbtg{background:none;border:none;color:var(--sub);font-size:11.5px;flex:0 0 auto;
+ font-weight:700;padding:5px 0;text-decoration:underline}
+.tbl{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.tbc{font-size:11.5px;font-weight:700;border:1px solid var(--line);border-radius:99px;
+ padding:3px 9px;color:var(--sub);background:#fff;white-space:nowrap}
+.tbc.on{background:#E9F2DC;border-color:#C6DCA8;color:#2F5714}
+.tbm{margin-top:9px;border-top:1px dashed var(--line);padding-top:9px}
+.tbm.hide{display:none !important}
+.tbm .tbnote{font-size:11.5px;color:var(--sub);line-height:1.65;margin:0 0 8px}
+.tbb{display:block;width:100%;text-align:left;background:#F7F5EA;border:1px solid var(--line);
+ border-radius:10px;padding:10px 11px;margin-bottom:6px;font-size:13px;font-weight:700;
+ color:var(--gd);line-height:1.5}
+.tbb.rst{background:#fff;color:var(--warn)}
+/* ---- 全員が振り終わったら「この月を終えて次へ」を明滅させる ---- */
+@keyframes gpulse{0%{box-shadow:0 0 0 0 rgba(63,107,27,.55)}
+ 70%{box-shadow:0 0 0 11px rgba(63,107,27,0)}100%{box-shadow:0 0 0 0 rgba(63,107,27,0)}}
+#guide .gbt button.pulse{background:var(--gd);color:#fff;border-color:var(--gd);
+ animation:gpulse 1.35s ease-out infinite}
+/* ---- サイコロのあと：次にやること＋大きな閉じるボタン ---- */
+.rres small.todo{display:block;background:rgba(255,255,255,.16);border-radius:9px;
+ padding:8px 10px;margin-top:9px;font-size:13px;font-weight:800;opacity:1;line-height:1.6}
+.rnext{margin-top:12px}
+.rnext.hide{display:none !important}
+.rnt{font-size:14.5px;font-weight:800;text-align:center;color:var(--gd);background:#F7F5EA;
+ border:1px solid var(--line);border-radius:11px;padding:11px 10px;line-height:1.65}
+.rnext .btn{margin-top:10px;padding:18px;font-size:17px}
+#cClose{margin-top:16px;padding:16px;font-size:16px}
+/* ---- イベントの月のポップアップ ---- */
+#esheet{position:fixed;inset:0;z-index:82;background:rgba(30,36,24,.45);
+ display:flex;align-items:flex-end;justify-content:center}
+#esheet.hide{display:none !important}
+#esheet .sheet{background:#fff;width:100%;max-width:560px;border-radius:18px 18px 0 0;
+ padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));max-height:86vh;overflow:auto;
+ animation:up .18s ease-out}
+#esheet .ebadge{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.1em;
+ background:#FBE9DC;color:#A6501C;border-radius:5px;padding:3px 8px}
+#esheet .ewho{font-size:11.5px;color:var(--sub);margin-top:12px;text-align:center;line-height:1.6}
+/* ---- 動きを減らす設定のときは明滅させず、静かに強調する ---- */
+@media (prefers-reduced-motion: reduce){
+  #guide .gbt button.pulse{animation:none;outline:3px solid #F4C542;outline-offset:3px}
+  .cav.tnow::before{animation:none;opacity:1}
+}
+@media (max-width:380px){
+  .cav{width:52px}
+  .cav em.tflag{font-size:8.5px}
+  .tbt{font-size:12.5px}
+}
 </style>
 </head>
 <body>
@@ -852,6 +922,7 @@ window.onerror=function(m,src,line,col){
         <div class="mv"><b id="monV">4月</b><small id="monS"></small></div>
         <div class="pm"><button class="navb" id="monNext" aria-label="次の月" title="次の月">→</button></div>
       </div>
+      <div id="turnBox" class="tbox"></div>
       <div id="guide"></div>
     </div>
     <div class="card" id="mcard">
@@ -977,7 +1048,7 @@ window.onerror=function(m,src,line,col){
     </div>
 
     <div id="rollOut" class="rollout hide"></div>
-
+    <div id="rollNext" class="rnext hide"></div>
 
     <div class="dbtns">
       <button class="btn" id="rollMove" style="margin:0">移動</button>
@@ -1159,6 +1230,18 @@ window.onerror=function(m,src,line,col){
     <div class="card"><h2>過去のワークショップ</h2><div id="pastWrap"></div></div>
   </div>
 </main>
+</div>
+
+<!-- ============ イベントの月のお知らせ（読み上げ係の端末にだけ出る） ============ -->
+<div id="esheet" class="hide">
+  <div class="sheet">
+    <span class="ebadge">イベントの月</span>
+    <div class="mt" id="esT">今月はイベントの月です</div>
+    <div class="mb">イベントカードを引いてください。卓に読み上げたあと、数値の反映は専務が行います。</div>
+    <button class="btn" id="esGo">イベントカードを引く</button>
+    <button class="btn alt" id="esNo">あとで</button>
+    <div class="ewho" id="esWho"></div>
+  </div>
 </div>
 
 <!-- ============ 分野の宣言モーダル ============ -->
@@ -3688,7 +3771,7 @@ YEARS.forEach(y=>{ const c=S.data[y]; if(c){ fixOff(c.v); fixOff(c.b); } });
 const save = ()=>{ try{ localStorage.setItem(BASE+":last", KEY); localStorage.setItem(KEY, JSON.stringify(
   {mode:S.mode,wid:S.wid,wmeta:S.wmeta,team:S.team,year:S.year,view:S.view,
    data:S.data,hist:S.hist,done:S.done,chars:S.chars,rolls:S.rolls,devId:S.devId,
-   proj:S.proj,evt:S.evt})); }catch(e){} };
+   proj:S.proj,evt:S.evt,turn:S.turn,evpop:S.evpop,roster:S.roster})); }catch(e){} };
 
 let FB = null;                       // モジュール側から差し込む
 const cell0 = ()=>{ const c = S.data[S.year] || (S.data[S.year]={v:blank(),b:blank()});
@@ -3882,12 +3965,24 @@ const pushChars = ()=> FB && FB.set(`chars/${S.devId}`, S.chars);
 
 function drawCStrip(){
   $("#cstrip").classList.toggle("hide", !S.chars.length);
+  if(CI>=S.chars.length) CI=0;                 /* 選び直しで人数が減ったときの保険 */
+  /* 済の印は「✓済」の記号＋文字で出す（色だけに頼らない）。
+     自分のキャラがまだなら、そこにだけ「あなたの番」を出す */
+  const flag = (t,me)=> turnOK(t)
+    ? `<em class="tflag done">✓済</em>`
+    : (me ? `<em class="tflag now">あなたの番</em>` : `<em class="tflag hid">ー</em>`);
+  const mine = S.chars.map(c=>c.t);
+  const ghost = roster().filter(t=>mine.indexOf(t)<0);   /* ほかの端末が持っているキャラ */
   $("#cstrip").innerHTML = S.chars.map((c,i)=>{
     const last = c.last ? `<u>${c.last.kind==="move"?c.last.sum:(c.last.ok?"○":"×")}</u>` : "";
     const skw = (c.lv===2 && (S.evt.chg||{})[c.t]) ? `<em class="skw">待機</em>` : "";
-    return `<button class="cav ${i===CI?"on":""} ${c.lv===2?"up":""}" data-c="${i}">
-      <i><img src="${cimg(c)}" alt=""></i>${last}${skw}<s>${cname(c)}</s></button>`;
-  }).join("");
+    const dn = turnOK(c.t), me = (i===CI) && !dn;
+    return `<button class="cav ${i===CI?"on":""} ${c.lv===2?"up":""} ${dn?"tdone":""} ${
+      me?"tnow":""}" data-c="${i}">
+      <i><img src="${cimg(c)}" alt=""></i>${last}${skw}<s>${cname(c)}</s>${flag(c.t,me)}</button>`;
+  }).join("")
+  + ghost.map(t=>`<span class="cav ghost ${turnOK(t)?"tdone":""}">
+      <i><img src="${CIMG[t+"1"]}" alt=""></i><s>${esc(tname(t))}</s>${flag(t,false)}</span>`).join("");
   $("#cstrip").querySelectorAll("[data-c]").forEach(b=>
     b.onclick=()=>{ CI=+b.dataset.c; drawCStrip(); openChar(); });
 }
@@ -4011,13 +4106,20 @@ function doRoll(kind){
     c.last={kind,sum,ok,faces};                 // 画面に出したまま残す
     S.rolls.push(rec); S.rolls=S.rolls.slice(-20);
     save(); pushChars(); FB&&FB.pushRoll(rec);
-    drawCStrip(); drawRollLog();
+    turnSet(c.t, true);                         // この月の手番を「済」にする（全端末で共有）
+    drawCStrip(); drawTurnBox(); drawGuide(); drawRollLog();
+    showNextTurn(c.t);                          // 次は誰の番か＋大きな閉じるボタン
   }
   function resText(){
     const fn = c.field?FIELDS[c.field].nm:"—", st = isStrong(c, c.field);
+    /* 出目のあとに「次にやること」を必ず出す（盤上の操作はアプリの外なので、言葉で示す） */
     return kind==="move"
       ? `${sum} マスまで移動できる`
-      : (ok?"成功　プロジェクトを1段階進める":"失敗　今回は進まない")
+        + `<small class="todo">盤上でコマを ${sum} マスまで動かしてください</small>`
+      : (ok?`成功　プロジェクトを1段階進める`
+            + `<small class="todo">プロジェクトボードのカードを右へ1つ動かしてください</small>`
+          :`失敗　今回は進まない`
+            + `<small class="todo">今回は動きません。次の人へ</small>`)
         + `<small>${fn}${st?"（得意）":""}　成功率 ${rate}%</small>`;
   }
 }
@@ -4031,13 +4133,18 @@ function faceHTML(fs,kind,cls2){
 /* 前回の出目をそのまま表示し続ける */
 function showLast(){
   const c=S.chars[CI], box=$("#rollOut"), L=c.last;
+  const nb=$("#rollNext"); if(nb) nb.classList.add("hide");   /* 前の人ぶんの誘導は消す */
   if(!L || !L.faces){ box.classList.add("hide"); return; }
   const t=CTYPE[c.t], up=c.lv===2;
   box.classList.remove("hide");
   box.innerHTML = faceHTML(L.faces, L.kind, "") +
     `<div class="rres">${L.kind==="move"
       ? `${L.sum} マスまで移動できる`
-      : (L.ok?"成功　プロジェクトを1段階進める":"失敗　今回は進まない")}</div>`;
+        + `<small class="todo">盤上でコマを ${L.sum} マスまで動かしてください</small>`
+      : (L.ok?`成功　プロジェクトを1段階進める`
+              + `<small class="todo">プロジェクトボードのカードを右へ1つ動かしてください</small>`
+            :`失敗　今回は進まない`
+              + `<small class="todo">今回は動きません。次の人へ</small>`)}</div>`;
 }
 $("#rollMove").onclick=()=>doRoll("move");
 $("#rollProj").onclick=()=>openFieldModal();   /* 押した瞬間に分野の宣言ポップアップ */
@@ -4086,13 +4193,14 @@ function drawTeam(){
   drawCStrip(); drawStrip();
   drawRows(); drawTotals(); drawHist(); drawRev();
   drawMeters(); drawRun(); drawPjList(); drawEvtBox();
-  drawGuide(); drawCGuide(); numHint(); drawManual();
+  drawGuide(); drawCGuide(); numHint(); drawManual(); drawTurnBox();
   $("#single").classList.toggle("hide",S.view!=="single");
   $("#cardsV").classList.toggle("hide",S.view!=="cards");
   $("#all").classList.toggle("hide",S.view!=="all");
   $("#v1").classList.toggle("on",S.view==="single");
   $("#v3").classList.toggle("on",S.view==="cards");
   $("#v2").classList.toggle("on",S.view==="all");
+  evPopCheck();          /* イベントの月のポップアップ（演出中なら中で待つ） */
 }
 function info(k){
   const r=ROWS.find(x=>x.k===k); if(!r)return;
@@ -4258,8 +4366,11 @@ function monMove(d){
   const ms=MONTHS[S.year]||[]; const c=cell0(), v0=c.mon||0;
   c.mon=Math.max(0,Math.min(ms.length-1,v0+d)); if(c.mon===v0) return;
   save(); FB && FB.set(`years/${S.year}/mon`, c.mon);
+  turnD(); pushTurn();     /* 月が変わったので手番は全員リセット。ほかの端末にも伝える */
   /* イベントの月かどうかは指示チップに出るので、お知らせバーは出さない */
-  drawMon(); drawGuide(); drawCGuide(); drawEvtBox(); drawStrip();
+  drawMon(); drawCStrip(); drawTurnBox();
+  drawGuide(); drawCGuide(); drawEvtBox(); drawStrip();
+  evPopCheck();
 }
 /* ---- 予算（アプリ管理。完了確定で自動支払い） ---- */
 /* 標準の年度予算（スライド準拠：1年目25=2500万円。2年目は決算の計算式で自動セット） */
@@ -5613,6 +5724,153 @@ const myFields= ()=> S.chars.map(c=>CFIELD[c.t]).filter(Boolean);
 const yrDeck  = ()=> YEARS.indexOf(S.year)===0 ? 1 : 2;
 const deckKey = ()=> yrDeck()===1 ? "y1" : "y2";
 
+/* ================= 月内の手番（この月にもう振ったか） =================
+   ・キーは「年度＋月」。evKey と同じ作法（Firebaseのキーに使えない文字は入れない）
+   ・移動でも推進でも、振ったら「済」になる
+   ・保存先はチーム直下の turn。チームの全端末が同じものを見る
+   ・月が変わるとキーが変わるので、自動で全員リセットされる
+   ・成功率・出目・コストなど、ルールや数値には一切関係しない（画面の誘導だけ） */
+const turnKey = ()=> evKey();
+function turnD(){
+  if(!S.turn || typeof S.turn!=="object") S.turn={k:"",d:{}};
+  if(S.turn.k!==turnKey()) S.turn={k:turnKey(), d:{}};    /* 月が変わったら全員リセット */
+  if(!S.turn.d || typeof S.turn.d!=="object") S.turn.d={};
+  return S.turn.d;
+}
+const pushTurn = ()=> FB && FB.set("turn", S.turn);
+const turnOK   = t=> !!turnD()[t];
+function turnSet(t,on){
+  const d=turnD();
+  if(on) d[t]=1; else delete d[t];
+  save(); pushTurn();
+}
+function turnReset(){ S.turn={k:turnKey(), d:{}}; save(); pushTurn(); }
+/* 卓にいるキャラの顔ぶれ（キャラ順）。
+   共有していないときは、この端末で選んでいるキャラだけになる */
+function roster(){
+  const out=[];
+  (S.roster||[]).forEach(t=>{ if(CTYPE[t] && out.indexOf(t)<0) out.push(t); });
+  S.chars.forEach(c=>{ if(out.indexOf(c.t)<0) out.push(c.t); });
+  return CORDER.filter(t=>out.indexOf(t)>=0);
+}
+const turnRest = ()=>{ const d=turnD(); return roster().filter(t=>!d[t]); };
+const turnAll  = ()=>{ const r=roster(); return r.length>0 && turnRest().length===0; };
+/* 振り終わった人の次（キャラ順で、まだ振っていない人） */
+function turnNextOf(t){
+  const r=roster(), d=turnD();
+  if(!r.length) return null;
+  const i=r.indexOf(t);
+  for(let n=1;n<=r.length;n++){ const x=r[(i+n+r.length)%r.length]; if(!d[x]) return x; }
+  return null;
+}
+const tname = t=>{ const c=S.chars.filter(x=>x.t===t)[0];
+  return c ? cname(c) : (CTYPE[t] ? CTYPE[t].n1 : t); };
+
+/* 手番の一覧。色だけに頼らず「✓済／・まだ」の記号と文字で出す */
+let TURNOPEN=false;
+function drawTurnBox(){
+  const box=$("#turnBox"); if(!box) return;
+  const r=roster();
+  if(!r.length){ box.innerHTML=""; return; }
+  const rest=turnRest(), all=rest.length===0;
+  box.innerHTML =
+    `<div class="tbh">
+       <span class="tbt ${all?"ok":""}">${all
+         ? "✓ 全員が振り終わりました"
+         : rest.length===r.length
+            ? `まだ誰も振っていません（0／${r.length}人）`
+         : rest.length===1
+            ? `残りは ${esc(tname(rest[0]))} さんだけです（${r.length-1}／${r.length}人）`
+            : `サイコロ ${r.length-rest.length}／${r.length}人が振りました`}</span>
+       <button class="tbtg" id="turnTg">${TURNOPEN?"とじる":"手番を手動で調整"}</button>
+     </div>
+     <div class="tbl">${r.map(t=>
+       `<span class="tbc ${turnOK(t)?"on":""}">${turnOK(t)?"✓ 済":"・まだ"}　${esc(tname(t))}</span>`
+     ).join("")}</div>
+     <div class="tbm ${TURNOPEN?"":"hide"}">
+       <p class="tbnote">押すたびに「済」と「まだ」が入れ替わります。押し間違えたときの戻し用です。
+          月を送れば自動で全員「まだ」に戻ります。</p>
+       ${r.map(t=>`<button class="tbb" data-tt="${t}">${esc(tname(t))}　<b>${
+         turnOK(t)?"済 → まだにする":"まだ → 済にする"}</b></button>`).join("")}
+       <button class="tbb rst" id="turnRst">この月の手番を全員「まだ」に戻す</button>
+     </div>`;
+  const tg=$("#turnTg"); if(tg) tg.onclick=()=>{ TURNOPEN=!TURNOPEN; drawTurnBox(); };
+  box.querySelectorAll("[data-tt]").forEach(b=>b.onclick=()=>{
+    const t=b.dataset.tt; turnSet(t, !turnOK(t));
+    drawCStrip(); drawTurnBox(); drawGuide(); });
+  const rs=$("#turnRst");
+  if(rs) rs.onclick=()=>{ turnReset(); drawCStrip(); drawTurnBox(); drawGuide(); };
+}
+
+/* サイコロを振り終わったあとの誘導。キャラのシートの、出目のすぐ下に出す */
+function showNextTurn(t){
+  const el=$("#rollNext"); if(!el) return;
+  const nx=turnNextOf(t);
+  el.classList.remove("hide");
+  el.innerHTML =
+    `<div class="rnt">${nx
+      ? `次は <b>${esc(tname(nx))}</b> さんの番です`
+      : `全員が振り終わりました<br><b>この月を終えて次へ →</b> を押してください`}</div>
+     <button class="btn" id="rnGo">${nx?"閉じて次の人へ":"閉じて月送りへ"}</button>`;
+  const g=$("#rnGo");
+  if(g) g.onclick=()=>{
+    /* 次の人がこの端末にいるなら、その人に切り替えておく（1台で回している卓むけ） */
+    if(nx){ const i=S.chars.findIndex(x=>x.t===nx); if(i>=0) CI=i; }
+    $("#csheet").classList.add("hide"); drawTeam();
+    if(!nx){ try{ const b=$("#gNext");
+      b && b.scrollIntoView({block:"center", behavior:RMOTION()?"auto":"smooth"}); }catch(e){} }
+  };
+  try{ el.scrollIntoView({block:"center", behavior:RMOTION()?"auto":"smooth"}); }catch(e){}
+}
+
+/* ---- イベントの月のポップアップ ----
+   ・イベントの月に入って、その月のカードをまだ引いていなければ、
+     読み上げ係＝若手営業を選んでいる端末にだけ出す
+   ・若手営業がいない卓では 専務 → 中堅広報 → 工場長 → 購買 の順で代わりに出す
+   ・引くか「あとで」を押したら、その月はもう出さない
+   ・演出中やほかのポップアップが開いているあいだは待つ（重ならないようにする） */
+S.evpop = S.evpop || {};
+const EVPOP_ORDER = ["sales","exec","pr","plant","proc"];
+function evPopWho(){
+  const r=roster();
+  for(let i=0;i<EVPOP_ORDER.length;i++){
+    if(r.indexOf(EVPOP_ORDER[i])>=0) return EVPOP_ORDER[i]; }
+  return null;
+}
+/* いま何かが前面に出ているか（達成・覚醒の演出、各種シート） */
+function popOpen(){
+  const ids=["csheet","ysheet","psheet","nsheet","fxsheet","menu","modal","fmodal","esheet",
+             "fxshow","skshow","awshow","acshow","payshow"];
+  for(let i=0;i<ids.length;i++){
+    const el=document.getElementById(ids[i]);
+    if(!el || el.classList.contains("hide")) continue;
+    try{ if(getComputedStyle(el).display==="none") continue; }catch(e){}
+    return true;
+  }
+  return false;
+}
+let EVPOPT=null;
+function evPopCheck(){
+  clearTimeout(EVPOPT);
+  if(S.mode!=="team" || !S.chars.length) return;
+  if(!isEvM(S.year, monNow()) || evGot()) return;
+  S.evpop = S.evpop || {};
+  const k=evKey();
+  if(S.evpop[k]) return;
+  const who=evPopWho();
+  if(!who || !S.chars.some(c=>c.t===who)) return;   /* 読み上げ係を持つ端末だけ */
+  if(FXBUSY || popOpen()){ EVPOPT=setTimeout(evPopCheck, 900); return; }
+  S.evpop[k]=1; save();
+  const t=$("#esT"); if(t) t.textContent = `今月（${monNow()}月）はイベントの月です`;
+  const w=$("#esWho");
+  if(w) w.textContent = `${tname(who)}を選んでいるこの端末に出しています。あとで引くこともできます。`;
+  $("#esheet").classList.remove("hide");
+}
+$("#esGo")   && ($("#esGo").onclick  =()=>{ $("#esheet").classList.add("hide"); drawEvent(); });
+$("#esNo")   && ($("#esNo").onclick  =()=> $("#esheet").classList.add("hide"));
+$("#esheet") && ($("#esheet").onclick=e=>{
+  if(e.target.id==="esheet") $("#esheet").classList.add("hide"); });
+
 /* いまの局面（年・月から、卓でやることを決める） */
 function phase(){
   const y=S.year, i=monIdx(), m=monNow();
@@ -5671,7 +5929,9 @@ function drawGuide(){
   let lead=true;
   const btns=b.map(([id,txt,act])=>{
     const go = act && lead; if(act && lead) lead=false;
-    return `<button class="${go?"go":(id==="gEv"&&evGot()?"done":"")}" id="${id}"${
+    /* 全員が振り終わったら月送りを明滅（動きを減らす設定なら、CSS側で静かな強調に変わる） */
+    const pl = (id==="gNext" && !p.last && turnAll()) ? " pulse" : "";
+    return `<button class="${go?"go":(id==="gEv"&&evGot()?"done":"")}${pl}" id="${id}"${
       id==="gNext"&&p.last?' style="opacity:.45"':''}>${txt}</button>`;
   });
   g.innerHTML =
@@ -6370,6 +6630,13 @@ window.__remote = d=>{
     const cu=YEARS.find(y=>!S.done[y]); if(cu && S.done[S.year]) S.year=cu; }
   if(d.chars && d.chars[S.devId]){
     S.chars=d.chars[S.devId].map(c=>Object.assign({t:"sales",lv:1,used:{}},c)); }
+  /* 卓にいるキャラの顔ぶれ。どの端末が誰を選んでいるかを合わせて持つ。
+     「全員が振り終わったか」の判定に使うだけで、ルールには関係しない */
+  if(d.chars){ const rs=[];
+    Object.keys(d.chars).forEach(k=>(d.chars[k]||[]).forEach(c=>{
+      if(c && c.t && rs.indexOf(c.t)<0) rs.push(c.t); }));
+    S.roster=rs; }
+  if(d.turn) S.turn=d.turn;
   if(d.rolls){ S.rolls=Object.values(d.rolls).slice(-20); }
   if(!$("#csheet").classList.contains("hide")) openChar();
   save(); if(S.mode==="team") drawTeam();
