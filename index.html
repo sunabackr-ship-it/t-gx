@@ -926,6 +926,27 @@ body.manual .budman{display:flex}
   .evHint::before{animation:none;opacity:.8}
   .evjc .evck{transition:none;opacity:1;transform:none}
 }
+
+/* ---- 推進ルーレット ---- */
+.rvWrap{display:flex;flex-direction:column;align-items:center;gap:7px;margin-bottom:9px}
+.rvSvg{display:block;width:180px;height:180px;max-width:62vw;max-height:62vw}
+.rvT{font-size:11px;font-weight:800;letter-spacing:.01em}
+.rvTs{font-size:9px;font-weight:700}
+.rvLbl{transition:opacity .18s linear}
+.rvCap{font-size:11px;line-height:1.55;color:#CFDDB8;max-width:290px;text-align:center}
+.rvCap b{color:#fff;font-size:13.5px}
+.rvCap i{font-style:normal;color:#EDF8D2;font-weight:800}
+.rvMini{flex:0 0 34px;width:34px;height:34px;display:block;margin-left:auto}
+.fmb .pct{margin-left:9px}
+.fmHint{margin-top:9px;font-size:11.5px;line-height:1.6;color:#7E7B68}
+@media (max-width:390px){
+  .rvSvg{width:158px;height:158px}
+  .rvCap{font-size:10.5px;max-width:250px}
+  .rvMini{flex:0 0 30px;width:30px;height:30px}
+  .fmb .pct{margin-left:7px;font-size:14px}
+}
+@media (max-width:340px){ .rvSvg{width:146px;height:146px} }
+@media (prefers-reduced-motion: reduce){ .rvLbl{transition:none} }
 </style>
 </head>
 <body>
@@ -4166,10 +4187,17 @@ const FSIMPLE=[["hr","人材"],["fin","制度"],["pr","広報"],["supply","調�
 function openFieldModal(){
   const c=S.chars[CI];
   $("#fmB").innerHTML = FSIMPLE.map(([f,nm])=>{
-    const st=isStrong(c,f), rt=rateOf(c,f);
+    const st=isStrong(c,f), rt=rateOf(c,f), ct=CTYPE[c.t];
+    const rBase = c.lv===2 ? ct.r2 : ct.r1;
     return `<button class="fmb" data-fm="${f}">`
       + `<i style="background:${FIELDS[f].c}"></i><b>${nm}</b>`
+      + rvHTML(rt, rBase, ct.r1, {mini:1})
       + `<span class="pct">${rt}%${st?" ★":""}</span></button>`;}).join("");
+  if(!$("#fmHint")){
+    const p=document.createElement("p"); p.id="fmHint"; p.className="fmHint";
+    p.textContent="丸の明るい部分が成功する面積です。得意分野（★）はここが広がります。";
+    $("#fmB").insertAdjacentElement("afterend", p);
+  }
   $("#fmB").querySelectorAll("[data-fm]").forEach(b=>b.onclick=()=>{
     S.chars[CI].field=b.dataset.fm; save(); pushChars();   /* 宣言を確定 */
     $("#fmodal").classList.add("hide");
@@ -4189,7 +4217,15 @@ function doRoll(kind){
   const ok  = kind==="proj" ? faces[0].o===1 : false;
   const box=$("#rollOut"); box.classList.remove("hide");
   const buzz = ms=>{ try{ navigator.vibrate && navigator.vibrate(ms); }catch(e){} };
+  /* ルーレットの層：rBase=覚醒まで込みの素／rZero=通常時(Lv1)の素 */
+  const rBase = up ? t.r2 : t.r1, rZero = t.r1;
+  const rAng  = kind==="proj" ? rvLand(rate, ok) : 0;   /* 結果に合う停止角を先に決める */
 
+  if(kind==="proj"){
+    box.innerHTML = rvHTML(rate, rBase, rZero, {ang:0})
+                  + `<div class="rres rolling">ルーレットを回しています…</div>`;
+    rvSpin(box, rAng, buzz, settle);
+  } else {
   // だんだん遅くなる（転がって止まる感じ）
   const steps=[45,45,50,55,62,70,80,92,106,124,146,172,205,250,300];
   let i=0;
@@ -4200,14 +4236,21 @@ function doRoll(kind){
     buzz(6);
     if(i<steps.length){ setTimeout(spin, steps[i++]); } else settle();
   })();
+  }
 
   function settle(){
+    if(kind==="proj"){
+      const rr=box.querySelector(".rres");
+      if(rr){ rr.className="rres"; rr.innerHTML=resText(); }
+      else box.innerHTML = rvHTML(rate, rBase, rZero, {ang:rAng})
+                         + `<div class="rres">${resText()}</div>`;
+    } else
     box.innerHTML = faceHTML(faces,kind,"land") + `<div class="rres">${resText()}</div>`;
     buzz([18,40,22]);
     const d=new Date();
     const rec={at:`${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`,
                who:cname(c), kind, faces, sum, ok, field:(c.field?FIELDS[c.field].nm:"—")};
-    c.last={kind,sum,ok,faces};                 // 画面に出したまま残す
+    c.last={kind,sum,ok,faces,rate,base:rBase,r0:rZero,ang:rAng};                 // 画面に出したまま残す
     S.rolls.push(rec); S.rolls=S.rolls.slice(-20);
     save(); pushChars(); FB&&FB.pushRoll(rec);
     turnSet(c.t, true);                         // この月の手番を「済」にする（全端末で共有）
@@ -4227,6 +4270,141 @@ function doRoll(kind){
         + `<small>${fn}${st?"（得意）":""}　成功率 ${rate}%</small>`;
   }
 }
+/* ================= 推進ルーレット =================
+   確率も判定も既存のまま。ここでやるのは「見せ方」だけ。
+   ・成功領域の角度 = 成功率×3.6度（例 83% → 298.8度）
+   ・素／覚醒ぶん／得意ぶん を分けて塗り、境界に破線を残す＝「広がった」が見える
+   ・色だけに頼らない：斜線／クロス／ドットのパターン＋明度差＋「成功」「失敗」の文字 */
+const RVSZ=180, RVPAD=15;
+let RVU=0;
+const rvRM = ()=>{ try{ return window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
+                   catch(e){ return false; } };
+/* 12時を0度・時計回り */
+const rvXY = (cx,cy,r,d)=>{ const a=(d-90)*Math.PI/180; return [cx+r*Math.cos(a), cy+r*Math.sin(a)]; };
+function rvSec(cx,cy,r,a0,a1){
+  const sw=a1-a0;
+  if(sw<=0.02) return "";
+  if(sw>=359.98){
+    const p=rvXY(cx,cy,r,0), q=rvXY(cx,cy,r,180);
+    return `M ${p[0].toFixed(2)} ${p[1].toFixed(2)} A ${r} ${r} 0 1 1 ${q[0].toFixed(2)} ${q[1].toFixed(2)}`
+         + ` A ${r} ${r} 0 1 1 ${p[0].toFixed(2)} ${p[1].toFixed(2)} Z`;
+  }
+  const p=rvXY(cx,cy,r,a0), q=rvXY(cx,cy,r,a1), big=sw>180?1:0;
+  return `M ${cx} ${cy} L ${p[0].toFixed(2)} ${p[1].toFixed(2)}`
+       + ` A ${r} ${r} 0 ${big} 1 ${q[0].toFixed(2)} ${q[1].toFixed(2)} Z`;
+}
+/* 既に確定している ok に合わせて停止角を選ぶ。
+   乱数は「その領域のどこで止まるか」だけに使うので、成功/失敗が変わることはない。 */
+function rvLand(rate, ok){
+  const S=Math.max(0,Math.min(100,rate))*3.6;
+  const a0 = ok ? 0 : S, a1 = ok ? S : 360;
+  const w  = Math.max(0.2, a1-a0), m = Math.min(8, w/4);
+  return a0 + m + Math.random()*Math.max(0.1, w-2*m);
+}
+/* rate=最終成功率／base=覚醒まで込みの素／r0=通常時（Lv1）の素 */
+function rvHTML(rate, base, r0, o){
+  o=o||{};
+  const mini=!!o.mini;
+  const sz  = mini?34:RVSZ, pad = mini?1.6:RVPAD;
+  const cx=sz/2, cy=sz/2, R=sz/2-pad, ps=mini?4:9;
+  const rt=Math.max(0,Math.min(100,Math.round(rate||0)));
+  const bs=Math.max(0,Math.min(rt, Math.round(base==null?rt:base)));
+  const rz=Math.max(0,Math.min(bs, Math.round(r0==null?bs:r0)));
+  const S=rt*3.6, B1=bs*3.6, B0=rz*3.6;
+  const u="rv"+(++RVU);
+  const hw=(ps/2.7).toFixed(2);
+  const defs=`<defs>`
+   + `<pattern id="${u}n" width="${ps}" height="${ps}" patternUnits="userSpaceOnUse">`
+   +   `<rect width="${ps}" height="${ps}" fill="#333B2B"/>`
+   +   `<circle cx="${(ps*0.26).toFixed(2)}" cy="${(ps*0.26).toFixed(2)}" r="${(ps*0.17).toFixed(2)}" fill="#7C8370"/>`
+   +   `<circle cx="${(ps*0.76).toFixed(2)}" cy="${(ps*0.76).toFixed(2)}" r="${(ps*0.17).toFixed(2)}" fill="#7C8370"/></pattern>`
+   + `<pattern id="${u}k" width="${ps}" height="${ps}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">`
+   +   `<rect width="${ps}" height="${ps}" fill="#CDE6A2"/>`
+   +   `<rect width="${hw}" height="${ps}" fill="#8FBE5C"/></pattern>`
+   + `<pattern id="${u}a" width="${ps}" height="${ps}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">`
+   +   `<rect width="${ps}" height="${ps}" fill="#E4F4C4"/>`
+   +   `<rect width="${hw}" height="${ps}" fill="#86BF49"/>`
+   +   `<rect y="${(ps/2).toFixed(2)}" width="${ps}" height="${(ps/7).toFixed(2)}" fill="#86BF49"/></pattern>`
+   + `<pattern id="${u}g" width="${(ps/1.5).toFixed(2)}" height="${(ps/1.5).toFixed(2)}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">`
+   +   `<rect width="${(ps/1.5).toFixed(2)}" height="${(ps/1.5).toFixed(2)}" fill="#F6FCE6"/>`
+   +   `<rect width="${(ps/4).toFixed(2)}" height="${(ps/1.5).toFixed(2)}" fill="#6FAE33"/>`
+   +   `<rect y="${(ps/3).toFixed(2)}" width="${(ps/1.5).toFixed(2)}" height="${(ps/5).toFixed(2)}" fill="#6FAE33"/></pattern>`
+   + `</defs>`;
+  const bd=(a,cls)=>{ if(a<=0.02||a>=359.98) return "";
+    const p=rvXY(cx,cy,R,a);
+    return `<line class="rvLbl ${cls||""}" x1="${cx}" y1="${cy}" x2="${p[0].toFixed(2)}" y2="${p[1].toFixed(2)}"`
+         + ` stroke="#26331C" stroke-width="${mini?1:2}" stroke-dasharray="${mini?"2 2":"5 4"}" stroke-linecap="round"/>`; };
+  const lb=(a0,a1,t1,t2,fill,cls,halo)=>{
+    if(mini || (a1-a0)<26) return "";
+    const m=(a0+a1)/2, p=rvXY(cx,cy,R*0.62,m), x=p[0].toFixed(1), y=p[1].toFixed(1);
+    return `<text class="rvT rvLbl ${cls||""}" x="${x}" y="${y}" fill="${fill}" text-anchor="middle"`
+      + ` stroke="${halo}" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke fill">`
+      + `<tspan x="${x}" dy="-3">${t1}</tspan>`
+      + `<tspan class="rvTs" x="${x}" dy="11">${t2}</tspan></text>`; };
+  /* 失敗は下地の全円。その上に成功の3層を重ねる（＝広がるほど失敗が覆われる） */
+  const body=
+      `<path d="${rvSec(cx,cy,R,0,360)}" fill="url(#${u}n)"/>`
+    + `<path class="rvW0" d="${rvSec(cx,cy,R,0,B0)}" fill="url(#${u}k)"/>`
+    + `<path class="rvW1" d="${rvSec(cx,cy,R,B0,B1)}" fill="url(#${u}a)"/>`
+    + `<path class="rvW2" d="${rvSec(cx,cy,R,B1,S)}" fill="url(#${u}g)"/>`
+    + bd(B0,"rvD1") + bd(B1,"rvD2")
+    + `<path d="${rvSec(cx,cy,R,0,S)}" fill="none" stroke="#F4F2E6" stroke-width="${mini?1.4:2.6}" stroke-linejoin="round"/>`
+    + `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#F4F2E6" stroke-width="${mini?1.4:2.6}"/>`
+    + lb(0,B0,"成功",`${rz}%`,"#25340F","rvL0","#E3F2C4")
+    + lb(B0,B1,"覚醒",`+${bs-rz}`,"#25340F","rvL1","#EDF8D3")
+    + lb(B1,S,"得意",`+${rt-bs}`,"#25340F","rvL2","#F7FCEA")
+    + lb(S,360,"失敗",`${100-rt}%`,"#F2F5EA","rvL3","#2A3124");
+  const a=(o.ang==null)?0:o.ang;
+  const ndl = mini ? "" :
+      `<g class="rvNdl" transform="rotate(${a.toFixed(2)} ${cx} ${cy})">`
+    +   `<line x1="${cx}" y1="${cy}" x2="${cx}" y2="${(cy-R+4).toFixed(1)}" stroke="#1B2413" stroke-width="7" stroke-linecap="round" opacity=".33"/>`
+    +   `<line x1="${cx}" y1="${cy}" x2="${cx}" y2="${(cy-R+4).toFixed(1)}" stroke="#FFFFFF" stroke-width="3.6" stroke-linecap="round"/>`
+    +   `<polygon points="${cx-7},${(cy-R+15).toFixed(1)} ${cx+7},${(cy-R+15).toFixed(1)} ${cx},${(cy-R+1).toFixed(1)}" fill="#FFFFFF" stroke="#1B2413" stroke-width="1.6"/>`
+    + `</g>`
+    + `<circle cx="${cx}" cy="${cy}" r="7" fill="#FFFFFF" stroke="#1B2413" stroke-width="2"/>`;
+  const svg = `<svg class="${mini?"rvMini":"rvSvg"}" viewBox="0 0 ${sz} ${sz}" role="img"`
+    + ` aria-label="成功率 ${rt}パーセントのルーレット"`
+    + ` data-cx="${cx}" data-cy="${cy}" data-r="${R}" data-b0="${B0}" data-b1="${B1}" data-s="${S}">`
+    + defs + body + ndl + `</svg>`;
+  if(mini) return svg;
+  const gA=bs-rz, gB=rt-bs;
+  const cap = (gA||gB)
+    ? `<div class="rvCap">通常 ${rz}% → <b>${rt}%</b>`
+      + (gA?`　<i>覚醒 +${gA}</i>`:"") + (gB?`　<i>得意 +${gB}</i>`:"")
+      + `<br>成功の面積がここまで広がっています</div>`
+    : `<div class="rvCap">成功率 <b>${rt}%</b>　この面積のぶんだけ成功します</div>`;
+  return `<div class="rvWrap">${svg}${cap}</div>`;
+}
+/* 回す。ang は既に結果に合わせて決めた停止角なので、ここで結果は動かない */
+function rvSpin(box, ang, buzz, done){
+  const svg=box.querySelector(".rvSvg"); if(!svg){ done(); return; }
+  const cx=+svg.dataset.cx, cy=+svg.dataset.cy, R=+svg.dataset.r;
+  const B0=+svg.dataset.b0, B1=+svg.dataset.b1, S=+svg.dataset.s;
+  const nd=svg.querySelector(".rvNdl");
+  const w1=svg.querySelector(".rvW1"), w2=svg.querySelector(".rvW2");
+  const setN=a=>{ nd && nd.setAttribute("transform",`rotate(${a.toFixed(2)} ${cx} ${cy})`); };
+  const op=(sel,v)=>{ const e=svg.querySelector(sel); if(e) e.style.opacity=v; };
+  const gain=S-B0;
+  if(rvRM()){ setN(ang); done(); return; }        /* 動きを減らす設定：回さず結果の位置に置く */
+  const front=f=>{
+    w1 && w1.setAttribute("d", rvSec(cx,cy,R,B0,Math.min(f,B1)));
+    w2 && w2.setAttribute("d", rvSec(cx,cy,R,B1,Math.max(B1,f)));
+    op(".rvD1", f>B0+1?1:0); op(".rvD2", f>B1+1?1:0);
+    op(".rvL1", f>=(B0+B1)/2?1:0); op(".rvL2", f>=(B1+S)/2?1:0);
+  };
+  const GROW = gain>1 ? 360 : 0, SPIN = gain>1 ? 1240 : 1400;
+  setN(0); if(GROW) front(B0);
+  const t0=performance.now(); let tick=-1;
+  (function step(now){
+    const e=now-t0;
+    if(e<GROW){ const p=e/GROW; front(B0+gain*(1-Math.pow(1-p,3))); requestAnimationFrame(step); return; }
+    if(GROW) front(S);
+    const p=Math.min(1,(e-GROW)/SPIN), a=(360*3+ang)*(1-Math.pow(1-p,3));
+    setN(a);
+    const k=Math.floor(a/45); if(k!==tick){ tick=k; buzz(4); }
+    if(p<1) requestAnimationFrame(step); else done();
+  })(t0);
+}
 function faceHTML(fs,kind,cls2){
   return `<div class="faces">${fs.map((f,i)=>
     kind==="move"
@@ -4241,7 +4419,9 @@ function showLast(){
   if(!L || !L.faces){ box.classList.add("hide"); return; }
   const t=CTYPE[c.t], up=c.lv===2;
   box.classList.remove("hide");
-  box.innerHTML = faceHTML(L.faces, L.kind, "") +
+  box.innerHTML = (L.kind==="proj" && L.rate
+      ? rvHTML(L.rate, L.base, L.r0, {ang:(L.ang==null?0:L.ang)})
+      : faceHTML(L.faces, L.kind, "")) +
     `<div class="rres">${L.kind==="move"
       ? `${L.sum} マスまで移動できる`
         + `<small class="todo">盤上でコマを ${L.sum} マスまで動かしてください</small>`
