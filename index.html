@@ -3548,7 +3548,7 @@ const CTYPE = {
    quote1:"全社を巻き込むのも、会社の財布を守るのも、私の仕事",
    quote2:"全社の結束が、脱炭素経営を成功に導く",
    view:"社内教育・脱炭素推進・人材育成・チーム予算管理を考える",mng:"予算",
-   s2:"【鶴の一声】任意の進行中プロジェクトの推進段階を1つ進める"}
+   s2:"【鶴の一声】盤上のプロジェクト1つを、いますぐ1段階すすめる"}
 };
 /* 特殊スキル（完了者の担当メーターが +1）は廃止。アプリの操作は専務に集約したため、誰が完了させたかで数値が変わらないようにした。スキルは覚醒スキル（CTYPE の s2）だけを使う */
 const AWAKE  = 7;   // 覚醒条件（担当メーターが7に到達）
@@ -3792,9 +3792,7 @@ function drawPick(){
       <div class="pd">${c.meter}<br>成功 ${c.r1}%／移動 ${d.nm}（${Math.min(...d.f)}〜${Math.max(...d.f)}）<br>
         ${strongOfT(t).length
           ? `<span style="color:${FIELDS[strongOfT(t)[0]].c}">得意 ${fnames(strongOfT(t))}</span>`
-            + `<br><span style="color:var(--sub);font-size:10.5px">覚醒すると ${fnames(gainOf(t))} も得意になる</span>`
-          : `<span style="color:var(--sub)">得意分野なし</span>`
-            + `<br><span style="color:#B4553A;font-size:10.5px;font-weight:700">覚醒すると ${fnames(gainOf(t))} を得る</span>`}</div>
+          : `<span style="color:var(--sub)">得意分野なし</span>`}</div>
     </div>`;}).join("");
   $("#pgrid").querySelectorAll("[data-t]").forEach(el=>
     el.onclick=()=>{ PICK[el.dataset.t]=!PICK[el.dataset.t]; drawPick(); });
@@ -3821,15 +3819,8 @@ function drawIntro(){
   $("#iProj").innerHTML = strongOfT(c.t).length
     ? `通常 ${t.r1}%　／　得意分野なら ${upStep(t.r1)}%<br>`
       + `<span style="color:${FIELDS[strongOfT(c.t)[0]].c};font-weight:700">得意：${fnames(strongOfT(c.t))}</span>`
-      + `<br><span style="color:#B4553A;font-weight:700">覚醒すると ${t.r2}% になり、`
-      + `得意分野に ${fnames(gainOf(c.t))} が加わります`
-      + `${upStep(t.r2)!==t.r2?`（得意なら ${upStep(t.r2)}%）`:"（成功率はここが上限です）"}</span>`
-    : `どの分野でも ${t.r1}%（得意分野なし）<br>`
-      + `<span style="color:#B4553A;font-weight:700">覚醒すると ${t.r2}% になり、`
-      + `得意分野 ${fnames(strongLv(c.t,2))} を得ます`
-      + `${upStep(t.r2)!==t.r2?`（得意なら ${upStep(t.r2)}%）`:""}</span>`;
-  $("#iSkill").innerHTML=`<span style="color:var(--sub)">覚醒条件：${t.meter}が${AWAKE}に到達</span>`
-    + `<br><b style="color:#B4553A">覚醒スキル ${t.s2}</b>`;
+    : `どの分野でも ${t.r1}%（得意分野なし）`;
+  $("#iSkill").innerHTML=`<span style="color:var(--sub)">覚醒条件：${t.meter}が${AWAKE}に到達</span>`;
   $("#iStep").textContent=`${II+1} / ${S.chars.length}人目`;
   $("#iNext").textContent = II+1<S.chars.length ? "次のキャラクター" : "スコアシートへ";
 }
@@ -3859,7 +3850,7 @@ function openChar(){
    if(rn.length===1) c.field=rn[0].f;}
   $("#cImg").src=cimg(c);
   $("#cWrap") && $("#cWrap").classList.toggle("up", up);
-  $("#cLvTag").textContent = up?"覚醒":"Normal";
+  $("#cLvTag").textContent = up?"覚醒":(c.man?"Normal（手動）":"Normal");
   $("#cName").textContent = cname(c);
   $("#cBase").textContent = `担当メーター「${t.meter}」`;
   $("#cLvBtn").textContent = up?"通常に戻す":"覚醒させる";
@@ -3872,12 +3863,9 @@ function openChar(){
       + `<span style="color:${FIELDS[strongOf(c)[0]].c};font-weight:700">得意：${strongTxt(c)}</span>`
     : `どの分野でも ${up?t.r2:t.r1}%<br>`
       + `<span style="color:var(--sub);font-weight:700">得意分野なし</span>`)
-    + (up ? ""
-          : `<br><span style="color:#B4553A;font-weight:700">覚醒すると ${t.r2}% になり、`
-            + `得意分野${strongOf(c).length?"に":" "} ${fnames(gainOf(c.t))} ${strongOf(c).length?"が加わります":"を得ます"}</span>`);
+;
   $("#cSkill").innerHTML = up ? `<b style="color:#B4553A">覚醒スキル ${t.s2}</b>`
-    : `<span style="color:var(--sub)">覚醒条件：${t.meter}が${AWAKE}に到達</span>`
-      + `<br><span style="color:var(--sub)">覚醒すると「${t.s2}」が使えます。</span>`;
+    : `<span style="color:var(--sub)">覚醒条件：${t.meter}が${AWAKE}に到達</span>`;
   drawFields();
   $("#skillBox").classList.toggle("hide", !up);
   if(up){
@@ -4004,7 +3992,13 @@ $("#rollMove").onclick=()=>doRoll("move");
 $("#rollProj").onclick=()=>openFieldModal();   /* 押した瞬間に分野の宣言ポップアップ */
 $("#cClose").onclick=()=>$("#csheet").classList.add("hide");
 $("#csheet").onclick=e=>{ if(e.target.id==="csheet") $("#csheet").classList.add("hide"); };
-$("#cLvBtn").onclick=()=>{ const c=S.chars[CI]; c.lv=c.lv===2?1:2; save(); pushChars(); drawCStrip(); openChar(); };
+$("#cLvBtn").onclick=()=>{
+  const c=S.chars[CI]; c.lv=c.lv===2?1:2;
+  /* 通常に戻したら「手動」の印を付ける（同期のたびに覚醒へ戻されないように）。
+     手動で覚醒させたときは印を消す＝以後はメーター任せに戻す */
+  if(c.lv===1 && mtrs()[MK[c.t]]>=AWAKE) c.man=1; else delete c.man;
+  save(); pushChars(); drawCStrip(); openChar();
+};
 $("#cTypeBtn").onclick=()=>{
   const c=S.chars[CI]; c.t=CORDER[(CORDER.indexOf(c.t)+1)%CORDER.length]; c.last=null;
   save(); pushChars(); drawCStrip(); openChar();
@@ -4138,7 +4132,12 @@ const ownersOf = k=> S.chars.filter(c=>MK[c.t]===k);
 
 function autoAwake(){
   let ch=false;
-  S.chars.forEach(c=>{ if(mtrs()[MK[c.t]]>=AWAKE && c.lv!==2){ c.lv=2; ch=true; } });
+  S.chars.forEach(c=>{
+    const v=mtrs()[MK[c.t]];
+    /* 手動で通常に戻したキャラは自動覚醒しない。メーターが7未満に下がったら印を消す */
+    if(c.man && v<AWAKE){ delete c.man; ch=true; }
+    if(v>=AWAKE && c.lv!==2 && !c.man){ c.lv=2; ch=true; }
+  });
   if(ch){ save(); pushChars(); drawCStrip(); }
   return ch;
 }
@@ -4710,7 +4709,7 @@ function applyAndShow(title, acts, meta){
   const m    = Object.assign({}, meta||{}, {aw, awc});
   /* 覚醒判定（autoAwake と同じ。書き込みは下の update にまとめる） */
   let grew=false;
-  S.chars.forEach(c=>{ if(mtrs()[MK[c.t]]>=AWAKE && c.lv!==2){ c.lv=2; grew=true; } });
+  S.chars.forEach(c=>{ if(mtrs()[MK[c.t]]>=AWAKE && c.lv!==2 && !c.man){ c.lv=2; grew=true; } });
   const ev={seq:Date.now(), by:S.devId, at:Date.now(), title:title||"", meta:m, ents:ents};
   FXSEEN=Math.max(FXSEEN, ev.seq); FXINIT=true;
   save();
@@ -5538,8 +5537,7 @@ function drawRole(){
         <div class="rn">${cname(c)}${aw?`<span class="awb">覚醒</span>`:`<span class="nmb">通常</span>`}</div>
         <div class="rkv"><span class="kk mt1">メーター</span><span>
           <b>${MNAME[k]} ${v}</b>${aw?"（覚醒ずみ）":`／覚醒${AWAKE}まで あと${r2(AWAKE-v)}`}
-          ${aw?`<br><span class="sm" style="color:#B4553A">覚醒スキル ${t.s2}</span>`
-             :`<br><span class="sm">覚醒すると覚醒スキルが使えます。</span>`}</span></div>
+          ${aw?`<br><span class="sm" style="color:#B4553A">覚醒スキル ${t.s2}</span>`:""}</span></div>
         <div class="rkv"><span class="kk mg">①管理</span><span>${mngOff
           ? `なし<span class="sm">　${procOff
               ? "プロジェクトカードの管理は1年目だけ。2年目は各自が分野を持ちます。" : mg.s}</span>`
@@ -5552,10 +5550,9 @@ function drawRole(){
         <div class="rkv"><span class="kk gt">得意</span><span>
           <b>${strongTxt(c)}</b>　推進 ${rate}%${strongOf(c).length?`（得意なら ${upStep(rate)}%）`:"（どの分野でも同じ）"}
           <span class="sm">　${!strongOf(c).length
-            ? `まだ得意分野がありません。覚醒すると ${t.r2}% になり、得意分野 ${fnames(strongLv(c.t,2))} を得ます。`
+            ? `まだ得意分野がありません。`
             : (good ? "担当分野と得意分野が同じです。"
-                    : `得意分野に ${FIELDS[f].nm} は入っていません。得意な分野で振ると、成功しやすくなります。`)
-              + (aw ? "" : `　覚醒すると ${fnames(gainOf(c.t))} も得意になります。`)}</span></span></div>
+                    : `得意分野に ${FIELDS[f].nm} は入っていません。得意な分野で振ると、成功しやすくなります。`)}</span></span></div>
         <button class="myb" data-mine="${i}">読み込み担当のカード ${n+left}枚を見る</button>
       </div></div>`;}).join("");
   box.querySelectorAll("[data-mine]").forEach(b=>b.onclick=()=>{
