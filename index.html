@@ -6628,12 +6628,16 @@ window.__remote = d=>{
   if(d.hist) S.hist=Object.values(d.hist);
   if(d.done){ S.done=d.done;
     const cu=YEARS.find(y=>!S.done[y]); if(cu && S.done[S.year]) S.year=cu; }
+  /* Firebaseは配列を、抜けがあるとオブジェクトの形で返してくる。
+     どちらで来ても同じように扱えるようにしてから使う */
+  const asArr = v => Array.isArray(v) ? v
+    : (v && typeof v === "object" ? Object.keys(v).sort((a,b)=>a-b).map(i=>v[i]) : []);
   if(d.chars && d.chars[S.devId]){
-    S.chars=d.chars[S.devId].map(c=>Object.assign({t:"sales",lv:1,used:{}},c)); }
+    S.chars=asArr(d.chars[S.devId]).map(c=>Object.assign({t:"sales",lv:1,used:{}},c)); }
   /* 卓にいるキャラの顔ぶれ。どの端末が誰を選んでいるかを合わせて持つ。
      「全員が振り終わったか」の判定に使うだけで、ルールには関係しない */
   if(d.chars){ const rs=[];
-    Object.keys(d.chars).forEach(k=>(d.chars[k]||[]).forEach(c=>{
+    Object.keys(d.chars).forEach(k=>asArr(d.chars[k]).forEach(c=>{
       if(c && c.t && rs.indexOf(c.t)<0) rs.push(c.t); }));
     S.roster=rs; }
   if(d.turn) S.turn=d.turn;
