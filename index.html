@@ -859,6 +859,73 @@ body.manual .budman{display:flex}
   .evSec,.evTame{animation:none}
   .evEf{transition:none;opacity:1;transform:none}
 }
+
+/* ---- 発動条件の発表を主役にする ---- */
+.evTame.done{margin-top:12px}
+.evTame.done .evTameT{animation:none;font-size:12.5px;color:var(--sub);opacity:.7}
+.evTame{margin-top:15px;text-align:center;animation:none;font-size:inherit;font-weight:400;
+ letter-spacing:normal;color:var(--ink)}
+.evTameT{font-size:15.5px;font-weight:800;color:var(--gd);letter-spacing:.06em;line-height:1.5;
+ animation:evTame 1.1s ease-in-out infinite}
+.evTapBtn{position:relative;display:inline-flex;align-items:center;gap:9px;margin-top:12px;
+ max-width:100%;border:0;border-radius:99px;padding:13px 24px;cursor:pointer;
+ font-family:inherit;font-size:15px;font-weight:800;letter-spacing:.04em;color:#fff;
+ background:linear-gradient(100deg,#6E9B3E,#2E4A22);box-shadow:0 6px 15px rgba(46,74,34,.32);
+ animation:evTapPls 1.3s ease-in-out infinite}
+.evTapBtn:active{transform:scale(.97)}
+.evTapTx{white-space:nowrap}
+.evTapIco{display:inline-flex;animation:evTapHand 1.3s ease-in-out infinite}
+.evTapIco svg{display:block}
+.evTapRip{position:absolute;inset:-6px;border-radius:99px;border:2px solid rgba(110,155,62,.6);
+ pointer-events:none;animation:evTapRip 1.3s ease-out infinite}
+@keyframes evTapPls{0%,100%{transform:none}50%{transform:scale(1.045)}}
+@keyframes evTapHand{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
+@keyframes evTapRip{0%{transform:scale(.93);opacity:.8}100%{transform:scale(1.2);opacity:0}}
+.evSec.cond{margin-top:14px;background:#FFF8E8;border:2px solid #E0C879;padding:13px 13px 12px;
+ box-shadow:0 3px 0 rgba(224,200,121,.4);animation:evPop .38s cubic-bezier(.16,1.3,.3,1) both}
+@keyframes evPop{0%{transform:scale(.93);opacity:0}62%{transform:scale(1.02)}100%{transform:none;opacity:1}}
+.evCondH{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}
+.evCondBadge{background:var(--gd);color:#fff;border-radius:6px;padding:3px 10px;
+ font-size:11px;font-weight:800;letter-spacing:.14em}
+.evCondChip{background:#EFE3BE;color:#7A5B14;border-radius:6px;padding:3px 9px;
+ font-size:11px;font-weight:800;letter-spacing:.04em}
+.evCondT{font-size:20px;font-weight:800;line-height:1.45;color:var(--ink);text-align:left;
+ overflow-wrap:anywhere;word-break:normal}
+.evCondT.mid{font-size:17px;line-height:1.5}
+.evCondT.lng{font-size:15px;line-height:1.6}
+.evCondN{margin-top:9px;padding-top:8px;border-top:1px dashed #E0D3A6;
+ font-size:11px;line-height:1.65;color:var(--sub);text-align:left;overflow-wrap:anywhere}
+.evjc .evck{margin-top:7px;padding:8px 10px;background:#fff;border:1px solid #E8DDBB;
+ border-radius:9px;font-size:13.5px;line-height:1.55;align-items:center;
+ opacity:.28;transform:translateY(5px);transition:opacity .22s,transform .22s,border-color .22s}
+.evjc .evck.on{opacity:1;transform:none}
+.evjc .evck.y{background:#F6FBEF;border-color:#BFD79B}
+.evjc .evck s{flex:0 0 26px;width:26px;height:26px;font-size:15px;border-radius:8px}
+.evjc .evck>span{flex:1;min-width:0;font-weight:700;overflow-wrap:anywhere}
+.evHint{margin-top:12px;font-size:11.5px;color:#8A876F}
+.evHint::before{content:"";display:inline-block;width:7px;height:7px;border-radius:99px;
+ background:#B9B59C;margin-right:6px;vertical-align:middle;
+ animation:evHintD 1.2s ease-in-out infinite}
+@keyframes evHintD{0%,100%{opacity:.3}50%{opacity:1}}
+@media (max-width:390px){
+  .evTameT{font-size:14.5px}
+  .evTapBtn{font-size:14px;padding:12px 18px;gap:7px}
+  .evCondT{font-size:18px}
+  .evCondT.mid{font-size:15.5px}
+  .evCondT.lng{font-size:14px}
+  .evjc .evck{font-size:12.5px;padding:7px 8px}
+  .evjc .evck s{flex:0 0 23px;width:23px;height:23px;font-size:14px}
+}
+@media (max-width:340px){
+  .evTapBtn{font-size:13px;padding:11px 14px}
+  .evCondT{font-size:16.5px}
+}
+@media (prefers-reduced-motion: reduce){
+  .evTameT,.evTapBtn,.evTapIco,.evSec.cond{animation:none}
+  .evTapRip{animation:none;opacity:.85;transform:none}
+  .evHint::before{animation:none;opacity:.8}
+  .evjc .evck{transition:none;opacity:1;transform:none}
+}
 </style>
 </head>
 <body>
@@ -5117,24 +5184,69 @@ function evType(el, txt, rm, done){
   };
   FXT.push(setTimeout(step, 60));
 }
+/* タップをうながす指の絵（外部読み込みなしで済むよう、その場に描く） */
+const EVTAPSVG='<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor"'
+  +' stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+  +'<path d="M9 11.5V5.6a1.6 1.6 0 0 1 3.2 0v5.1"/>'
+  +'<path d="M12.2 10.7V9.2a1.6 1.6 0 0 1 3.2 0v1.9"/>'
+  +'<path d="M15.4 11.1v-.6a1.6 1.6 0 0 1 3.2 0V15a6 6 0 0 1-6 6h-1.1'
+  +'a5 5 0 0 1-4.15-2.2l-2.1-3.1a1.65 1.65 0 0 1 2.7-1.9L9 15.6V11.5"/></svg>';
+/* その段のあたまが見えるところまで、カードの中だけをスクロールする */
+function evScrollTo(sel){
+  const p=document.querySelector("#fxshow .fsIn"), el=document.querySelector(sel);
+  if(!p||!el){ evScroll(); return; }
+  FXT.push(setTimeout(()=>{ try{
+    const pr=p.getBoundingClientRect(), er=el.getBoundingClientRect();
+    p.scrollTop = p.scrollTop + (er.top - pr.top) - 10;
+  }catch(e){} }, 50));
+}
+/* 長い発動条件を「前置き」「見出し」「補足（かっこ書き）」に分ける。
+   当てはまらない書き方のときは、全文をそのまま見出しにするので破綻しない */
+function evCondParts(cond, hasMarks){
+  let s=String(cond==null?"":cond).trim(), chip="", note="";
+  if(!s) return {chip:"", head:"なし（かならず発動）", note:""};
+  const m=s.match(/[（(]([^（）()]{6,})[）)]\s*$/);      /* 末尾のかっこ書きは補足へ */
+  if(m){ note=m[1]; s=s.slice(0, s.length-m[0].length).trim(); }
+  const c=s.match(/^([^:：【】]{2,12})[:：]\s*/);        /* 「2年目のみ:」のような前置き */
+  if(c && c[0].length<s.length){ chip=c[1]; s=s.slice(c[0].length).trim(); }
+  if(hasMarks){                                          /* 【…】は下の内訳と重なるので外す */
+    const i=s.indexOf("【");
+    if(i>0) s=s.slice(0,i).replace(/[:：、]\s*$/,"").trim();
+  }
+  return {chip:chip, head:s||String(cond), note:note};
+}
 function evDrama(box, title, ents, meta, rm){
   const ev=meta.ev;
   EVFIN=null;
   $("#fsEnd").className="fsEnd"; $("#fsEnd").innerHTML="";
   $("#fsList").innerHTML =
-    `<div class="evjc">
+    `<div class="evjc" id="evjc">
        <div class="evDesc" id="evDesc"></div>
        <div class="evSec hide" id="evEff"><b>${ev.pos?"うまくいくと、こんな効果があります"
                                                :"もし発動すると、こんなことが起きます"}</b>
          <div id="evEffL"></div></div>
-       <div class="evTame hide" id="evTame">さて、発動条件は……</div>
-       <div class="evSec cond hide" id="evCondB"><b>発動条件</b>
+       <div class="evTame hide" id="evTame">
+         <div class="evTameT">さて、発動条件は……</div>
+         <button type="button" class="evTapBtn" id="evTapBtn">
+           <span class="evTapRip" aria-hidden="true"></span>
+           <span class="evTapIco">${EVTAPSVG}</span>
+           <span class="evTapTx">タップして確かめる</span>
+         </button>
+       </div>
+       <div class="evSec cond hide" id="evCondB">
+         <div class="evCondH"><span class="evCondBadge">発動条件</span>
+           <span class="evCondChip hide" id="evCondChip"></span></div>
          <div class="evCondT" id="evCondT"></div>
-         <div id="evCkL"></div></div>
+         <div id="evCkL"></div>
+         <div class="evCondN hide" id="evCondN"></div></div>
        <div id="evJd"></div>
        <div class="evHint" id="evHint">タップで次へ</div>
      </div>`;
   const cb=$("#fsClose"); if(cb){ cb.disabled=true; cb.style.opacity=.35; }
+  /* カードの中のどこをタップしても次の段へ。
+     背景タップ（#fxshow）だけだと、どこを押せばいいのか分かりにくいため */
+  const jc=$("#evjc");
+  if(jc) jc.onclick=()=>{ if(EVSKIP){ const f=EVSKIP; EVSKIP=null; f(); } };
   FXDONE=false; FXAWQ=(meta.awc||[]).slice(); FXACQ=(meta.achv||[]).slice();
   box.classList.add("evd");            /* 絵を少し小さくして、文章の場所をつくる */
   box.classList.remove("hide"); box.classList.remove("go");
@@ -5152,6 +5264,9 @@ function evStage(ph, title, ents, meta, rm){
   /* 先へ飛ばされたときは、出そろっていない効果の行をここで出しきる */
   if(ph>2) Array.prototype.forEach.call(
     document.querySelectorAll("#evEffL .evEf"), r=>r.classList.add("on"));
+  /* 条件が出たあとは、うながしのボタンを引っこめて主役をゆずる */
+  if(ph>3){ const tb=$("#evTapBtn"); if(tb) tb.classList.add("hide");
+            const tm=$("#evTame");   if(tm) tm.classList.add("done"); }
   /* ---- 2 説明文を1文字ずつ ---- */
   if(ph===1){
     EVSKIP=nx;                          /* 打っている最中でもタップで先へ */
@@ -5175,37 +5290,54 @@ function evStage(ph, title, ents, meta, rm){
     arm(fl.length*per + (rm?200:1000));
     return;
   }
-  /* ---- 4 「さて、発動条件は……」とためる ---- */
+  /* ---- 4 「さて、発動条件は……」＝いちばんのためどころ。
+          ここだけはタップを待つ見せ方にする（押さなくても保険で自動的に進む） ---- */
   if(ph===3){
     const t=$("#evTame"); if(t) t.classList.remove("hide");
-    evScroll();
+    const hn=$("#evHint"); if(hn) hn.classList.add("hide");  /* 小さい文言は引っこめる */
+    evScrollTo("#evTame");
     if(!rm) sndOmen();
-    arm(rm?250:1200);
+    arm(rm?4500:7000);      /* 押さなくても進む保険。動きを抑える設定でも読む間は残す */
     return;
   }
-  /* ---- 5 発動条件を発表（リスク点カードは内訳の ✓／✗ も） ---- */
+  /* ---- 5 発動条件の発表。この段は発動条件そのものが主役。
+          長い条件文（E4/E5/E6）は前置き・見出し・補足に分け、
+          【…】の列挙は下の ✓／✗ の内訳にまかせるので、はみ出さない ---- */
   if(ph===4){
     const b=$("#evCondB"); if(!b){ nx(); return; }
-    b.classList.remove("hide");
-    const ct=$("#evCondT"); if(ct) ct.textContent = ev.cond || "なし（かならず発動）";
     const mk=(ev.marks&&ev.marks.length>1)?ev.marks:[];
+    const cp=evCondParts(ev.cond, mk.length>0);
+    b.classList.remove("hide");
+    const ct=$("#evCondT");
+    if(ct){ ct.textContent=cp.head;
+            ct.className="evCondT "+(cp.head.length>34?"lng":cp.head.length>18?"mid":""); }
+    const cc=$("#evCondChip");
+    if(cc){ cc.textContent=cp.chip; cc.classList.toggle("hide", !cp.chip); }
+    const cn=$("#evCondN");
+    if(cn){ cn.textContent=cp.note; cn.classList.toggle("hide", !cp.note); }
     const L=$("#evCkL");
     if(L) L.innerHTML = mk.map((m,i)=>
-      `<div class="evck"><s data-evck="${i}">…</s><span>${esc(m.t)}</span></div>`).join("");
-    evScroll();
-    const t0=rm?60:600, per=rm?40:300;
+      `<div class="evck" data-evckr="${i}"><s data-evck="${i}">…</s><span>${esc(m.t)}</span></div>`).join("");
+    evScrollTo("#evCondB");
+    const t0=rm?60:700, per=rm?40:420;
     mk.forEach((m,i)=>FXT.push(setTimeout(()=>{
       const el=document.querySelector(`[data-evck="${i}"]`);
       if(el){ el.textContent=m.ok?"✓":"✗"; el.className=m.ok?"ok":"ng"; }
+      const rw=document.querySelector(`[data-evckr="${i}"]`);
+      if(rw) rw.classList.add("on", m.ok?"y":"n");
       sndPikon(i);
     }, t0+i*per)));
-    arm(t0 + mk.length*per + (rm?200:900));
+    const hn=$("#evHint");
+    if(hn){ hn.textContent="タップで結果へ"; hn.classList.remove("hide"); }
+    arm(t0 + mk.length*per + (rm?2400:3400));  /* 読む間を取る。押せばすぐ結果へ */
     return;
   }
   /* ---- 6 効果発揮／発揮せず（判定そのものは evJudgeOf の結果をそのまま出す） ---- */
   ((ev.marks&&ev.marks.length>1)?ev.marks:[]).forEach((m,i)=>{
     const el=document.querySelector(`[data-evck="${i}"]`);   /* 飛ばされていたら埋める */
-    if(el){ el.textContent=m.ok?"✓":"✗"; el.className=m.ok?"ok":"ng"; } });
+    if(el){ el.textContent=m.ok?"✓":"✗"; el.className=m.ok?"ok":"ng"; }
+    const rw=document.querySelector(`[data-evckr="${i}"]`);
+    if(rw) rw.classList.add("on", m.ok?"y":"n"); });
   const hint=$("#evHint"); if(hint) hint.classList.add("hide");
   const jd=$("#evJd"); if(!jd) return;
   if(ev.ok===true){
