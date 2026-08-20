@@ -822,6 +822,43 @@ body.manual .budman{display:flex}
   .cav em.tflag{font-size:8.5px}
   .tbt{font-size:12.5px}
 }
+
+/* ---- イベントの段階演出 ---- */
+#fxshow.evd .fsEvW{margin:8px auto 2px}
+#fxshow.evd .fsEvW img{width:42%;max-width:150px}
+.evDesc{font-size:14px;line-height:1.85;color:var(--ink);text-align:left;min-height:3.7em;
+ padding:2px 2px 4px;overflow-wrap:anywhere}
+.evSec{margin-top:11px;border-radius:11px;padding:9px 11px;background:#F7F5EA;
+ border:1px solid var(--line);text-align:left;animation:evUp .28s ease-out both}
+.evSec>b{display:block;font-size:10px;letter-spacing:.1em;color:var(--sub);margin-bottom:5px;
+ line-height:1.5}
+.evSec.cond{background:#FFF8E8;border-color:#E8D9A8}
+.evCondT{font-size:12.5px;line-height:1.65;color:var(--ink);overflow-wrap:anywhere}
+.evEf{display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.55;padding:4px 0;
+ opacity:.14;transform:translateY(6px);transition:opacity .2s,transform .2s}
+.evEf.on{opacity:1;transform:none}
+.evEf s{flex:0 0 auto;text-decoration:none;background:#E9F2DC;color:#3F6B1B;border-radius:6px;
+ padding:2px 7px;font-size:10px;font-weight:800;margin-top:2px;white-space:nowrap}
+.evEf.bad s{background:#FBE9DC;color:#A6501C}
+.evEf>span{flex:1;min-width:0;font-weight:700;overflow-wrap:anywhere}
+.evEf em{display:block;font-style:normal;font-size:11px;font-weight:600;color:var(--sub);
+ margin-top:2px;line-height:1.5}
+.evTame{margin-top:13px;text-align:center;font-size:15.5px;font-weight:800;color:var(--gd);
+ letter-spacing:.06em;animation:evTame 1.1s ease-in-out infinite}
+@keyframes evTame{0%,100%{opacity:.42;transform:none}50%{opacity:1;transform:translateY(-2px)}}
+@keyframes evUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.evHint{margin-top:10px;text-align:center;font-size:11px;color:#9A9788;letter-spacing:.06em}
+.evjc .evck{padding:4px 2px}
+@media (max-width:390px){
+  .evDesc{font-size:13px;line-height:1.8}
+  .evEf{font-size:12.5px}
+  .evTame{font-size:14.5px}
+  #fxshow.evd .fsEvW img{width:38%;max-width:122px}
+}
+@media (prefers-reduced-motion: reduce){
+  .evSec,.evTame{animation:none}
+  .evEf{transition:none;opacity:1;transform:none}
+}
 </style>
 </head>
 <body>
@@ -4989,7 +5026,9 @@ function runShow(title, ents, meta){
   meta=meta||{}; ents=ents||[];
   fxClear(); FXBUSY=true;
   /* スキルのカットイン → コストの支払い → 効果反映、の順で流す */
-  if(meta.skill && !meta._sk){ meta._sk=1;
+  /* イベントは判定のドラマが先。スキルのカットインは判定が出てから流す
+     （先に出すと、条件を見せる前に発動が確定だと分かってしまう） */
+  if(meta.skill && !meta._sk && !(meta.ev && !meta._evj)){ meta._sk=1;
     skPlay(meta.skill, ()=>runShow(title, ents, meta)); return; }
   /* 先にコストの支払い演出。免除（skip）とコスト0のときは meta.pay が無いので素通り */
   if(meta.pay && meta.pay.cost>0){ payPlay(meta.pay, ()=>runShow2(title, ents, meta)); return; }
@@ -5005,45 +5044,9 @@ function runShow2(title, ents, meta){
   $("#fsName").innerHTML=(meta.no?`<span class="fsNo">No.${meta.no}</span>`:"")+esc(title);
   $("#fsSub").textContent=meta.sub||"";
   $("#fsWho").textContent=meta.remote ? "ほかの端末（専務）で反映されました" : "チーム全員の画面に同じ結果が出ています";
-  /* ---- イベントの判定ドラマ（条件確認 → 判定 → 効果の積み上げ） ---- */
-  if(meta.ev && !meta._evj){
-    const ev=meta.ev;
-    $("#fsEnd").className="fsEnd"; $("#fsEnd").innerHTML="";
-    $("#fsList").innerHTML =
-      `<div class="evjc">
-         <div class="evcond"><b>発動条件</b>${ev.cond?esc(ev.cond):"なし（かならず発動）"}</div>
-         ${(ev.marks&&ev.marks.length>1?ev.marks:[]).map((m,i)=>`<div class="evck"><s data-evck="${i}">…</s><span>${esc(m.t)}</span></div>`).join("")}
-         <div class="evchk" id="evchk">条件を確認中…</div>
-       </div>`;
-    const cb=$("#fsClose"); if(cb){ cb.disabled=true; cb.style.opacity=.35; }
-    FXDONE=false; FXAWQ=(meta.awc||[]).slice(); FXACQ=(meta.achv||[]).slice();
-    box.classList.remove("hide"); box.classList.remove("go");
-    void box.offsetWidth; box.classList.add("go");
-    sndStart();
-    const reveal=()=>{
-      EVSKIP=null; fxClear();
-      (ev.marks||[]).forEach((m,i)=>{ const el=document.querySelector(`[data-evck="${i}"]`);
-        if(el){ el.textContent=m.ok?"✓":"✗"; el.className=m.ok?"ok":"ng"; } });
-      const jc=$("#evchk"); if(!jc) return;
-      if(ev.ok===true){
-        jc.outerHTML=`<div class="evjudge on">効果発動‼</div>`
-          +(ev.strong?`<div class="evjn strong">すべて該当：効果が強まる</div>`:"");
-        sndAwake();
-        FXT.push(setTimeout(()=>{ meta._evj=1; runShow2(title, ents, meta); }, rm?400:1000));
-      }else{
-        jc.outerHTML = ev.ok==="warn"
-          ? `<div class="evjudge warn">警告</div><div class="evjn">${esc(ev.note||"")}</div>`
-          : `<div class="evjudge off">効果発動せず</div><div class="evjn">${esc(ev.note||"条件を満たしていません")}</div>`;
-        sndEnd();
-        $("#fsEnd").innerHTML="このイベントの効果はありません";
-        $("#fsEnd").classList.add("on");
-        FXDONE=true; const c2=$("#fsClose"); if(c2){ c2.disabled=false; c2.style.opacity=""; }
-      }
-    };
-    EVSKIP=reveal;
-    FXT.push(setTimeout(reveal, rm?500:1400));
-    return;
-  }
+  /* ---- イベントは段階演出へ（説明文 → 想定効果 → ため → 条件 → 判定） ---- */
+  if(meta.ev && !meta._evj){ evDrama(box, title, ents, meta, rm); return; }
+  box.classList.remove("evd");
   $("#fsEnd").className="fsEnd"; $("#fsEnd").innerHTML="";
   $("#fsList").innerHTML = ents.length ? ents.map((e,i)=>{
     const ic=entIcon(e);
@@ -5084,6 +5087,143 @@ function runShow2(title, ents, meta){
     if(cb){ cb.disabled=false; cb.style.opacity=""; }
   }, endAt));
 }
+/* ================= イベントカードの段階演出 =================
+   社長の要望どおりの段取りで、ためながら見せる。
+     1 タイトルと絵（すでに上に出ている）
+     2 カードの説明文をタイプライターで1文字ずつ
+     3 「うまくいくと、こんな効果があります」＝起きうる効果の内容だけ
+     4 「さて、発動条件は……」とためる
+     5 発動条件を発表（リスク点カードは ✓／✗ の内訳つき）
+     6 効果発揮／発揮せず（判定は evJudgeOf のまま。表示の順番だけ）
+     7 効果の積み上げ（既存の runShow2）
+   どの段でもタップで次へ送れる。放っておいても自動で進む。
+   prefers-reduced-motion のときは打ち出しをやめて一気に出す。 */
+let EVFIN=null;                       /* 打っている途中の説明文を一気に出す関数 */
+function evScroll(){
+  const p=document.querySelector("#fxshow .fsIn"); if(!p) return;
+  FXT.push(setTimeout(()=>{ try{ p.scrollTop=p.scrollHeight; }catch(e){} }, 40));
+}
+function evType(el, txt, rm, done){
+  const s=String(txt||"");
+  if(!el || rm || !s){ if(el) el.textContent=s; EVFIN=null; done&&done(); return; }
+  const a=Array.from(s); let i=0;
+  el.textContent="";
+  EVFIN=()=>{ EVFIN=null; el.textContent=s; };
+  const step=()=>{
+    el.textContent=a.slice(0,++i).join("");
+    if(i%4===0) sndTick(i/4);
+    if(i<a.length) FXT.push(setTimeout(step, 26));
+    else { EVFIN=null; done&&done(); }
+  };
+  FXT.push(setTimeout(step, 60));
+}
+function evDrama(box, title, ents, meta, rm){
+  const ev=meta.ev;
+  EVFIN=null;
+  $("#fsEnd").className="fsEnd"; $("#fsEnd").innerHTML="";
+  $("#fsList").innerHTML =
+    `<div class="evjc">
+       <div class="evDesc" id="evDesc"></div>
+       <div class="evSec hide" id="evEff"><b>${ev.pos?"うまくいくと、こんな効果があります"
+                                               :"もし発動すると、こんなことが起きます"}</b>
+         <div id="evEffL"></div></div>
+       <div class="evTame hide" id="evTame">さて、発動条件は……</div>
+       <div class="evSec cond hide" id="evCondB"><b>発動条件</b>
+         <div class="evCondT" id="evCondT"></div>
+         <div id="evCkL"></div></div>
+       <div id="evJd"></div>
+       <div class="evHint" id="evHint">タップで次へ</div>
+     </div>`;
+  const cb=$("#fsClose"); if(cb){ cb.disabled=true; cb.style.opacity=.35; }
+  FXDONE=false; FXAWQ=(meta.awc||[]).slice(); FXACQ=(meta.achv||[]).slice();
+  box.classList.add("evd");            /* 絵を少し小さくして、文章の場所をつくる */
+  box.classList.remove("hide"); box.classList.remove("go");
+  void box.offsetWidth; box.classList.add("go");
+  sndStart();
+  evStage(1, title, ents, meta, rm);
+}
+function evStage(ph, title, ents, meta, rm){
+  const fin=EVFIN; EVFIN=null;
+  fxClear();                            /* 前の段のタイマーとタップ受けを外す */
+  if(fin) fin();                        /* 打ちかけの説明文は一気に出しきる */
+  const ev=meta.ev;
+  const nx  = ()=>evStage(ph+1, title, ents, meta, rm);
+  const arm = ms=>{ EVSKIP=nx; FXT.push(setTimeout(nx, ms)); };
+  /* 先へ飛ばされたときは、出そろっていない効果の行をここで出しきる */
+  if(ph>2) Array.prototype.forEach.call(
+    document.querySelectorAll("#evEffL .evEf"), r=>r.classList.add("on"));
+  /* ---- 2 説明文を1文字ずつ ---- */
+  if(ph===1){
+    EVSKIP=nx;                          /* 打っている最中でもタップで先へ */
+    evType($("#evDesc"), ev.desc||"", rm, ()=>{ evScroll(); arm(rm?200:900); });
+    return;
+  }
+  /* ---- 3 うまくいくとこういう効果（判定前なので結果は明かさない） ---- */
+  if(ph===2){
+    const b=$("#evEff"), L=$("#evEffL"), fl=(ev.fxl||[]).filter(x=>x.t);
+    if(!b||!L||!fl.length){ nx(); return; }
+    b.classList.remove("hide");
+    L.innerHTML=fl.map((x,i)=>`<div class="evEf${x.b?" bad":""}" data-eve="${i}">`
+      +`<s>${x.b?"マイナス":"プラス"}</s><span>${esc(x.t)}`
+      +(x.c?`<em>${esc(x.c)}のとき</em>`:"")+`</span></div>`).join("");
+    evScroll();
+    const per=rm?60:240;
+    fl.forEach((x,i)=>FXT.push(setTimeout(()=>{
+      const r=document.querySelector(`[data-eve="${i}"]`); if(r) r.classList.add("on");
+      sndPikon(i);
+    }, i*per)));
+    arm(fl.length*per + (rm?200:1000));
+    return;
+  }
+  /* ---- 4 「さて、発動条件は……」とためる ---- */
+  if(ph===3){
+    const t=$("#evTame"); if(t) t.classList.remove("hide");
+    evScroll();
+    if(!rm) sndOmen();
+    arm(rm?250:1200);
+    return;
+  }
+  /* ---- 5 発動条件を発表（リスク点カードは内訳の ✓／✗ も） ---- */
+  if(ph===4){
+    const b=$("#evCondB"); if(!b){ nx(); return; }
+    b.classList.remove("hide");
+    const ct=$("#evCondT"); if(ct) ct.textContent = ev.cond || "なし（かならず発動）";
+    const mk=(ev.marks&&ev.marks.length>1)?ev.marks:[];
+    const L=$("#evCkL");
+    if(L) L.innerHTML = mk.map((m,i)=>
+      `<div class="evck"><s data-evck="${i}">…</s><span>${esc(m.t)}</span></div>`).join("");
+    evScroll();
+    const t0=rm?60:600, per=rm?40:300;
+    mk.forEach((m,i)=>FXT.push(setTimeout(()=>{
+      const el=document.querySelector(`[data-evck="${i}"]`);
+      if(el){ el.textContent=m.ok?"✓":"✗"; el.className=m.ok?"ok":"ng"; }
+      sndPikon(i);
+    }, t0+i*per)));
+    arm(t0 + mk.length*per + (rm?200:900));
+    return;
+  }
+  /* ---- 6 効果発揮／発揮せず（判定そのものは evJudgeOf の結果をそのまま出す） ---- */
+  ((ev.marks&&ev.marks.length>1)?ev.marks:[]).forEach((m,i)=>{
+    const el=document.querySelector(`[data-evck="${i}"]`);   /* 飛ばされていたら埋める */
+    if(el){ el.textContent=m.ok?"✓":"✗"; el.className=m.ok?"ok":"ng"; } });
+  const hint=$("#evHint"); if(hint) hint.classList.add("hide");
+  const jd=$("#evJd"); if(!jd) return;
+  if(ev.ok===true){
+    jd.innerHTML=`<div class="evjudge on">効果発動‼</div>`
+      +(ev.strong?`<div class="evjn strong">すべて該当：効果が強まる</div>`:"");
+    evScroll(); sndAwake();
+    const go=()=>{ fxClear(); meta._evj=1; runShow(title, ents, meta); };
+    EVSKIP=go; FXT.push(setTimeout(go, rm?350:1200));
+  }else{
+    jd.innerHTML = ev.ok==="warn"
+      ? `<div class="evjudge warn">警告</div><div class="evjn">${esc(ev.note||"")}</div>`
+      : `<div class="evjudge off">効果発動せず</div><div class="evjn">${esc(ev.note||"条件を満たしていません")}</div>`;
+    evScroll(); sndEnd();
+    $("#fsEnd").innerHTML="このイベントの効果はありません";
+    $("#fsEnd").classList.add("on");
+    FXDONE=true; const c2=$("#fsClose"); if(c2){ c2.disabled=false; c2.style.opacity=""; }
+  }
+}
 function hitEnt(i,e,rm,per){
   const row=$(`[data-fs="${i}"]`); if(!row) return;
   row.classList.add("on"); row.classList.remove("hit"); void row.offsetWidth; row.classList.add("hit");
@@ -5112,9 +5252,9 @@ function markReal(ents){
   });
 }
 function closeShow(){
-  fxClear(); payClose(); FXBUSY=false;
+  fxClear(); payClose(); FXBUSY=false; EVFIN=null;
   const b=$("#fxshow"); if(!b) return;
-  b.classList.add("hide"); b.classList.remove("go");
+  b.classList.add("hide"); b.classList.remove("go"); b.classList.remove("evd");
 }
 let FXAWQ=null, FXACQ=null, FXDONE=false, EVSKIP=null;
 function fxDone(){
@@ -6113,8 +6253,13 @@ function drawEvent(){
     acts.forEach(a=>{ if(actGood(a)===true && typeof a.d==="number") a.d=a.d*2; });
     sk={t:"pr", n:skName("pr"), sub:"プラス効果 2倍"};
   }
+  /* 説明文（desc）と、起きうる効果の一覧（fxl）も演出に渡す。
+     判定前なので「起きるかどうか」は伏せ、効果の内容だけを見せる */
   applyAndShow(e.n, ok===true?acts:[], {badge:"イベント発生", evid:e.id, skill:sk,
-    ev:{cond:(e.cond?e.cond.t:null), marks:j.marks, ok:ok, strong:j.strong, note:j.note}});
+    ev:{cond:(e.cond?e.cond.t:null), marks:j.marks, ok:ok, strong:j.strong, note:j.note,
+        desc:e.desc||"", pos:(evBad(e)?0:1),
+        fxl:(e.fx||[]).map(x=>({t:x.t||"", c:x.c||"",
+                                b:(x.a||[]).some(a=>actGood(a)===false)?1:0}))}});
 }
 
 /* ================= 振り返り =================
