@@ -794,6 +794,7 @@ body.manual .budman{display:flex}
 .ldrn{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:12.5px;font-weight:700;color:var(--gd)}
 .ldrn button{margin-left:auto;padding:5px 10px;border:1px solid #cfd8c4;border-radius:8px;
   background:#fff;color:var(--sub);font-size:11px;cursor:pointer}
+.mvSvg{display:block;margin:0 auto;width:100%;max-width:260px;height:auto}
 .gobig{width:100%;margin:0 0 10px;padding:15px 10px;border:0;border-radius:14px;
   background:var(--gd);color:#fff;font-size:16px;font-weight:800;cursor:pointer}
 .gobig:active{opacity:.85}
@@ -953,7 +954,7 @@ body.manual .budman{display:flex}
 
 /* ---- 推進ルーレット ---- */
 .rvWrap{display:flex;flex-direction:column;align-items:center;gap:7px;margin-bottom:9px}
-.rvSvg{display:block;width:180px;height:180px;max-width:62vw;max-height:62vw}
+.rvSvg{display:block;margin:0 auto;width:100%;max-width:260px;height:auto}
 .rvT{font-size:11px;font-weight:800;letter-spacing:.01em}
 .rvTs{font-size:9px;font-weight:700}
 .rvLbl{transition:opacity .18s linear}
@@ -964,12 +965,12 @@ body.manual .budman{display:flex}
 .fmb .pct{margin-left:9px}
 .fmHint{margin-top:9px;font-size:11.5px;line-height:1.6;color:#7E7B68}
 @media (max-width:390px){
-  .rvSvg{width:158px;height:158px}
+  .rvSvg{max-width:240px}
   .rvCap{font-size:10.5px;max-width:250px}
   .rvMini{flex:0 0 30px;width:30px;height:30px}
   .fmb .pct{margin-left:7px;font-size:14px}
 }
-@media (max-width:340px){ .rvSvg{width:146px;height:146px} }
+@media (max-width:340px){ .rvSvg{max-width:210px} }
 @media (prefers-reduced-motion: reduce){ .rvLbl{transition:none} }
 
 /* ---- UI簡素化（2026-08-21） ---- */
@@ -4286,11 +4287,9 @@ function doRoll(kind){
       if(rr){ rr.className="rres"; rr.innerHTML=resText(); }
       else box.innerHTML = rvHTML(rate, rBase, rZero, {ang:rAng})
                          + `<div class="rres">${resText()}</div>`;
-    } else {
-      const rm=box.querySelector(".rres");
-      if(rm){ rm.className="rres"; rm.innerHTML=resText(); }
-      else box.innerHTML = mvHTML(t.move, mAng) + `<div class="rres">${resText()}</div>`;
-    }
+    } else
+      box.innerHTML = mvHTML(t.move, mAng, {hit:mvIdx})
+                    + `<div class="rres">${resText()}</div>`;
     buzz([18,40,22]);
     const d=new Date();
     const rec={at:`${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`,
@@ -4360,9 +4359,9 @@ function rvHTML(rate, base, r0, o){
   const hw=(ps/2.7).toFixed(2);
   const defs=`<defs>`
    + `<pattern id="${u}n" width="${ps}" height="${ps}" patternUnits="userSpaceOnUse">`
-   +   `<rect width="${ps}" height="${ps}" fill="#333B2B"/>`
-   +   `<circle cx="${(ps*0.26).toFixed(2)}" cy="${(ps*0.26).toFixed(2)}" r="${(ps*0.17).toFixed(2)}" fill="#7C8370"/>`
-   +   `<circle cx="${(ps*0.76).toFixed(2)}" cy="${(ps*0.76).toFixed(2)}" r="${(ps*0.17).toFixed(2)}" fill="#7C8370"/></pattern>`
+   +   `<rect width="${ps}" height="${ps}" fill="#5A6350"/>`
+   +   `<circle cx="${(ps*0.26).toFixed(2)}" cy="${(ps*0.26).toFixed(2)}" r="${(ps*0.17).toFixed(2)}" fill="#9AA48D"/>`
+   +   `<circle cx="${(ps*0.76).toFixed(2)}" cy="${(ps*0.76).toFixed(2)}" r="${(ps*0.17).toFixed(2)}" fill="#9AA48D"/></pattern>`
    + `<pattern id="${u}k" width="${ps}" height="${ps}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">`
    +   `<rect width="${ps}" height="${ps}" fill="#CDE6A2"/>`
    +   `<rect width="${hw}" height="${ps}" fill="#8FBE5C"/></pattern>`
@@ -4403,10 +4402,10 @@ function rvHTML(rate, base, r0, o){
   const ndl = mini ? "" :
       `<g class="rvNdl" transform="rotate(${a.toFixed(2)} ${cx} ${cy})">`
     +   `<line x1="${cx}" y1="${cy}" x2="${cx}" y2="${(cy-R+4).toFixed(1)}" stroke="#1B2413" stroke-width="7" stroke-linecap="round" opacity=".33"/>`
-    +   `<line x1="${cx}" y1="${cy}" x2="${cx}" y2="${(cy-R+4).toFixed(1)}" stroke="#FFFFFF" stroke-width="3.6" stroke-linecap="round"/>`
-    +   `<polygon points="${cx-7},${(cy-R+15).toFixed(1)} ${cx+7},${(cy-R+15).toFixed(1)} ${cx},${(cy-R+1).toFixed(1)}" fill="#FFFFFF" stroke="#1B2413" stroke-width="1.6"/>`
+    +   `<line x1="${cx}" y1="${cy}" x2="${cx}" y2="${(cy-R+4).toFixed(1)}" stroke="#F5C518" stroke-width="3.6" stroke-linecap="round"/>`
+    +   `<polygon points="${cx-8},${(cy-R+16).toFixed(1)} ${cx+8},${(cy-R+16).toFixed(1)} ${cx},${(cy-R+1).toFixed(1)}" fill="#F5C518" stroke="#1B2413" stroke-width="1.8" stroke-linejoin="round"/>`
     + `</g>`
-    + `<circle cx="${cx}" cy="${cy}" r="7" fill="#FFFFFF" stroke="#1B2413" stroke-width="2"/>`;
+    + `<circle cx="${cx}" cy="${cy}" r="7" fill="#F5C518" stroke="#1B2413" stroke-width="2"/>`;
   const svg = `<svg class="${mini?"rvMini":"rvSvg"}" viewBox="0 0 ${sz} ${sz}" role="img"`
     + ` aria-label="成功率 ${rt}パーセントのルーレット"`
     + ` data-cx="${cx}" data-cy="${cy}" data-r="${R}" data-b0="${B0}" data-b1="${B1}" data-s="${S}">`
@@ -4457,26 +4456,36 @@ function rvSpin(box, ang, buzz, done){
 /* ===== 移動ルーレット =====
    サイコロの目をそのまま6つの区画にした輪。出る確率は今までと同じ（6分の1ずつ）。
    卓の全員で「せーの」で回すので、転がる音より「同時に止まる」ほうが見やすい */
-function mvHTML(col, ang){
-  const D=DICE[col], sz=RVSZ, cx=sz/2, cy=sz/2, R=sz/2-RVPAD-4;
-  let segs="";
+function mvHTML(col, ang, o){
+  o=o||{};
+  const hit = (o.hit==null) ? null : o.hit;   /* 止まった区画。回している間は null */
+  const D=DICE[col], sz=240, cx=sz/2, cy=sz/2, R=sz/2-26;
+  /* 薄くした区画に背景が透けると輪が崩れて見えるので、白の下地を敷く */
+  let segs=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="#fff"/>`;
   for(let i=0;i<6;i++){
     const on=i%2===1;
+    const off = (hit!=null && i!==hit);       /* 止まったところ以外は薄くする */
     segs += `<path d="${rvSec(cx,cy,R,i*60,i*60+60)}" fill="${on?D.c:"#fff"}"`
-          + ` stroke="${D.c}" stroke-width="1.5"/>`;
-    const q=rvXY(cx,cy,R*0.64,i*60+30);
+          + ` stroke="${D.c}" stroke-width="1.5" opacity="${off?.34:1}"/>`;
+    const q=rvXY(cx,cy,R*0.62,i*60+30);
     segs += `<text x="${q[0].toFixed(1)}" y="${q[1].toFixed(1)}" text-anchor="middle"`
-          + ` dominant-baseline="central" font-size="23" font-weight="800"`
-          + ` fill="${on?"#fff":D.c}">${D.f[i]}</text>`;
+          + ` dominant-baseline="central" font-size="30" font-weight="800"`
+          + ` opacity="${off?.42:1}" fill="${on?"#fff":D.c}">${D.f[i]}</text>`;
   }
-  return `<svg class="mvSvg" viewBox="0 0 ${sz} ${sz}" width="${sz}" height="${sz}"`
+  /* 止まった区画を太い線で囲む。色が見分けにくい人にも「ここで止まった」が分かる */
+  const mark = hit==null ? ""
+    : `<path d="${rvSec(cx,cy,R,hit*60,hit*60+60)}" fill="none"`
+      + ` stroke="#F5C518" stroke-width="6" stroke-linejoin="round"/>`;
+  return `<svg class="mvSvg" viewBox="0 0 ${sz} ${sz}"`
        + ` data-cx="${cx}" data-cy="${cy}" role="img"`
-       + ` aria-label="移動ルーレット（${D.nm}）">${segs}`
-       + `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#333B2B" stroke-width="2"/>`
+       + ` aria-label="移動ルーレット（${D.nm}）${hit==null?"":"　出目 "+D.f[hit]}">${segs}`
+       + `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#fff" stroke-width="2.5"/>`
+       + mark
        + `<g class="mvNdl" transform="rotate(${(+ang||0).toFixed(2)} ${cx} ${cy})">`
-       +   `<path d="M ${cx} ${cy-R+3} L ${cx-9} ${cy-R-12} L ${cx+9} ${cy-R-12} Z"`
-       +   ` fill="#333B2B"/></g>`
-       + `<circle cx="${cx}" cy="${cy}" r="7" fill="#333B2B"/></svg>`;
+       +   `<path d="M ${cx} ${cy-R+6} L ${cx-12} ${cy-R-17} L ${cx+12} ${cy-R-17} Z"`
+       +   ` fill="#F5C518" stroke="#1A1A1A" stroke-width="2.5" stroke-linejoin="round"/></g>`
+       + `<circle cx="${cx}" cy="${cy}" r="9" fill="#F5C518" stroke="#1A1A1A" stroke-width="2.5"/>`
+       + `</svg>`;
 }
 /* 何番目の区画で止まるかは先に決まっている。乱数は区画の中のどこで止まるかだけに使う */
 function mvLand(i){ return i*60 + 12 + Math.random()*36; }
@@ -4516,7 +4525,7 @@ function showLast(){
   box.innerHTML = (L.kind==="proj" && L.rate
       ? rvHTML(L.rate, L.base, L.r0, {ang:(L.ang==null?0:L.ang)})
       : (L.kind==="move" && L.mang!=null
-          ? mvHTML(L.faces[0].c, L.mang)
+          ? mvHTML(L.faces[0].c, L.mang, {hit:Math.floor(L.mang/60)})
           : faceHTML(L.faces, L.kind, ""))) +
     `<div class="rres">${L.kind==="move"
       ? `${L.sum} マスまで移動できる`
