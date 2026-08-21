@@ -947,6 +947,17 @@ body.manual .budman{display:flex}
 }
 @media (max-width:340px){ .rvSvg{width:146px;height:146px} }
 @media (prefers-reduced-motion: reduce){ .rvLbl{transition:none} }
+
+/* ---- UI簡素化（2026-08-21） ---- */
+.wtg{width:100%;margin-top:12px;background:#F0EEE3;border:1px solid var(--line);color:var(--gd);
+ border-radius:10px;padding:11px 10px;font-size:13px;font-weight:700;line-height:1.4}
+.wtg.on{background:#fff}
+#single .tot div,#single .grand{cursor:pointer}
+.bkb{width:100%;margin-bottom:12px}
+.evck s.hit{color:#B4553A;font-weight:800}
+.evck s.miss{color:#9AA69B}
+.evckw{font-style:normal;font-size:11px;margin-left:6px;color:var(--sub)}
+.evck s.hit ~ .evckw{color:#B4553A}
 </style>
 </head>
 <body>
@@ -1031,7 +1042,7 @@ window.onerror=function(m,src,line,col){
   <div class="hrow">
     <h1 id="teamTitle">スコアシート</h1>
     <div class="yr">
-      <div class="seg"><button id="v1" class="on">入力</button><button id="v3">カード</button><button id="v2">記録</button></div>
+      <div class="seg"><button id="v1" class="on">入力</button><button id="v3">カード</button><button id="v2" style="display:none">記録</button></div>
     </div>
   </div>
   <div class="cstrip" id="cstrip"></div>
@@ -1087,14 +1098,16 @@ window.onerror=function(m,src,line,col){
       <div class="base"><span id="bset">初期設定値 <b id="tb">0</b> <i>▾</i></span><span id="db" class="delta"></span></div>
       <div class="manrow"><button class="manTg" data-man="1">手動で調整</button></div>
       <div class="manban">手動調整中です。ふだんはカードの完了でアプリが自動反映します。直し終えたら閉じてください。</div>
+      <button class="wtg" id="rowsTg"></button>
     </div>
-    <div class="card" id="rows"></div>
+    <div class="card hide" id="rows"></div>
   </div>
   <div id="all" class="hide">
+    <button class="btn alt bkb" id="allBack">← 入力にもどる</button>
     <div class="card">
       <h2>年度別の記録</h2>
       <table id="histTbl"></table>
-      <p class="note">「年度を記録」を押した時点の数字が残ります。</p>
+      <p class="note">⋯ →「いまの数字を記録に残す」を押した時点の数字が残ります。</p>
     </div>
     <div class="card">
       <h2>振り返り</h2>
@@ -1107,7 +1120,6 @@ window.onerror=function(m,src,line,col){
     </div>
   </div>
   <div id="cardsV" class="hide">
-    <div class="card gcard" id="cGuide"></div>
     <div class="card" id="numCard">
       <div class="hcol"><h2 style="margin:0">カード番号で完了を登録</h2>
         <button class="sndTg" data-snd="1">効果音 オン</button></div>
@@ -1145,9 +1157,11 @@ window.onerror=function(m,src,line,col){
 <div id="menu" class="hide">
   <div class="sheet">
     <div class="mt" style="font-size:18px">この年度の操作</div>
-    <button class="btn alt" id="setbase">いまの値を初期設定値にする</button>
-    <button class="btn alt" id="reset">初期設定値に戻す</button>
+    <button class="btn alt" id="proxy">この端末で代理操作する</button>
+    <button class="btn alt" id="setbase">いまの数字を「開始時の値」として保存</button>
+    <button class="btn alt" id="reset">開始時の値に戻す（いまの数字は消えます）</button>
     <button class="btn alt" id="snap">いまの数字を記録に残す</button>
+    <button class="btn alt" id="mRec">年度別の記録・振り返りを見る</button>
     <button class="btn alt" id="repick">キャラクターを選び直す</button>
     <button class="btn alt" id="menuClose" style="margin-top:18px">閉じる</button>
   </div>
@@ -4435,7 +4449,10 @@ $("#rollProj").onclick=()=>openFieldModal();   /* 押した瞬間に分野の宣
 $("#cClose").onclick=()=>$("#csheet").classList.add("hide");
 $("#csheet").onclick=e=>{ if(e.target.id==="csheet") $("#csheet").classList.add("hide"); };
 $("#cLvBtn").onclick=()=>{
-  const c=S.chars[CI]; c.lv=c.lv===2?1:2;
+  const c=S.chars[CI];
+  if(c.lv!==2 && mtrs()[MK[c.t]]<AWAKE &&
+     !confirm(`まだ${MNAME[MK[c.t]]}が${AWAKE}に届いていません。それでも覚醒させますか？`)) return;
+  c.lv=c.lv===2?1:2;
   /* 通常に戻したら「手動」の印を付ける（同期のたびに覚醒へ戻されないように）。
      手動で覚醒させたときは印を消す＝以後はメーター任せに戻す */
   if(c.lv===1 && mtrs()[MK[c.t]]>=AWAKE) c.man=1; else delete c.man;
@@ -4475,7 +4492,7 @@ function drawTeam(){
   carry();
   $("#teamTitle").textContent = S.team ? `${S.team} のスコアシート` : "スコアシート";
   drawCStrip(); drawStrip();
-  drawRows(); drawTotals(); drawHist(); drawRev();
+  drawRows(); drawRowsTg(); drawTotals(); drawHist(); drawRev();
   drawMeters(); drawRun(); drawPjList(); drawEvtBox();
   drawGuide(); drawCGuide(); numHint(); drawManual(); drawTurnBox();
   $("#single").classList.toggle("hide",S.view!=="single");
@@ -4497,6 +4514,14 @@ function info(k){
 $("#modal").onclick=e=>{ if(e.target.id==="modal"||e.target.id==="mClose") $("#modal").classList.add("hide"); };
 $("#fmodal").onclick=e=>{ if(e.target.id==="fmodal"||e.target.id==="fmClose") $("#fmodal").classList.add("hide"); };
 $("#more").onclick=()=>$("#menu").classList.remove("hide");
+$("#proxy") && ($("#proxy").onclick=()=>{
+  PROXY=!PROXY;
+  $("#proxy").textContent = PROXY ? "代理操作を終える" : "この端末で代理操作する";
+  $("#menu").classList.add("hide");
+  drawTeam();
+  alert(PROXY ? "この端末ですべての操作ができます。担当が戻ったら「代理操作を終える」を押してください。"
+              : "代理操作を終わりました。");
+});
 $("#repick").onclick=()=>{ $("#menu").classList.add("hide");
   PICK={sales:false,pr:false,plant:false,proc:false,exec:false};
   S.chars.forEach(c=>PICK[c.t]=true); show("pick"); };
@@ -4557,7 +4582,29 @@ function endYear(){
 }
 $("#v1").onclick=()=>{S.view="single";save();drawTeam();};
 $("#v2").onclick=()=>{S.view="all";save();drawTeam();};
+$("#mRec")    && ($("#mRec").onclick   =()=>{ $("#menu").classList.add("hide");
+  S.view="all"; save(); drawTeam(); window.scrollTo(0,0); });
+$("#allBack") && ($("#allBack").onclick=()=>{ S.view="single"; save(); drawTeam();
+  window.scrollTo(0,0); });
 $("#v3").onclick=()=>{S.view="cards";save();drawTeam();};
+/* ---- Scope明細の開閉。既定は閉じ、排出量の数字タップでもひらく ---- */
+let ROWSOPEN=false;
+function drawRowsTg(){
+  const b=$("#rowsTg"), r=$("#rows"); if(!b||!r) return;
+  r.classList.toggle("hide", !ROWSOPEN);
+  b.classList.toggle("on", ROWSOPEN);
+  b.textContent = ROWSOPEN ? "▲ Scopeの明細をとじる"
+                           : "▼ Scopeの明細をひらく（どのカテゴリが動いたか）";
+}
+function rowsToggle(open){
+  ROWSOPEN = (open===undefined) ? !ROWSOPEN : !!open;
+  drawRowsTg();
+  if(ROWSOPEN){ try{ $("#rows").scrollIntoView({block:"start",
+    behavior:(typeof RMOTION==="function"&&RMOTION())?"auto":"smooth"}); }catch(e){} }
+}
+$("#rowsTg") && ($("#rowsTg").onclick=()=>rowsToggle());
+document.querySelectorAll("#single .tot div, #single .grand").forEach(el=>{
+  el.addEventListener("click", ()=>rowsToggle(true)); });
 $("#pClose").onclick=()=>$("#psheet").classList.add("hide");
 $("#psheet").onclick=e=>{ if(e.target.id==="psheet") $("#psheet").classList.add("hide"); };
 $("#fxsheet").onclick=e=>{ if(e.target.id==="fxsheet") $("#fxsheet").classList.add("hide"); };
@@ -5497,12 +5544,15 @@ function evStage(ph, title, ents, meta, rm){
     if(cn){ cn.textContent=cp.note; cn.classList.toggle("hide", !cp.note); }
     const L=$("#evCkL");
     if(L) L.innerHTML = mk.map((m,i)=>
-      `<div class="evck" data-evckr="${i}"><s data-evck="${i}">…</s><span>${esc(m.t)}</span></div>`).join("");
+      `<div class="evck" data-evckr="${i}"><s data-evck="${i}">…</s><span>${esc(m.t)}</span>`
+      + `<i class="evckw" data-evckw="${i}"></i></div>`).join("");
     evScrollTo("#evCondB");
     const t0=rm?60:700, per=rm?40:420;
     mk.forEach((m,i)=>FXT.push(setTimeout(()=>{
       const el=document.querySelector(`[data-evck="${i}"]`);
-      if(el){ el.textContent=m.ok?"✓":"✗"; el.className=m.ok?"ok":"ng"; }
+      if(el){ el.textContent=m.ok?"●":"○"; el.className=m.ok?"hit":"miss"; }
+      const wd=document.querySelector(`[data-evckw="${i}"]`);
+      if(wd) wd.textContent = m.ok?"あてはまる":"あてはまらない";
       const rw=document.querySelector(`[data-evckr="${i}"]`);
       if(rw) rw.classList.add("on", m.ok?"y":"n");
       sndPikon(i);
@@ -5515,7 +5565,9 @@ function evStage(ph, title, ents, meta, rm){
   /* ---- 6 効果発揮／発揮せず（判定そのものは evJudgeOf の結果をそのまま出す） ---- */
   ((ev.marks&&ev.marks.length>1)?ev.marks:[]).forEach((m,i)=>{
     const el=document.querySelector(`[data-evck="${i}"]`);   /* 飛ばされていたら埋める */
-    if(el){ el.textContent=m.ok?"✓":"✗"; el.className=m.ok?"ok":"ng"; }
+    if(el){ el.textContent=m.ok?"●":"○"; el.className=m.ok?"hit":"miss"; }
+    const wd2=document.querySelector(`[data-evckw="${i}"]`);
+    if(wd2) wd2.textContent = m.ok?"あてはまる":"あてはまらない";
     const rw=document.querySelector(`[data-evckr="${i}"]`);
     if(rw) rw.classList.add("on", m.ok?"y":"n"); });
   const hint=$("#evHint"); if(hint) hint.classList.add("hide");
@@ -6148,7 +6200,9 @@ function drawEvtBox(){
   $("#evtBox").innerHTML =
     `<div class="cnd ${ev?(got?"ok":"ng"):"man"}" style="margin-bottom:10px">${S.year} ${monNow()}月　${
       ev ? (got?"イベントの月：この月のカードは引き済みです。":"イベントの月です。1枚引いてください。")
-         : "イベントの月ではありません（5・8・11・2月に引きます）"}</div>`
+         : ((YEARS.indexOf(S.year)===0 && monNow()===5)
+             ? "1年目の5月はチュートリアル中のためお休みです。最初のイベントは8月です。"
+             : "イベントの月ではありません（5・8・11・2月に引きます）")}</div>`
     + (e ? `<div class="evb"><div class="evbRow">${(typeof EVIMG!=="undefined"&&EVIMG[e.id])?`<img class="evIco" src="${EVIMG[e.id]}" alt="">`:""}<div><div style="font-weight:800">${e.n}</div>
         <div style="font-size:12px;color:var(--sub);line-height:1.6;margin-top:5px">${e.desc}</div></div></div></div>
        <p class="note" style="margin:0">全${EV.length}枚のうち ${S.evt.drawn.length}枚を使いました。</p>`
@@ -6283,6 +6337,27 @@ function showNextTurn(t){
    ・演出中やほかのポップアップが開いているあいだは待つ（重ならないようにする） */
 S.evpop = S.evpop || {};
 const EVPOP_ORDER = ["sales","exec","pr","plant","proc"];
+/* 卓の受け持ち。上から順に、その卓にいる人を探して割り当てる。
+   ひとりで試すとき（同期なし）や、代理を立てたときは全部出す。 */
+const ROLEGATE = {
+  reg:  ["exec","pr","sales","plant","proc"],
+  ev:   ["sales","exec","pr","plant","proc"],
+  mon:  ["pr","exec","sales","plant","proc"],
+  bud:  ["exec","pr","sales","plant","proc"]
+};
+let PROXY = false;
+function roleWho(key){
+  const r=roster(), o=ROLEGATE[key]||[];
+  for(let i=0;i<o.length;i++){ if(r.indexOf(o[i])>=0) return o[i]; }
+  return null;
+}
+function roleOK(key){
+  if(PROXY) return true;
+  if(!SHARED || !S.wid) return true;   /* 同期していない・ひとりで試しているときは全部出す */
+  const who=roleWho(key);
+  if(!who) return true;
+  return S.chars.some(c=>c.t===who);
+}
 function evPopWho(){
   const r=roster();
   for(let i=0;i<EVPOP_ORDER.length;i++){
@@ -6374,10 +6449,14 @@ function drawGuide(){
   /* 濃い色（go）はいちばん先にやることだけ。押す順番が見た目でわかるようにする */
   if(p.tut)    b.push([`gTut`,`チュートリアルの3枚を見る`,true]);
   if(p.start2) b.push([`gDeck`,`場札（1年目の残り＋2年目40枚）を見る`,true]);
-  if(p.ev)     b.push([`gEv`, evGot()?`イベント引き済み`:`イベントカードを引く`, !evGot()]);
+  if(p.ev && roleOK("ev")) b.push([`gEv`, evGot()?`イベント引き済み`:`イベントカードを引く`, !evGot()]);
   if(p.last)   b.push([`gFin`,`${S.year}を終了して決算`,true]);
-  b.push([`gNum`,`カード番号で完了を登録（専務）`,false]);
-  b.push([`gNext`, p.last?`これが最後の月です`:`この月を終えて次へ →`, false]);
+  /* いちばん押すものを先頭に。自分が振り終わっていたら出さない */
+  {const me=S.chars[CI];
+   if(me && !turnD()[me.t] && !p.tut)
+     b.unshift([`gRoll`,`サイコロを振る（${cname(me)}）`,true]);}
+  if(roleOK("reg"))  b.push([`gNum`,`カード番号で完了を登録`,false]);
+  if(roleOK("mon"))  b.push([`gNext`, p.last?`これが最後の月です`:`この月を終えて次へ →`, false]);
   let lead=true;
   const btns=b.map(([id,txt,act])=>{
     const go = act && lead; if(act && lead) lead=false;
@@ -6400,6 +6479,7 @@ function drawGuide(){
      setTimeout(()=>{ const el=$("#numIn");
        if(el){ el.focus(); try{ el.scrollIntoView({block:"center"}); }catch(e){} } }, 60); });
   on("#gNext",()=>{ if(!p.last) monMove(1); });
+  on("#gRoll",()=>{ openChar(); $("#csheet").classList.remove("hide"); });
 }
 
 /* いまの会社レベル（決算の判定を年度の途中でも見せる） */
@@ -6617,7 +6697,7 @@ function review(){
 function revHTML(){
   const R=review(), t=R.t, H=[];
   const nm=p=>`No.${p.id} ${esc(p.n)}`;
-  H.push(`<h4>この${YEARS.length}年でやったこと</h4><ul>`);
+  H.push(`<h4>この${Math.max(1, YEARS.indexOf(S.year)+1)}年でやったこと</h4><ul>`);
   H.push(`<li>完了したカードは <b>${R.all.length}枚</b>（払ったコストの合計 ${R.all.reduce((a,x)=>a+costOf(x.p),0)}）。`
        + `排出量は <b>${R.ys[0].base} → ${t.net}</b>、削減は <b>${t.red}</b> でした。</li>`);
   H.push(`<li>会社レベルは <b>Lv${t.lv}　${t.lvName}</b>。`
@@ -6655,7 +6735,8 @@ function revHTML(){
     R.evAll.forEach(x=>{
       const c=evCond(x.e, x.r.year);
       H.push(`<li>${x.r.year||"年不明"}${x.r.mon==null?"":" "+x.r.mon+"月"}　${(typeof EVIMG!=="undefined"&&EVIMG[x.e.id])?`<img class="revEvIco" src="${EVIMG[x.e.id]}" alt="">`:""}<b>${esc(x.e.n)}</b>`
-        + (evBad(x.e)?`<span class="warn2">　痛手</span>`:"")
+        + ((evBad(x.e) && c && c.ok!==false)?`<span class="warn2">　痛手</span>`
+           : ((c && c.ok===false)?`<span class="sub2">　効果なし</span>`:""))
         + (c?`<br><span class="sub2">条件：${esc(c.t)}`
              + (c.ok===null?"":(c.ok?`　→ 年度末の値（${c.v}）では満たしています`:`　→ 年度末の値（${c.v}）では届いていません`))
              + `</span>`:"") + `</li>`);
@@ -6864,7 +6945,7 @@ function drawCGuide(){
 }
 /* 役割ガイドの開閉 */
 let ROLEOPEN = null;                       // null＝まだ触っていない（人数から決める）
-const roleOpen = ()=> ROLEOPEN===null ? S.chars.length<=3 : ROLEOPEN;
+const roleOpen = ()=> ROLEOPEN===null ? false : ROLEOPEN;
 function drawRoleTg(){
   const t=$("#roleTg"), l=$("#roleList"); if(!t||!l) return;
   const o=roleOpen();
