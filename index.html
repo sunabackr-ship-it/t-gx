@@ -784,6 +784,30 @@ body.manual .budman{display:flex}
 .tbm{margin-top:9px;border-top:1px dashed var(--line);padding-top:9px}
 .tbm.hide{display:none !important}
 .tbm .tbnote{font-size:11.5px;color:var(--sub);line-height:1.65;margin:0 0 8px}
+.ldrq{border:2px solid var(--gd);border-radius:14px;padding:12px 12px 10px;margin:0 0 10px;background:#fbfdf7}
+.ldrq h5{margin:0 0 4px;font-size:14px;font-weight:800;color:var(--gd)}
+.ldrq p{margin:0 0 9px;font-size:11.5px;color:var(--sub);line-height:1.65}
+.ldrq .row{display:flex;flex-wrap:wrap;gap:6px}
+.ldrq button{flex:1 1 44%;padding:11px 8px;border:1px solid var(--gd);border-radius:10px;
+  background:#fff;color:var(--gd);font-size:13px;font-weight:700;cursor:pointer}
+.ldrq button:active{background:var(--gd);color:#fff}
+.ldrn{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:12.5px;font-weight:700;color:var(--gd)}
+.ldrn button{margin-left:auto;padding:5px 10px;border:1px solid #cfd8c4;border-radius:8px;
+  background:#fff;color:var(--sub);font-size:11px;cursor:pointer}
+.gobig{width:100%;margin:0 0 10px;padding:15px 10px;border:0;border-radius:14px;
+  background:var(--gd);color:#fff;font-size:16px;font-weight:800;cursor:pointer}
+.gobig:active{opacity:.85}
+#goOv{position:fixed;inset:0;z-index:95;background:rgba(30,36,24,.92);
+  display:flex;align-items:center;justify-content:center}
+#goOv.hide{display:none !important}
+.gobx{text-align:center;color:#fff;padding:20px;width:100%;max-width:420px}
+.gonum{font-size:110px;line-height:1;font-weight:800;letter-spacing:-.03em}
+.gotxt{font-size:20px;font-weight:700;margin:10px 0 22px}
+.gotap{width:100%;padding:26px 10px;border:0;border-radius:18px;background:#fff;
+  color:var(--gd);font-size:22px;font-weight:800;cursor:pointer}
+.gotap.hide{display:none !important}
+.goskip{margin-top:16px;background:none;border:0;color:rgba(255,255,255,.75);
+  font-size:12px;text-decoration:underline;cursor:pointer}
 .tbb{display:block;width:100%;text-align:left;background:#F7F5EA;border:1px solid var(--line);
  border-radius:10px;padding:10px 11px;margin-bottom:6px;font-size:13px;font-weight:700;
  color:var(--gd);line-height:1.5}
@@ -1193,7 +1217,7 @@ window.onerror=function(m,src,line,col){
       <button class="btn" id="rollMove" style="margin:0">移動</button>
       <button class="btn" id="rollProj" style="margin:0">推進</button>
     </div>
-    <p class="note">推進の判定はここでサイコロを振り、プロジェクトカードは卓の盤上で進めます。
+    <p class="note">推進の判定はここでルーレットを回し、プロジェクトカードは卓の盤上で進めます。
        完了まで進んだら、専務が「カード」タブのカード番号で登録します。</p>
 
     <div id="skillBox" class="skillbox hide">
@@ -1384,6 +1408,15 @@ window.onerror=function(m,src,line,col){
 </div>
 
 <!-- ============ 分野の宣言モーダル ============ -->
+<div id="goOv" class="hide">
+  <div class="gobx">
+    <div class="gonum" id="goNum">3</div>
+    <div class="gotxt" id="goTxt">せーの…</div>
+    <button class="gotap hide" id="goTap">タップして回す</button>
+    <button class="goskip" id="goSkip">とじる</button>
+  </div>
+</div>
+
 <div id="fmodal" class="hide">
   <div class="sheet">
     <div class="mt">今回推進するプロジェクトはどの分野ですか？</div>
@@ -3910,7 +3943,7 @@ YEARS.forEach(y=>{ const c=S.data[y]; if(c){ fixOff(c.v); fixOff(c.b); } });
 const save = ()=>{ try{ localStorage.setItem(BASE+":last", KEY); localStorage.setItem(KEY, JSON.stringify(
   {mode:S.mode,wid:S.wid,wmeta:S.wmeta,team:S.team,year:S.year,view:S.view,
    data:S.data,hist:S.hist,done:S.done,chars:S.chars,rolls:S.rolls,devId:S.devId,
-   proj:S.proj,evt:S.evt,turn:S.turn,evpop:S.evpop,roster:S.roster})); }catch(e){} };
+   proj:S.proj,evt:S.evt,turn:S.turn,evpop:S.evpop,roster:S.roster,lead:S.lead})); }catch(e){} };
 
 let FB = null;                       // モジュール側から差し込む
 const cell0 = ()=>{ const c = S.data[S.year] || (S.data[S.year]={v:blank(),b:blank()});
@@ -4086,7 +4119,7 @@ function drawIntro(){
   $("#iTag").textContent="Normal";
   $("#iName").textContent=cname(c);
   $("#iDice").textContent=`担当メーター「${t.meter}」　${t.quote1}`;
-  $("#iMove").textContent=`${d.nm}のサイコロ　出目 ${Math.min(...d.f)}〜${Math.max(...d.f)} の範囲に移動できる`;
+  $("#iMove").textContent=`${d.nm}のルーレット　出目 ${Math.min(...d.f)}〜${Math.max(...d.f)} の範囲に移動できる`;
   $("#iProj").innerHTML = strongOfT(c.t).length
     ? `通常 ${t.r1}%　／　得意分野なら ${upStep(t.r1)}%<br>`
       + `<span style="color:${FIELDS[strongOfT(c.t)[0]].c};font-weight:700">得意：${fnames(strongOfT(c.t))}</span>`
@@ -4137,7 +4170,7 @@ function openChar(){
   $("#cName").textContent = cname(c);
   $("#cBase").textContent = `担当メーター「${t.meter}」`;
   $("#cLvBtn").textContent = up?"通常に戻す":"覚醒させる";
-  $("#cMove").textContent = `${d.nm}のサイコロ　出目 ${Math.min(...d.f)}〜${Math.max(...d.f)}`;
+  $("#cMove").textContent = `${d.nm}のルーレット　出目 ${Math.min(...d.f)}〜${Math.max(...d.f)}`;
   const rNow = up?t.r2:t.r1;
   $("#cProj").innerHTML = (strongOf(c).length
     ? (upStep(rNow)!==rNow
@@ -4179,7 +4212,7 @@ function drawRollLog(){
     + (r.kind==="move" ? `${DICE[r.faces[0].c].nm}${r.faces[0].n}`
                        : `${r.field||""} ${r.faces[0].o?"○":"×"}`)
     + `　→ <b>${r.kind==="move"?r.sum+"マス":(r.ok?"成功":"失敗")}</b>`).join("<br>")
-    : `<span style="color:#9a9788">まだ振っていません</span>`;
+    : `<span style="color:#9a9788">まだ回していません</span>`;
 }
 /* 分野の選択 */
 function drawFields(){
@@ -4224,8 +4257,10 @@ function doRoll(kind){
   if(kind==="proj" && !c.field){ openFieldModal(); return; }   /* 念のための保険 */
   const colors = [t.move];
   const rate = rateOf(c, c.field);
+  const mvIdx = Math.floor(Math.random()*6);
+  const mAng  = kind==="move" ? mvLand(mvIdx) : 0;
   const faces = kind==="move"
-    ? [{c:t.move, n:DICE[t.move].f[Math.floor(Math.random()*6)], o:0}]
+    ? [{c:t.move, n:DICE[t.move].f[mvIdx], o:0}]
     : [{c:t.move, n:0, o: Math.random()*100 < rate ? 1 : 0}];
   const sum = kind==="move" ? faces[0].n : 0;
   const ok  = kind==="proj" ? faces[0].o===1 : false;
@@ -4240,16 +4275,9 @@ function doRoll(kind){
                   + `<div class="rres rolling">ルーレットを回しています…</div>`;
     rvSpin(box, rAng, buzz, settle);
   } else {
-  // だんだん遅くなる（転がって止まる感じ）
-  const steps=[45,45,50,55,62,70,80,92,106,124,146,172,205,250,300];
-  let i=0;
-  (function spin(){
-    const tmp=colors.map(col=>({c:col, n:DICE[col].f[Math.floor(Math.random()*6)],
-                                o:Math.random()<.5?1:0}));
-    box.innerHTML = faceHTML(tmp,kind,"roll") + `<div class="rres rolling">転がっています…</div>`;
-    buzz(6);
-    if(i<steps.length){ setTimeout(spin, steps[i++]); } else settle();
-  })();
+    box.innerHTML = mvHTML(t.move, 0)
+                  + `<div class="rres rolling">ルーレットを回しています…</div>`;
+    mvSpin(box, mAng, buzz, settle);
   }
 
   function settle(){
@@ -4258,13 +4286,16 @@ function doRoll(kind){
       if(rr){ rr.className="rres"; rr.innerHTML=resText(); }
       else box.innerHTML = rvHTML(rate, rBase, rZero, {ang:rAng})
                          + `<div class="rres">${resText()}</div>`;
-    } else
-    box.innerHTML = faceHTML(faces,kind,"land") + `<div class="rres">${resText()}</div>`;
+    } else {
+      const rm=box.querySelector(".rres");
+      if(rm){ rm.className="rres"; rm.innerHTML=resText(); }
+      else box.innerHTML = mvHTML(t.move, mAng) + `<div class="rres">${resText()}</div>`;
+    }
     buzz([18,40,22]);
     const d=new Date();
     const rec={at:`${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`,
                who:cname(c), kind, faces, sum, ok, field:(c.field?FIELDS[c.field].nm:"—")};
-    c.last={kind,sum,ok,faces,rate,base:rBase,r0:rZero,ang:rAng};                 // 画面に出したまま残す
+    c.last={kind,sum,ok,faces,rate,base:rBase,r0:rZero,ang:rAng,mang:mAng};                 // 画面に出したまま残す
     S.rolls.push(rec); S.rolls=S.rolls.slice(-20);
     save(); pushChars(); FB&&FB.pushRoll(rec);
     turnSet(c.t, true);                         // この月の手番を「済」にする（全端末で共有）
@@ -4408,16 +4439,65 @@ function rvSpin(box, ang, buzz, done){
   };
   const GROW = gain>1 ? 360 : 0, SPIN = gain>1 ? 1240 : 1400;
   setN(0); if(GROW) front(B0);
+  let fin=false;
+  const end=()=>{ if(fin) return; fin=true; front(S); setN(ang); done(); };
   const t0=performance.now(); let tick=-1;
   (function step(now){
+    if(fin) return;
     const e=now-t0;
     if(e<GROW){ const p=e/GROW; front(B0+gain*(1-Math.pow(1-p,3))); requestAnimationFrame(step); return; }
     if(GROW) front(S);
     const p=Math.min(1,(e-GROW)/SPIN), a=(360*3+ang)*(1-Math.pow(1-p,3));
     setN(a);
     const k=Math.floor(a/45); if(k!==tick){ tick=k; buzz(4); }
-    if(p<1) requestAnimationFrame(step); else done();
+    if(p<1) requestAnimationFrame(step); else end();
   })(t0);
+  setTimeout(end, GROW+SPIN+1500);
+}
+/* ===== 移動ルーレット =====
+   サイコロの目をそのまま6つの区画にした輪。出る確率は今までと同じ（6分の1ずつ）。
+   卓の全員で「せーの」で回すので、転がる音より「同時に止まる」ほうが見やすい */
+function mvHTML(col, ang){
+  const D=DICE[col], sz=RVSZ, cx=sz/2, cy=sz/2, R=sz/2-RVPAD-4;
+  let segs="";
+  for(let i=0;i<6;i++){
+    const on=i%2===1;
+    segs += `<path d="${rvSec(cx,cy,R,i*60,i*60+60)}" fill="${on?D.c:"#fff"}"`
+          + ` stroke="${D.c}" stroke-width="1.5"/>`;
+    const q=rvXY(cx,cy,R*0.64,i*60+30);
+    segs += `<text x="${q[0].toFixed(1)}" y="${q[1].toFixed(1)}" text-anchor="middle"`
+          + ` dominant-baseline="central" font-size="23" font-weight="800"`
+          + ` fill="${on?"#fff":D.c}">${D.f[i]}</text>`;
+  }
+  return `<svg class="mvSvg" viewBox="0 0 ${sz} ${sz}" width="${sz}" height="${sz}"`
+       + ` data-cx="${cx}" data-cy="${cy}" role="img"`
+       + ` aria-label="移動ルーレット（${D.nm}）">${segs}`
+       + `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#333B2B" stroke-width="2"/>`
+       + `<g class="mvNdl" transform="rotate(${(+ang||0).toFixed(2)} ${cx} ${cy})">`
+       +   `<path d="M ${cx} ${cy-R+3} L ${cx-9} ${cy-R-12} L ${cx+9} ${cy-R-12} Z"`
+       +   ` fill="#333B2B"/></g>`
+       + `<circle cx="${cx}" cy="${cy}" r="7" fill="#333B2B"/></svg>`;
+}
+/* 何番目の区画で止まるかは先に決まっている。乱数は区画の中のどこで止まるかだけに使う */
+function mvLand(i){ return i*60 + 12 + Math.random()*36; }
+function mvSpin(box, ang, buzz, done){
+  const svg=box.querySelector(".mvSvg"); if(!svg){ done(); return; }
+  const cx=+svg.dataset.cx, cy=+svg.dataset.cy;
+  const nd=svg.querySelector(".mvNdl");
+  const setN=a=>{ nd && nd.setAttribute("transform",`rotate(${a.toFixed(2)} ${cx} ${cy})`); };
+  if(rvRM()){ setN(ang); done(); return; }   /* 動きを減らす設定のときは回さない */
+  const SPIN=1500, t0=performance.now(); let tick=-1;
+  let fin=false;
+  const end=()=>{ if(fin) return; fin=true; setN(ang); done(); };
+  (function step(now){
+    if(fin) return;
+    const p=Math.min(1,(now-t0)/SPIN);
+    const a=(360*3+ang)*(1-Math.pow(1-p,3));
+    setN(a);
+    const k=Math.floor(a/60); if(k!==tick){ tick=k; buzz && buzz(5); }
+    if(p<1) requestAnimationFrame(step); else end();
+  })(performance.now());
+  setTimeout(end, SPIN+1500);
 }
 function faceHTML(fs,kind,cls2){
   return `<div class="faces">${fs.map((f,i)=>
@@ -4435,7 +4515,9 @@ function showLast(){
   box.classList.remove("hide");
   box.innerHTML = (L.kind==="proj" && L.rate
       ? rvHTML(L.rate, L.base, L.r0, {ang:(L.ang==null?0:L.ang)})
-      : faceHTML(L.faces, L.kind, "")) +
+      : (L.kind==="move" && L.mang!=null
+          ? mvHTML(L.faces[0].c, L.mang)
+          : faceHTML(L.faces, L.kind, ""))) +
     `<div class="rres">${L.kind==="move"
       ? `${L.sum} マスまで移動できる`
         + `<small class="todo">盤上でコマを ${L.sum} マスまで動かしてください</small>`
@@ -4445,6 +4527,19 @@ function showLast(){
               + `<small class="todo">今回は動きません。次の人へ</small>`)}</div>`;
 }
 $("#rollMove").onclick=()=>doRoll("move");
+$("#goTap") && ($("#goTap").onclick=()=>{
+  goClose();
+  /* 1台で2人以上を持っているときは、まだ回していない人から順に */
+  const i = S.chars.findIndex(c=>!turnOK(c.t));
+  if(i<0){ return; }
+  CI = i;
+  GOTAP = true;
+  openChar();
+  $("#csheet").classList.remove("hide");
+  doRoll("move");
+});
+$("#goSkip") && ($("#goSkip").onclick=goClose);
+$("#goOv") && ($("#goOv").onclick=e=>{ if(e.target.id==="goOv") goClose(); });
 $("#rollProj").onclick=()=>openFieldModal();   /* 押した瞬間に分野の宣言ポップアップ */
 $("#cClose").onclick=()=>$("#csheet").classList.add("hide");
 $("#csheet").onclick=e=>{ if(e.target.id==="csheet") $("#csheet").classList.add("hide"); };
@@ -4890,7 +4985,7 @@ function drawPjList(){
     $("#pjCount").innerHTML = `${dn}${PF.f==="all"?"":"／"+FIELDS[PF.f].nm}　<b>${list.length}枚</b>`
       + (PF.d==="mine"
           ? (S.chars.length
-              ? `<br>読み込み係としてチームに提案するカードです（得意な人が振ると、成功しやすくなります）。`
+              ? `<br>読み込み係としてチームに提案するカードです（得意な人が回すと、成功しやすくなります）。`
               : `　<span style="color:var(--warn)">キャラクターが選ばれていません</span>`)
           : "");
   }
@@ -6274,20 +6369,78 @@ const tname = t=>{ const c=S.chars.filter(x=>x.t===t)[0];
 
 /* 手番の一覧。色だけに頼らず「✓済／・まだ」の記号と文字で出す */
 let TURNOPEN=false;
+/* ===== 「せーの」 =====
+   進行役が合図を出すと、全員の画面で同じ瞬間に0になるカウントダウンが始まる。
+   端末の時計はそれぞれずれているので、サーバとの差（__SKEW）を足して揃える。
+   通信が重い卓では合図が届かないことがある。そのときは進行役が声で「せーの」と言い、
+   各自がふだんどおり移動を押せばよい。ゲームの進行は止まらない。 */
+const nowS = ()=> Date.now() + (window.__SKEW||0);
+let GOAT=0, GOTM=null, GODONE=0;
+/* 「せーの」でそろって回したのか、自分ひとりで回したのか。
+   そろって回したときは「次は◯◯さんの番」ではなく「そろうまで待つ」と出す */
+let GOTAP=false;
+function goSend(){
+  const at = nowS()+3000;   /* 3・2・1 の3秒 */
+  if(FB) FB.set("go", {k:turnKey(), at});
+  goStart(at);
+}
+function goStart(at){
+  if(!at || GODONE===at) return;        /* このかけ声はもう終えている */
+  GOTAP=false;
+  const ov=$("#goOv"); if(!ov) return;
+  GOAT=at;
+  ov.classList.remove("hide");
+  const tap=$("#goTap"), num=$("#goNum"), txt=$("#goTxt");
+  tap.classList.add("hide");
+  const mine = S.chars.filter(c=>!turnOK(c.t));
+  clearInterval(GOTM);
+  const paint=()=>{
+    const left = GOAT - nowS();
+    if(left>0){ num.textContent = String(Math.min(3,Math.ceil(left/1000)));
+                txt.textContent = "せーの…"; return; }
+    clearInterval(GOTM); GOTM=null;
+    num.textContent = "！";
+    if(mine.length){ txt.textContent="せーの！"; tap.classList.remove("hide"); }
+    else txt.textContent = "あなたはもう回し終わっています";
+    try{ navigator.vibrate && navigator.vibrate([20,40,20]); }catch(e){}
+  };
+  paint(); GOTM=setInterval(paint, 80);
+}
+function goClose(){ clearInterval(GOTM); GOTM=null; GODONE=GOAT;
+  const ov=$("#goOv"); if(ov) ov.classList.add("hide"); }
 function drawTurnBox(){
   const box=$("#turnBox"); if(!box) return;
   const r=roster();
   if(!r.length){ box.innerHTML=""; return; }
   const rest=turnRest(), all=rest.length===0;
-  box.innerHTML =
+  /* 卓ではじめに進行役（プロジェクトリーダー）を決める。決まるまではここだけ出す */
+  const L=leaderOf();
+  const ldrHTML = L
+    ? `<div class="ldrn"><span>&#128681; 進行役：${esc(tname(L))}</span>
+         <button id="ldrCh">変えたいとき</button></div>`
+    : `<div class="ldrq">
+         <h5>&#128681; はじめに、進行役を決めましょう</h5>
+         <p>「せーの」の合図をかけて、月を送る役です。話し合って1人を選び、その人を押してください。
+            カードの完了登録は専務のままです。</p>
+         <div class="row">${r.map(t=>
+           `<button data-ldr="${t}">${esc(tname(t))}</button>`).join("")}</div>
+       </div>`;
+  if(!L && SHARED && S.wid){
+    box.innerHTML = ldrHTML;
+    box.querySelectorAll("[data-ldr]").forEach(b=>b.onclick=()=>setLeader(b.dataset.ldr));
+    return;
+  }
+  const goBtn = (L && (iamLeader()||PROXY) && !all)
+    ? `<button class="gobig" id="goSay">&#128227;「せーの」で全員に合図する</button>` : "";
+  box.innerHTML = ldrHTML + goBtn +
     `<div class="tbh">
        <span class="tbt ${all?"ok":""}">${all
-         ? "✓ 全員が振り終わりました"
+         ? "✓ 全員が回し終わりました"
          : rest.length===r.length
-            ? `まだ誰も振っていません（0／${r.length}人）`
+            ? `まだ誰も回していません（0／${r.length}人）`
          : rest.length===1
             ? `残りは ${esc(tname(rest[0]))} さんだけです（${r.length-1}／${r.length}人）`
-            : `サイコロ ${r.length-rest.length}／${r.length}人が振りました`}</span>
+            : `ルーレット ${r.length-rest.length}／${r.length}人が回しました`}</span>
        <button class="tbtg" id="turnTg">${TURNOPEN?"とじる":"手番を手動で調整"}</button>
      </div>
      <div class="tbl">${r.map(t=>
@@ -6301,6 +6454,9 @@ function drawTurnBox(){
        <button class="tbb rst" id="turnRst">この月の手番を全員「まだ」に戻す</button>
      </div>`;
   const tg=$("#turnTg"); if(tg) tg.onclick=()=>{ TURNOPEN=!TURNOPEN; drawTurnBox(); };
+  const lc=$("#ldrCh");
+  if(lc) lc.onclick=()=>{ if(confirm("進行役を決め直しますか？")) setLeader(null); };
+  const gs=$("#goSay"); if(gs) gs.onclick=goSend;
   box.querySelectorAll("[data-tt]").forEach(b=>b.onclick=()=>{
     const t=b.dataset.tt; turnSet(t, !turnOK(t));
     drawCStrip(); drawTurnBox(); drawGuide(); });
@@ -6313,11 +6469,15 @@ function showNextTurn(t){
   const el=$("#rollNext"); if(!el) return;
   const nx=turnNextOf(t);
   el.classList.remove("hide");
+  const left = turnRest().length;
   el.innerHTML =
-    `<div class="rnt">${nx
-      ? `次は <b>${esc(tname(nx))}</b> さんの番です`
-      : `全員が振り終わりました<br><b>この月を終えて次へ →</b> を押してください`}</div>
-     <button class="btn" id="rnGo">${nx?"閉じて次の人へ":"閉じて月送りへ"}</button>`;
+    `<div class="rnt">${!nx
+      ? `全員が回し終わりました<br><b>この月を終えて次へ →</b> を押してください`
+      : GOTAP
+        ? `ほかの人も回しています（残り ${left}人）<br>そろうまで待ちましょう`
+        : `次は <b>${esc(tname(nx))}</b> さんの番です`}</div>
+     <button class="btn" id="rnGo">${!nx ? "閉じて月送りへ"
+        : (GOTAP ? "閉じる" : "閉じて次の人へ")}</button>`;
   const g=$("#rnGo");
   if(g) g.onclick=()=>{
     /* 次の人がこの端末にいるなら、その人に切り替えておく（1台で回している卓むけ） */
@@ -6346,6 +6506,22 @@ const ROLEGATE = {
   bud:  ["exec","pr","sales","plant","proc"]
 };
 let PROXY = false;
+/* 進行役（プロジェクトリーダー）。卓ではじめに決める。
+   「せーの」の合図と月送りを受け持つ。カードの登録は専務のまま。 */
+function leaderOf(){ return (S.lead && CTYPE[S.lead]) ? S.lead : null; }
+function iamLeader(){
+  const L=leaderOf();
+  if(!L) return false;
+  return S.chars.some(c=>c.t===L);
+}
+function setLeader(t){
+  S.lead = t || null;
+  save();
+  /* 空にするときは null ではなく空文字。null だとキーごと消えて、
+     ほかの端末に「消えた」ことが伝わらない */
+  if(FB) FB.set("lead", S.lead || "");
+  if(S.mode==="team") drawTeam();
+}
 function roleWho(key){
   const r=roster(), o=ROLEGATE[key]||[];
   for(let i=0;i<o.length;i++){ if(r.indexOf(o[i])>=0) return o[i]; }
@@ -6354,6 +6530,8 @@ function roleWho(key){
 function roleOK(key){
   if(PROXY) return true;
   if(!SHARED || !S.wid) return true;   /* 同期していない・ひとりで試しているときは全部出す */
+  /* 進行（月送り）は、進行役が決まっていればその人。決まっていなければ従来どおり */
+  if(key==="mon" && leaderOf()) return iamLeader();
   const who=roleWho(key);
   if(!who) return true;
   return S.chars.some(c=>c.t===who);
@@ -6409,7 +6587,7 @@ function phase(){
     steps.push(["チュートリアルのカードを3枚、卓に並べる",
                 "グループで話し合って、取り組む1枚を選びます。"]);
     steps.push(["選んだ1枚を、全員で一巡して進める",
-                "一人ずつ推進のサイコロを振ります。コストはかかりません。"]);
+                "一人ずつ推進のルーレットを回します。コストはかかりません。"]);
     steps.push(["完了したら、専務がカード番号を入れて登録する",
                 "アプリの操作と効果の反映は、専務がまとめて行います。"]);
     if(i===1) steps.push(["一巡が終わったら「この月を終えて次へ」",
@@ -6421,12 +6599,12 @@ function phase(){
       steps.push(["1年目に使わなかったカードも、卓に残しておく",
                   "1年目デッキの残りは2年目もそのまま使えます。40枚と合わせて場札にします。"]);
       steps.push(["チームで相談して、取り組むプロジェクトを決める",
-                  "読み込んだカードを持ち寄って提案します。決まったら、各自が自分の番に推進のサイコロを振って、みんなで進めます。"]);
+                  "読み込んだカードを持ち寄って提案します。決まったら、各自が推進のルーレットを回して、みんなで進めます。"]);
     }
     if(ev) steps.push(["イベントカードを1枚引く",
                        evGot()?"この月のカードは引き済みです。":"引いたカードの効果は、専務がアプリに反映します。"]);
-    steps.push(["全員がサイコロを振る",
-                "移動 → 止まったマスの分野で、プロジェクトを1段階すすめます。"]);
+    steps.push(["進行役の「せーの」で、全員そろって回す",
+                "移動のルーレットを全員で同時に回します。そのあと、決めたプロジェクトを推進します。"]);
     steps.push(["完了したプロジェクトを、専務がアプリに登録する",
                 "カードの No.（番号）を入れて「完了」。効果はチーム全員のスマホに同時に出ます。"]);
     if(last) steps.push([`${y}の決算をする`,
@@ -6454,7 +6632,7 @@ function drawGuide(){
   /* いちばん押すものを先頭に。自分が振り終わっていたら出さない */
   {const me=S.chars[CI];
    if(me && !turnD()[me.t] && !p.tut)
-     b.unshift([`gRoll`,`サイコロを振る（${cname(me)}）`,true]);}
+     b.unshift([`gRoll`,`ルーレットを回す（${cname(me)}）`,true]);}
   if(roleOK("reg"))  b.push([`gNum`,`カード番号で完了を登録`,false]);
   if(roleOK("mon"))  b.push([`gNext`, p.last?`これが最後の月です`:`この月を終えて次へ →`, false]);
   let lead=true;
@@ -6522,8 +6700,8 @@ function drawRole(){
     <b>①卓の管理担当</b>（通年・固定）… 卓の道具やアプリの進行を預かる係。<br>
     <b>②分野の読み込み係</b>… その分野のカードを読んで、チームに提案する係です。<br>
     <b>チームで相談して、取り組むプロジェクトを決めます</b>。あとは各自が自分の番に
-    推進のサイコロを振って、みんなで進めます。
-    その分野が<b>得意</b>な人が振ると、成功しやすくなります
+    推進のルーレットを回して、みんなで進めます。
+    その分野が<b>得意</b>な人が回すと、成功しやすくなります
     （担当分野と得意分野は一致しないことがあります）。<br>
     <b>アプリの操作・効果の反映は専務がまとめて行います</b>（結果はチーム全員の画面に同時に出ます）。</p>`;
   box.innerHTML = lead + S.chars.map((c,i)=>{
@@ -6559,7 +6737,7 @@ function drawRole(){
           <span class="sm">　${!strongOf(c).length
             ? `まだ得意分野がありません。`
             : (good ? "担当分野と得意分野が同じです。"
-                    : `得意分野に ${FIELDS[f].nm} は入っていません。得意な分野で振ると、成功しやすくなります。`)}</span></span></div>
+                    : `得意分野に ${FIELDS[f].nm} は入っていません。得意な分野で回すと、成功しやすくなります。`)}</span></span></div>
         <button class="myb" data-mine="${i}">読み込み担当のカード ${n+left}枚を見る</button>
       </div></div>`;}).join("");
   box.querySelectorAll("[data-mine]").forEach(b=>b.onclick=()=>{
@@ -7179,6 +7357,8 @@ window.__remote = d=>{
       if(c && c.t && rs.indexOf(c.t)<0) rs.push(c.t); }));
     S.roster=rs; }
   if(d.turn) S.turn=d.turn;
+  if(d.lead!==undefined) S.lead=d.lead||null;
+  if(d.go && d.go.k===turnKey()) goStart(d.go.at);
   if(d.rolls){ S.rolls=Object.values(d.rolls).slice(-20); }
   if(!$("#csheet").classList.contains("hide")) openChar();
   save(); if(S.mode==="team") drawTeam();
@@ -7237,6 +7417,9 @@ if(CFG && CFG.databaseURL) try{
     watchAll:(id,cb)=> onValue(ref(db,`workshops/${id}/teams`), s=>cb(s.val()))
   };
   window.__setFB(api);
+  /* 端末の時計はそれぞれ数秒ずれている。サーバとの差をもらって、
+     「せーの」のカウントダウンが全員の画面で同じ瞬間に0になるようにする */
+  onValue(ref(db,".info/serverTimeOffset"), s=>{ window.__SKEW = s.val()||0; });
   onValue(ref(db,"index"), s=> window.__index(s.val()));
 
   window.__connectTeam = (w,t)=>{
