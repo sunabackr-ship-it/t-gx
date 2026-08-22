@@ -319,6 +319,19 @@ body.simple:not(.ismon) .foot #endYear{display:none !important}
 body.simple:not(.ismon) .foot #more{flex:1 1 auto}
 /* 年の切り替えを隠すぶん、いまが何年目かを月の欄に出す */
 body.simple .mon .ml{font-weight:800;color:var(--gd)}
+.runr{display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  padding:10px 11px;margin:0 0 7px;border:1px solid #DCE3D2;border-radius:12px;
+  background:#fff;cursor:pointer}
+.runr:active{background:#F4F7EE}
+.runr .rn{flex:1 1 auto;min-width:0}
+.runr .rn b{display:block;font-size:14px;font-weight:800;line-height:1.35}
+.runr .rn span{display:block;font-size:11px;color:var(--sub);margin-top:2px}
+.runr .rs{flex:0 0 auto;display:flex;gap:3px}
+.runr .rs s{width:9px;height:9px;border-radius:50%;background:#DCE3D2;text-decoration:none}
+.runr .rs s.on{background:var(--g)}
+.runr .rg{flex:0 0 auto;font-size:12px;font-weight:800;color:var(--gd)}
+.runr.fin{border-color:var(--g);background:#F4FAE9}
+.runNo{margin:0;font-size:12px;color:var(--sub);line-height:1.6}
 .dtlTg{display:block;width:100%;margin:2px 0 12px;padding:11px 10px;
   border:1px dashed #B9C4A8;border-radius:12px;background:transparent;
   color:var(--sub);font-size:12.5px;font-weight:700;cursor:pointer}
@@ -1115,6 +1128,11 @@ window.onerror=function(m,src,line,col){
       <div id="turnBox" class="tbox"></div>
       <div id="guide"></div>
     </div>
+    <div class="card" id="runCard">
+      <div class="hcol"><h2 style="margin:0">実行中</h2>
+        <button class="tbtn" id="runAdd">カード番号を入れる</button></div>
+      <div id="runList" style="margin-top:8px"></div>
+    </div>
     <div class="card" id="mcard">
       <div class="hcol"><h2 style="margin:0">担当メーター</h2>
         <button class="manTg" data-man="1">手動で調整</button></div>
@@ -1450,8 +1468,8 @@ window.onerror=function(m,src,line,col){
 
 <div id="fmodal" class="hide">
   <div class="sheet">
-    <div class="mt">今回推進するプロジェクトはどの分野ですか？</div>
-    <div class="ms">分野はカードの左上に書かれています</div>
+    <div class="mt" id="fmT">今回推進するプロジェクトはどの分野ですか？</div>
+    <div class="ms" id="fmS">分野はカードの左上に書かれています</div>
     <div id="fmB"></div>
     <button id="fmClose">閉じる</button>
   </div>
@@ -4262,6 +4280,44 @@ function updRate(){
    成功率と得意判定は既存の rateOf／isStrong をそのまま使う（計算は一切変えない）。
    選択肢をタップ＝宣言確定→そのまま推進ダイスを振る。 */
 const FSIMPLE=[["hr","人材"],["fin","制度"],["pr","広報"],["supply","調達"],["tech","設備"]];
+/* 推進するカードを選ぶ。実行中のカードだけが出る。
+   分野はカードが持っているので、ここで分野を聞く必要はもうない */
+function openPjPick(){
+  const c=S.chars[CI];
+  const rs=(S.proj.run||[]).filter(r=>PBY[r.id] && r.step<PBY[r.id].st);
+  $("#fmT") && ($("#fmT").textContent = "どのプロジェクトを推進しますか？");
+  $("#fmS") && ($("#fmS").textContent = "実行中のカードだけが出ます");
+  if(!rs.length){
+    $("#fmB").innerHTML =
+      `<p class="note" style="margin:4px 2px 0">実行中のプロジェクトがありません。<br>`
+      + `先にカードを実行中に入れてください（「カード」タブで番号を読み込みます）。</p>`;
+  } else {
+    $("#fmB").innerHTML = rs.map(r=>{
+      const p=PBY[r.id], st=isStrong(c,p.f), rt=rateOf(c,p.f), ct=CTYPE[c.t];
+      const rBase = c.lv===2 ? ct.r2 : ct.r1;
+      return `<button class="fmb" data-pjk="${p.id}">`
+        + `<i style="background:${FIELDS[p.f].c}"></i>`
+        + `<b>${esc(p.n)}<small style="display:block;font-weight:700;opacity:.7">`
+        + `No.${p.id}　${FIELDS[p.f].nm}　${r.step}/${p.st}段階</small></b>`
+        + rvHTML(rt, rBase, ct.r1, {mini:1})
+        + `<span class="pct">${rt}%${st?" ★":""}</span></button>`;}).join("");
+  }
+  const hint=$("#fmHint"); if(hint) hint.remove();
+  if(rs.length){
+    const q=document.createElement("p"); q.id="fmHint"; q.className="fmHint";
+    q.textContent="丸の明るい部分が成功する面積です。得意分野（★）はここが広がります。";
+    $("#fmB").insertAdjacentElement("afterend", q);
+  }
+  $("#fmB").querySelectorAll("[data-pjk]").forEach(b=>b.onclick=()=>{
+    const id=+b.dataset.pjk;
+    S.chars[CI].pj = id;
+    S.chars[CI].field = PBY[id].f;    /* 成功率の計算は分野で行うので、そろえておく */
+    save(); pushChars();
+    $("#fmodal").classList.add("hide");
+    doRoll("proj");
+  });
+  $("#fmodal").classList.remove("hide");
+}
 function openFieldModal(){
   const c=S.chars[CI];
   $("#fmB").innerHTML = FSIMPLE.map(([f,nm])=>{
@@ -4290,6 +4346,10 @@ function doRoll(kind){
   const rate = rateOf(c, c.field);
   const mvIdx = Math.floor(Math.random()*6);
   const mAng  = kind==="move" ? mvLand(mvIdx) : 0;
+  /* 推進は「どのカードを進めるか」を先に選んでいる。成功したらその1枚が1段階すすむ */
+  const RUN = (kind==="proj" && c.pj!=null)
+    ? (S.proj.run||[]).find(r=>r.id===c.pj) : null;
+  const RP  = RUN ? PBY[RUN.id] : null;
   const faces = kind==="move"
     ? [{c:t.move, n:DICE[t.move].f[mvIdx], o:0}]
     : [{c:t.move, n:0, o: Math.random()*100 < rate ? 1 : 0}];
@@ -4312,6 +4372,11 @@ function doRoll(kind){
   }
 
   function settle(){
+    if(kind==="proj" && ok && RUN && RP){
+      RUN.step = Math.min(RP.st, RUN.step+1);
+      RUN.by = CI;
+      save(); pushProj(); drawRun();
+    }
     if(kind==="proj"){
       const rr=box.querySelector(".rres");
       if(rr){ rr.className="rres"; rr.innerHTML=resText(); }
@@ -4337,11 +4402,19 @@ function doRoll(kind){
     return kind==="move"
       ? `${sum} マスまで移動できる`
         + `<small class="todo">盤上でコマを ${sum} マスまで動かしてください</small>`
-      : (ok?`成功　プロジェクトを1段階進める`
-            + `<small class="todo">プロジェクトボードのカードを右へ1つ動かしてください</small>`
-          :`失敗　今回は進まない`
+      : (ok
+          ? (RUN && RP
+              ? (RUN.step>=RP.st
+                  ? `成功　全段階を達成`
+                    + `<small class="todo">「実行中」からこのカードをひらいて、`
+                    + `コスト ${RP.cost} を支払って完了を確定してください</small>`
+                  : `成功　1段階すすんだ（${RUN.step}/${RP.st}）`
+                    + `<small class="todo">盤上のカードを右へ1つ動かしてください</small>`)
+              : `成功　プロジェクトを1段階進める`
+                + `<small class="todo">プロジェクトボードのカードを右へ1つ動かしてください</small>`)
+          : `失敗　今回は進まない`
             + `<small class="todo">今回は動きません。次の人へ</small>`)
-        + `<small>${fn}${st?"（得意）":""}　成功率 ${rate}%</small>`;
+        + `<small>${RP?esc(RP.n)+"　":""}${fn}${st?"（得意）":""}　成功率 ${rate}%</small>`;
   }
 }
 /* ================= 推進ルーレット =================
@@ -4598,7 +4671,7 @@ $("#goTap") && ($("#goTap").onclick=()=>{
 });
 $("#goSkip") && ($("#goSkip").onclick=goClose);
 $("#goOv") && ($("#goOv").onclick=e=>{ if(e.target.id==="goOv") goClose(); });
-$("#rollProj").onclick=()=>openFieldModal();   /* 押した瞬間に分野の宣言ポップアップ */
+$("#rollProj").onclick=()=>openPjPick();   /* 押した瞬間に「どのカードを推進するか」を聞く */
 $("#cClose").onclick=()=>$("#csheet").classList.add("hide");
 $("#csheet").onclick=e=>{ if(e.target.id==="csheet") $("#csheet").classList.add("hide"); };
 $("#cLvBtn").onclick=()=>{
@@ -5061,15 +5134,15 @@ function drawPjList(){
 }
 function drawRun(){
   if(!$("#runList")) return;
-  $("#runList").innerHTML = S.proj.run.length ? S.proj.run.map((r,i)=>{
-    const p=PBY[r.id];
-    return `<button class="pcd" data-run="${p.id}">
-      <div class="pi" style="background:${DCOLOR[p.d]}">${p.d}</div>
-      <div class="pb"><div class="t">${pjIco(p.id,"pjIcoS")}${p.n}</div>
-        <div class="stp">${Array.from({length:p.st},(_,j)=>`<s class="${j<r.step?"on":""}"></s>`).join("")}</div>
-        <div class="s">${r.step===0?"発案":(r.step<p.st?"進行中":`完了待ち　コスト${p.cost}を支払って確定`)}　${r.step}/${p.st}　${FIELDS[p.f].nm}</div></div>
-      <div class="pr">${r.step>=p.st?"確定":"推進"}</div></button>`;}).join("")
-    : `<p class="note" style="margin:0">着手中のプロジェクトはありません。下の一覧から選んでください。</p>`;
+  const rs=(S.proj.run||[]).filter(r=>PBY[r.id]);
+  $("#runList").innerHTML = rs.length ? rs.map(r=>{
+    const p=PBY[r.id], fin=r.step>=p.st;
+    return `<button class="runr ${fin?"fin":""}" data-run="${p.id}">
+      <span class="rn"><b>${esc(p.n)}</b>
+        <span>No.${p.id}　${FIELDS[p.f].nm}　${fin?`完了待ち　コスト${p.cost}`:`${r.step}/${p.st}段階`}</span></span>
+      <span class="rs">${Array.from({length:p.st},(_,j)=>`<s class="${j<r.step?"on":""}"></s>`).join("")}</span>
+      <span class="rg">${fin?"確定":"ひらく"}</span></button>`;}).join("")
+    : `<p class="runNo">まだありません。カードを実行中に入れるときに、番号を読み込んでください。</p>`;
   $("#runList").querySelectorAll("[data-run]").forEach(b=>b.onclick=()=>openPj(+b.dataset.run));
 }
 
@@ -6220,6 +6293,24 @@ function openBig(id){
         : `<button class="btn" id="bcGo">完了する（コスト ${p.cost} を支払う${bud!=null?`　残 ${bud}`:""}）</button>`
           + (short?`<p class="note" style="margin:8px 0 0;color:var(--warn)">予算が足りません（残 ${bud}）。予算が増えてから登録してください。カードは盤上に置いたままでかまいません。</p>`:""))
       + `<button class="tbtn" id="bcGo0" style="margin-top:9px">支払わずに完了（覚醒スキルの使用時）</button>`;
+  /* 実行中に入れる。ここで番号を読み込んでおけば、あとは推進で選ぶだけになる */
+  {const run=(S.proj.run||[]).find(r=>r.id===id);
+   if(!done){
+     const st = run
+       ? `<p class="note" style="margin:12px 0 0">このカードは実行中です（${run.step}/${p.st}段階）。推進はキャラクターの画面から行います。</p>`
+       : `<button class="btn" id="bcRun">実行中に入れる</button>`
+         + `<p class="note" style="margin:8px 0 0">盤上のスロットに移すときに押してください。`
+         + `以降は「推進」でこのカードを選んで進めます。</p>`;
+     $("#bcAct").insertAdjacentHTML("afterbegin", st + `<div style="height:12px"></div>`);
+   }}
+  const gr=$("#bcRun");
+  if(gr) gr.onclick=()=>{
+    if(!canStart(p) && !confirm("開始条件を満たしていません。それでも実行中に入れますか？")) return;
+    S.proj.run.push({id, step:0}); save(); pushProj();
+    $("#nsheet").classList.add("hide");
+    S.view="single"; save(); drawTeam(); window.scrollTo(0,0);
+    toast(`「${p.n}」を実行中に入れました。`);
+  };
   const g=$("#bcGo");  if(g)  g.onclick =()=>bigFinish(id,null,short,bud);
   const g0=$("#bcGo0");if(g0) g0.onclick=()=>{ if(!confirm("コストを支払わずに完了します（覚醒スキルの使用など）。よろしいですか？")) return;
                                                bigFinish(id,"skip"); };
@@ -6341,6 +6432,11 @@ function bigFinish(id, pay, short, bud){
 $("#bcClose") && ($("#bcClose").onclick=()=>$("#nsheet").classList.add("hide"));
 $("#nsheet")  && ($("#nsheet").onclick=e=>{ if(e.target.id==="nsheet") $("#nsheet").classList.add("hide"); });
 $("#numGo")   && ($("#numGo").onclick=numOpen);
+$("#runAdd")  && ($("#runAdd").onclick=()=>{
+  S.view="cards"; save(); drawTeam(); window.scrollTo(0,0);
+  setTimeout(()=>{ const el=$("#numIn");
+    if(el){ el.focus(); try{ el.scrollIntoView({block:"center"}); }catch(e){} } }, 60);
+});
 $("#numIn")   && ($("#numIn").addEventListener("input", numHint));
 $("#numIn")   && ($("#numIn").addEventListener("keydown", e=>{
   if(e.key==="Enter"){ e.preventDefault(); numOpen(); } }));
