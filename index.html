@@ -1266,8 +1266,9 @@ window.onerror=function(m,src,line,col){
       <button class="btn" id="rollMove" style="margin:0">移動</button>
       <button class="btn" id="rollProj" style="margin:0">推進</button>
     </div>
-    <p class="note">推進の判定はここでルーレットを回し、プロジェクトカードは卓の盤上で進めます。
-       完了まで進んだら、専務が「カード」タブのカード番号で登録します。</p>
+    <p class="note">まず<b>移動</b>を回して盤上でコマを動かし、そのあと<b>推進</b>を押して、
+       実行中のプロジェクトから1つ選びます。全段階そろったら「実行中」からひらいて、
+       コストを払って完了を確定します。</p>
 
     <div id="skillBox" class="skillbox hide">
       <div id="skillGoBox" class="skgo"></div>
@@ -4392,7 +4393,7 @@ function doRoll(kind){
     c.last={kind,sum,ok,faces,rate,base:rBase,r0:rZero,ang:rAng,mang:mAng};                 // 画面に出したまま残す
     S.rolls.push(rec); S.rolls=S.rolls.slice(-20);
     save(); pushChars(); FB&&FB.pushRoll(rec);
-    turnSet(c.t, true);                         // この月の手番を「済」にする（全端末で共有）
+    turnSet(c.t, true, kind==="proj" ? "pj" : "mv");   // 全端末で共有
     drawCStrip(); drawTurnBox(); drawGuide(); drawRollLog();
     showNextTurn(c.t);                          // 次は誰の番か＋大きな閉じるボタン
   }
@@ -4661,7 +4662,7 @@ applySimple();
 $("#goTap") && ($("#goTap").onclick=()=>{
   goClose();
   /* 1台で2人以上を持っているときは、まだ回していない人から順に */
-  const i = S.chars.findIndex(c=>!turnOK(c.t));
+  const i = S.chars.findIndex(c=>!turnMvOK(c.t));
   if(i<0){ return; }
   CI = i;
   GOTAP = true;
@@ -6487,20 +6488,29 @@ const deckKey = ()=> yrDeck()===1 ? "y1" : "y2";
    ・月が変わるとキーが変わるので、自動で全員リセットされる
    ・成功率・出目・コストなど、ルールや数値には一切関係しない（画面の誘導だけ） */
 const turnKey = ()=> evKey();
-function turnD(){
-  if(!S.turn || typeof S.turn!=="object") S.turn={k:"",d:{}};
-  if(S.turn.k!==turnKey()) S.turn={k:turnKey(), d:{}};    /* 月が変わったら全員リセット */
+function turnFix(){
+  if(!S.turn || typeof S.turn!=="object") S.turn={k:"",d:{},p:{}};
+  if(S.turn.k!==turnKey()) S.turn={k:turnKey(), d:{}, p:{}};  /* 月が変わったら全員リセット */
   if(!S.turn.d || typeof S.turn.d!=="object") S.turn.d={};
-  return S.turn.d;
+  if(!S.turn.p || typeof S.turn.p!=="object") S.turn.p={};
+  return S.turn;
 }
+const turnD = ()=> turnFix().d;    /* 移動を回したか */
+const turnP = ()=> turnFix().p;    /* 推進まで終えたか */
 const pushTurn = ()=> FB && FB.set("turn", S.turn);
-const turnOK   = t=> !!turnD()[t];
-function turnSet(t,on){
-  const d=turnD();
-  if(on) d[t]=1; else delete d[t];
+const turnMvOK = t=> !!turnD()[t];
+const turnPjOK = t=> !!turnP()[t];
+/* 「済」＝移動も推進も終えた人 */
+const turnOK   = t=> turnMvOK(t) && turnPjOK(t);
+function turnSet(t,on,kind){
+  const m=turnFix();
+  const box = kind==="pj" ? m.p : m.d;
+  if(on) box[t]=1; else delete box[t];
+  /* 移動を取り消したら、推進も取り消す（順番が逆になるのを防ぐ） */
+  if(!on && kind!=="pj") delete m.p[t];
   save(); pushTurn();
 }
-function turnReset(){ S.turn={k:turnKey(), d:{}}; save(); pushTurn(); }
+function turnReset(){ S.turn={k:turnKey(), d:{}, p:{}}; save(); pushTurn(); }
 /* 卓にいるキャラの顔ぶれ（キャラ順）。
    共有していないときは、この端末で選んでいるキャラだけになる */
 function roster(){
@@ -6509,14 +6519,20 @@ function roster(){
   S.chars.forEach(c=>{ if(out.indexOf(c.t)<0) out.push(c.t); });
   return CORDER.filter(t=>out.indexOf(t)>=0);
 }
-const turnRest = ()=>{ const d=turnD(); return roster().filter(t=>!d[t]); };
-const turnAll  = ()=>{ const r=roster(); return r.length>0 && turnRest().length===0; };
+const turnMvRest = ()=> roster().filter(t=>!turnMvOK(t));
+const turnPjRest = ()=> roster().filter(t=>!turnPjOK(t));
+/* いまどの段階か。移動が全員そろってから推進に移る */
+const turnPhase = ()=> turnMvRest().length ? "mv" : (turnPjRest().length ? "pj" : "end");
+const turnRest = ()=> turnPhase()==="mv" ? turnMvRest() : turnPjRest();
+const turnAll  = ()=>{ const r=roster(); return r.length>0 && turnPhase()==="end"; };
 /* 振り終わった人の次（キャラ順で、まだ振っていない人） */
 function turnNextOf(t){
-  const r=roster(), d=turnD();
+  const r=roster();
   if(!r.length) return null;
+  const ph=turnPhase(); if(ph==="end") return null;
+  const yet = ph==="mv" ? turnMvOK : turnPjOK;
   const i=r.indexOf(t);
-  for(let n=1;n<=r.length;n++){ const x=r[(i+n+r.length)%r.length]; if(!d[x]) return x; }
+  for(let n=1;n<=r.length;n++){ const x=r[(i+n+r.length)%r.length]; if(!yet(x)) return x; }
   return null;
 }
 const tname = t=>{ const c=S.chars.filter(x=>x.t===t)[0];
@@ -6547,7 +6563,7 @@ function goStart(at){
   ov.classList.remove("hide");
   const tap=$("#goTap"), num=$("#goNum"), txt=$("#goTxt");
   tap.classList.add("hide");
-  const mine = S.chars.filter(c=>!turnOK(c.t));
+  const mine = S.chars.filter(c=>!turnMvOK(c.t));
   clearInterval(GOTM);
   const paint=()=>{
     const left = GOAT - nowS();
@@ -6585,27 +6601,38 @@ function drawTurnBox(){
     box.querySelectorAll("[data-ldr]").forEach(b=>b.onclick=()=>setLeader(b.dataset.ldr));
     return;
   }
-  const goBtn = (L && (iamLeader()||PROXY) && !all)
+  const goBtn = (L && (iamLeader()||PROXY) && turnMvRest().length)
     ? `<button class="gobig" id="goSay">&#128227;「せーの」で全員に合図する</button>` : "";
   box.innerHTML = ldrHTML + goBtn +
     `<div class="tbh">
-       <span class="tbt ${all?"ok":""}">${all
-         ? "✓ 全員が回し終わりました"
-         : rest.length===r.length
-            ? `まだ誰も回していません（0／${r.length}人）`
-         : rest.length===1
-            ? `残りは ${esc(tname(rest[0]))} さんだけです（${r.length-1}／${r.length}人）`
-            : `ルーレット ${r.length-rest.length}／${r.length}人が回しました`}</span>
+       <span class="tbt ${all?"ok":""}">${(()=>{
+          const ph=turnPhase();
+          if(ph==="end") return "✓ 全員が移動と推進を終えました";
+          const nm = ph==="mv" ? "移動" : "推進";
+          const done = r.length-rest.length;
+          const head = ph==="pj" && turnPjRest().length===r.length
+            ? "全員が移動しました。つぎは推進です<br>" : "";
+          return head + (done===0
+            ? `${nm} まだ誰も終えていません（0／${r.length}人）`
+            : rest.length===1
+              ? `${nm} 残りは ${esc(tname(rest[0]))} さんだけです（${r.length-1}／${r.length}人）`
+              : `${nm} ${done}／${r.length}人が終えました`);
+        })()}</span>
        <button class="tbtg" id="turnTg">${TURNOPEN?"とじる":"手番を手動で調整"}</button>
      </div>
-     <div class="tbl">${r.map(t=>
-       `<span class="tbc ${turnOK(t)?"on":""}">${turnOK(t)?"✓ 済":"・まだ"}　${esc(tname(t))}</span>`
-     ).join("")}</div>
+     <div class="tbl">${r.map(t=>{
+       const m=turnMvOK(t), j=turnPjOK(t);
+       return `<span class="tbc ${m&&j?"on":""}">${
+         m&&j ? "✓ 済" : (m ? "移動のみ" : "・まだ")}　${esc(tname(t))}</span>`;
+     }).join("")}</div>
      <div class="tbm ${TURNOPEN?"":"hide"}">
        <p class="tbnote">押すたびに「済」と「まだ」が入れ替わります。押し間違えたときの戻し用です。
           月を送れば自動で全員「まだ」に戻ります。</p>
-       ${r.map(t=>`<button class="tbb" data-tt="${t}">${esc(tname(t))}　<b>${
-         turnOK(t)?"済 → まだにする":"まだ → 済にする"}</b></button>`).join("")}
+       ${r.map(t=>
+         `<button class="tbb" data-tt="${t}" data-tp="mv">${esc(tname(t))}　移動　<b>${
+           turnMvOK(t)?"済 → まだにする":"まだ → 済にする"}</b></button>`
+       + `<button class="tbb" data-tt="${t}" data-tp="pj">${esc(tname(t))}　推進　<b>${
+           turnPjOK(t)?"済 → まだにする":"まだ → 済にする"}</b></button>`).join("")}
        <button class="tbb rst" id="turnRst">この月の手番を全員「まだ」に戻す</button>
      </div>`;
   const tg=$("#turnTg"); if(tg) tg.onclick=()=>{ TURNOPEN=!TURNOPEN; drawTurnBox(); };
@@ -6613,7 +6640,8 @@ function drawTurnBox(){
   if(lc) lc.onclick=()=>{ if(confirm("進行役を決め直しますか？")) setLeader(null); };
   const gs=$("#goSay"); if(gs) gs.onclick=goSend;
   box.querySelectorAll("[data-tt]").forEach(b=>b.onclick=()=>{
-    const t=b.dataset.tt; turnSet(t, !turnOK(t));
+    const t=b.dataset.tt, ph=b.dataset.tp;
+    turnSet(t, ph==="pj" ? !turnPjOK(t) : !turnMvOK(t), ph);
     drawCStrip(); drawTurnBox(); drawGuide(); });
   const rs=$("#turnRst");
   if(rs) rs.onclick=()=>{ turnReset(); drawCStrip(); drawTurnBox(); drawGuide(); };
@@ -6624,16 +6652,27 @@ function showNextTurn(t){
   const el=$("#rollNext"); if(!el) return;
   const nx=turnNextOf(t);
   el.classList.remove("hide");
-  const left = turnRest().length;
+  const left = turnRest().length, ph=turnPhase();
+  const me  = S.chars[CI];
+  /* 自分の移動が終わって推進がまだなら、次の人よりも先に自分の推進を促す */
+  const myPush = me && turnMvOK(me.t) && !turnPjOK(me.t);
   el.innerHTML =
-    `<div class="rnt">${!nx
-      ? `全員が回し終わりました<br><b>この月を終えて次へ →</b> を押してください`
-      : GOTAP
-        ? `ほかの人も回しています（残り ${left}人）<br>そろうまで待ちましょう`
-        : `次は <b>${esc(tname(nx))}</b> さんの番です`}</div>
-     <button class="btn" id="rnGo">${!nx ? "閉じて月送りへ"
-        : (GOTAP ? "閉じる" : "閉じて次の人へ")}</button>`;
+    `<div class="rnt">${
+      ph==="end"
+        ? `全員が移動と推進を終えました<br><b>この月を終えて次へ →</b> を押してください`
+      : myPush
+        ? `盤上でコマを動かしてから、<br><b>プロジェクトを推進</b>してください`
+      : ph==="mv" && GOTAP
+        ? `ほかの人も移動を回しています（残り ${left}人）<br>そろうまで待ちましょう`
+      : nx
+        ? `つぎは <b>${esc(tname(nx))}</b> さんの${ph==="mv"?"移動":"推進"}です`
+        : `${ph==="mv"?"移動":"推進"}の残りは ${left}人です`}</div>
+     <button class="btn" id="rnGo">${
+       ph==="end" ? "閉じて月送りへ"
+       : myPush   ? "推進する"
+       : "閉じる"}</button>`;
   const g=$("#rnGo");
+  if(g && myPush){ g.onclick=()=>{ el.classList.add("hide"); openPjPick(); }; return; }
   if(g) g.onclick=()=>{
     /* 次の人がこの端末にいるなら、その人に切り替えておく（1台で回している卓むけ） */
     if(nx){ const i=S.chars.findIndex(x=>x.t===nx); if(i>=0) CI=i; }
@@ -6758,8 +6797,10 @@ function phase(){
     }
     if(ev) steps.push(["イベントカードを1枚引く",
                        evGot()?"この月のカードは引き済みです。":"引いたカードの効果は、専務がアプリに反映します。"]);
-    steps.push(["進行役の「せーの」で、全員そろって回す",
-                "移動のルーレットを全員で同時に回します。そのあと、決めたプロジェクトを推進します。"]);
+    steps.push(["進行役の「せーの」で、全員そろって移動を回す",
+                "移動のルーレットを全員で同時に回し、盤上でコマを動かします。"]);
+    steps.push(["ひとりずつ、プロジェクトを推進する",
+                "「推進」を押して、実行中のカードから1つ選びます。成功すると1段階すすみます。"]);
     steps.push(["完了したプロジェクトを、専務がアプリに登録する",
                 "カードの No.（番号）を入れて「完了」。効果はチーム全員のスマホに同時に出ます。"]);
     if(last) steps.push([`${y}の決算をする`,
@@ -6786,8 +6827,12 @@ function drawGuide(){
   if(p.last)   b.push([`gFin`,`${S.year}を終了して決算`,true]);
   /* いちばん押すものを先頭に。自分が振り終わっていたら出さない */
   {const me=S.chars[CI];
-   if(me && !turnD()[me.t] && !p.tut)
-     b.unshift([`gRoll`,`ルーレットを回す（${cname(me)}）`,true]);}
+   if(me && !p.tut){
+     if(!turnMvOK(me.t))
+       b.unshift([`gRoll`,`移動のルーレットを回す（${cname(me)}）`,true]);
+     else if(!turnPjOK(me.t))
+       b.unshift([`gPush`,`プロジェクトを推進する（${cname(me)}）`,true]);
+   }}
   if(roleOK("reg"))  b.push([`gNum`,`カード番号で完了を登録`,false]);
   if(roleOK("mon"))  b.push([`gNext`, p.last?`これが最後の月です`:`この月を終えて次へ →`, false]);
   let lead=true;
@@ -6813,6 +6858,7 @@ function drawGuide(){
        if(el){ el.focus(); try{ el.scrollIntoView({block:"center"}); }catch(e){} } }, 60); });
   on("#gNext",()=>{ if(!p.last) monMove(1); });
   on("#gRoll",()=>{ openChar(); $("#csheet").classList.remove("hide"); });
+  on("#gPush",()=>{ openChar(); $("#csheet").classList.remove("hide"); openPjPick(); });
 }
 
 /* いまの会社レベル（決算の判定を年度の途中でも見せる） */
