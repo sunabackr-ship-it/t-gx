@@ -4309,6 +4309,18 @@ function openPjPick(){
     q.textContent="丸の明るい部分が成功する面積です。得意分野（★）はここが広がります。";
     $("#fmB").insertAdjacentElement("afterend", q);
   }
+  {const old=$("#fmPass"); if(old) old.remove();
+   const q=document.createElement("button");
+   q.id="fmPass"; q.className="tbtn"; q.style.cssText="width:100%;margin-top:10px";
+   q.textContent="今月は推進しない";
+   q.onclick=()=>{ const me=S.chars[CI];
+     $("#fmodal").classList.add("hide");
+     if(!me) return;
+     turnSet(me.t, true, "pj");
+     $("#csheet").classList.add("hide");
+     drawTeam();
+     toast(`${cname(me)} は今月の推進を見送りました。`); };
+   $("#fmB").insertAdjacentElement("afterend", q);}
   $("#fmB").querySelectorAll("[data-pjk]").forEach(b=>b.onclick=()=>{
     const id=+b.dataset.pjk;
     S.chars[CI].pj = id;
@@ -4321,6 +4333,7 @@ function openPjPick(){
 }
 function openFieldModal(){
   const c=S.chars[CI];
+  {const old=$("#fmPass"); if(old) old.remove();}
   $("#fmB").innerHTML = FSIMPLE.map(([f,nm])=>{
     const st=isStrong(c,f), rt=rateOf(c,f), ct=CTYPE[c.t];
     const rBase = c.lv===2 ? ct.r2 : ct.r1;
@@ -6520,7 +6533,9 @@ function roster(){
   return CORDER.filter(t=>out.indexOf(t)>=0);
 }
 const turnMvRest = ()=> roster().filter(t=>!turnMvOK(t));
-const turnPjRest = ()=> roster().filter(t=>!turnPjOK(t));
+/* 実行中に、まだ進められるカードがあるか。1枚も無ければ推進のしようがない */
+const canPush = ()=> (S.proj.run||[]).some(r=>PBY[r.id] && r.step<PBY[r.id].st);
+const turnPjRest = ()=> canPush() ? roster().filter(t=>!turnPjOK(t)) : [];
 /* いまどの段階か。移動が全員そろってから推進に移る */
 const turnPhase = ()=> turnMvRest().length ? "mv" : (turnPjRest().length ? "pj" : "end");
 const turnRest = ()=> turnPhase()==="mv" ? turnMvRest() : turnPjRest();
@@ -6611,7 +6626,7 @@ function drawTurnBox(){
           const nm = ph==="mv" ? "移動" : "推進";
           const done = r.length-rest.length;
           const head = ph==="pj" && turnPjRest().length===r.length
-            ? "全員が移動しました。つぎは推進です<br>" : "";
+            ? "全員が移動しました。つぎは推進です（見送ってもかまいません）<br>" : "";
           return head + (done===0
             ? `${nm} まだ誰も終えていません（0／${r.length}人）`
             : rest.length===1
@@ -6662,6 +6677,8 @@ function showNextTurn(t){
         ? `全員が移動と推進を終えました<br><b>この月を終えて次へ →</b> を押してください`
       : myPush
         ? `盤上でコマを動かしてから、<br><b>プロジェクトを推進</b>してください`
+          + `<small style="display:block;margin-top:5px;font-size:11.5px;font-weight:700;opacity:.75">`
+          + `進めるカードが無い月は、見送ってかまいません</small>`
       : ph==="mv" && GOTAP
         ? `ほかの人も移動を回しています（残り ${left}人）<br>そろうまで待ちましょう`
       : nx
@@ -6830,8 +6847,10 @@ function drawGuide(){
    if(me && !p.tut){
      if(!turnMvOK(me.t))
        b.unshift([`gRoll`,`移動のルーレットを回す（${cname(me)}）`,true]);
-     else if(!turnPjOK(me.t))
+     else if(!turnPjOK(me.t) && canPush()){
        b.unshift([`gPush`,`プロジェクトを推進する（${cname(me)}）`,true]);
+       b.push([`gPass`,`今月は推進しない`,false]);
+     }
    }}
   if(roleOK("reg"))  b.push([`gNum`,`カード番号で完了を登録`,false]);
   if(roleOK("mon"))  b.push([`gNext`, p.last?`これが最後の月です`:`この月を終えて次へ →`, false]);
@@ -6859,6 +6878,10 @@ function drawGuide(){
   on("#gNext",()=>{ if(!p.last) monMove(1); });
   on("#gRoll",()=>{ openChar(); $("#csheet").classList.remove("hide"); });
   on("#gPush",()=>{ openChar(); $("#csheet").classList.remove("hide"); openPjPick(); });
+  on("#gPass",()=>{ const me=S.chars[CI]; if(!me) return;
+    turnSet(me.t, true, "pj");
+    drawCStrip(); drawTurnBox(); drawGuide();
+    toast(`${cname(me)} は今月の推進を見送りました。`); });
 }
 
 /* いまの会社レベル（決算の判定を年度の途中でも見せる） */
