@@ -294,6 +294,35 @@ label{display:block;font-size:13px;color:var(--sub);margin:14px 0 5px}
 .evb{background:#FFF8E8;border:1px solid #E8D9A8;border-radius:12px;padding:12px;margin-bottom:12px}
 /* ---- 卓への指示チップ ---- */
 .gcard{border-left:5px solid var(--g)}
+/* ---- ふだんの画面（body.simple）----
+   出すのは メーター／予算／排出量／スコープ・カテゴリ別 と、自分がいま押すボタンだけ。
+   手順の文章・役割ガイド・手動調整は「くわしく」を押したときだけ出す。 */
+body.simple #guide .gt,
+body.simple #guide .gl,
+body.simple #turnBox .tbl,
+body.simple #turnBox .tbtg,
+body.simple #turnBox .tbm,
+body.simple #roleCard,
+body.simple #mcard .manTg,
+body.simple #mcard .manban,
+body.simple #mcard .budnote,
+body.simple #mcard .budman,
+body.simple #mcard .bgt,
+body.simple #scard .manrow,
+body.simple #scard .manban,
+body.simple #scard .base,
+body.simple #ystrip,
+body.simple .mon .pm,
+body.simple #ldrCh{display:none !important}
+/* 月送り・年度終了は進行役の仕事。ふだんはその人の端末にだけ出す */
+body.simple:not(.ismon) .foot #endYear{display:none !important}
+body.simple:not(.ismon) .foot #more{flex:1 1 auto}
+/* 年の切り替えを隠すぶん、いまが何年目かを月の欄に出す */
+body.simple .mon .ml{font-weight:800;color:var(--gd)}
+.dtlTg{display:block;width:100%;margin:2px 0 12px;padding:11px 10px;
+  border:1px dashed #B9C4A8;border-radius:12px;background:transparent;
+  color:var(--sub);font-size:12.5px;font-weight:700;cursor:pointer}
+.dtlTg:active{background:rgba(0,0,0,.04)}
 #guide .gt,#cGuide .gt{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
 .gph{font-size:10px;font-weight:800;letter-spacing:.08em;background:#E9F2DC;color:#3F6B1B;
  border-radius:5px;padding:3px 8px;flex:0 0 auto}
@@ -1106,12 +1135,12 @@ window.onerror=function(m,src,line,col){
       </div>
       <div class="bgt" style="border-top:none;padding-top:6px"><span>次年度予算ボーナス</span><b id="bgv">±0</b></div>
     </div>
-    <div class="card">
+    <div class="card" id="roleCard">
       <div class="hcol"><h2 style="margin:0">役割ガイド</h2>
         <button id="roleTg">たたむ</button></div>
       <div id="roleList" style="margin-top:8px"></div>
     </div>
-    <div class="card">
+    <div class="card" id="scard">
       <div class="tot">
         <div><b id="t1">0</b><span>SCOPE1</span></div>
         <div><b id="t2">0</b><span>SCOPE2</span></div>
@@ -1126,6 +1155,7 @@ window.onerror=function(m,src,line,col){
       <button class="wtg" id="rowsTg"></button>
     </div>
     <div class="card hide" id="rows"></div>
+    <button class="dtlTg" id="dtlTg">くわしく</button>
   </div>
   <div id="all" class="hide">
     <button class="btn alt bkb" id="allBack">← 入力にもどる</button>
@@ -4536,6 +4566,25 @@ function showLast(){
               + `<small class="todo">今回は動きません。次の人へ</small>`)}</div>`;
 }
 $("#rollMove").onclick=()=>doRoll("move");
+/* ふだんの画面か、くわしく出すか。端末ごとの好みなので同期はしない */
+let SIMPLE = true;
+try{ SIMPLE = localStorage.getItem(BASE+":simple") !== "0"; }catch(e){}
+function applySimple(){
+  document.body.classList.toggle("simple", SIMPLE);
+  /* 月送りを受け持つ人かどうか。ふだんの画面では、その人にだけ年度終了を出す */
+  let mon=true; try{ mon = roleOK("mon"); }catch(e){}
+  document.body.classList.toggle("ismon", !!mon);
+  /* 年の切り替えを隠すので、いまが何年目かは月の欄で示す */
+  const ml=document.querySelector(".mon .ml");
+  if(ml) ml.textContent = SIMPLE ? (S.year||"いまの月") : "いまの月";
+  const b=$("#dtlTg"); if(b) b.textContent = SIMPLE ? "くわしく" : "とじる";
+}
+$("#dtlTg") && ($("#dtlTg").onclick=()=>{
+  SIMPLE = !SIMPLE;
+  try{ localStorage.setItem(BASE+":simple", SIMPLE?"1":"0"); }catch(e){}
+  applySimple();
+});
+applySimple();
 $("#goTap") && ($("#goTap").onclick=()=>{
   goClose();
   /* 1台で2人以上を持っているときは、まだ回していない人から順に */
@@ -4599,6 +4648,7 @@ function drawTeam(){
   drawRows(); drawRowsTg(); drawTotals(); drawHist(); drawRev();
   drawMeters(); drawRun(); drawPjList(); drawEvtBox();
   drawGuide(); drawCGuide(); numHint(); drawManual(); drawTurnBox();
+  if(typeof applySimple==="function") applySimple();
   $("#single").classList.toggle("hide",S.view!=="single");
   $("#cardsV").classList.toggle("hide",S.view!=="cards");
   $("#all").classList.toggle("hide",S.view!=="all");
