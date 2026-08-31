@@ -7898,6 +7898,20 @@ window.__status=(on,txt)=>{ $("#roomBar").classList.remove("hide");
   $("#dot").className="dot "+(on?"on":"off"); $("#roomTxt").textContent=txt; };
 window.__S = ()=>S;
 
+/* リモート卓から ?ch=... で渡されたキャラを引き継ぐ（選び直しをさせない） */
+{const qc=Q.get("ch");
+ if(qc && !S.chars.length){
+   const list=qc.split(",").map(s=>s.trim())
+     .filter(t=>CORDER.indexOf(t)>=0).map(t=>({t,lv:1,used:{}}));
+   if(list.length){
+     S.chars=list; CI=0; save();
+     /* FBはあとからつながるので、つながってから1回だけ送る */
+     (function push(n){
+        if(typeof FB!=="undefined" && FB){ try{ pushChars(); }catch(e){} }
+        else if(n<24) setTimeout(()=>push(n+1), 500);
+      })(0);
+   }
+ }}
 if(Q.get("demo")){ S.wid=""; S.team="テスト"; S.chars=[]; save(); show("pick"); }
 else if(qw && qt){ S.wid=qw; S.team=qt; save(); toTeam(); }
 else if(qw && qa){ S.wid=qw; save(); show("admin"); }

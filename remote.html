@@ -2739,6 +2739,7 @@ const ALLP={"1": ["社内の電球LED化", "低"], "2": ["効率的な輸送ル�
 const CHINFO={"tech": {"n2": "真・工場長", "meter": "設備充実度", "s1": ["tech"], "s2f": ["tech", "hr"], "gain": ["hr"], "r1": 50, "r2": 67, "r1s": 67, "r2s": 83, "view": "製造現場の視点から「設備投資」「実行性」を考える", "quote": "現場が動かなければ、どんな計画も絵に描いた餅", "s2": "【現場改善】設備充実度または社員理解度を1上げる", "mng": "", "mngs": "卓の管理担当はありません。盤上のプロジェクト推進に専念します。"}, "supply": {"n2": "真・ベテラン購買", "meter": "サプライヤー理解度", "s1": ["supply"], "s2f": ["supply", "tech"], "gain": ["tech"], "r1": 67, "r2": 83, "r1s": 83, "r2s": 83, "view": "サプライチェーン・取引先の視点で考える", "quote": "サプライチェーン全体を動かさないと、削減は完結しない", "s2": "【戦略的調達】次に完了するプロジェクト1件のコストを2減らす", "mng": "プロジェクトカード（1年目）", "mngs": "1年目のあいだ預かります（2年目は解除）。"}, "pr": {"n2": "真・中堅広報", "meter": "市場評価", "s1": ["pr"], "s2f": ["pr", "fin"], "gain": ["fin"], "r1": 50, "r2": 67, "r1s": 67, "r2s": 83, "view": "企業の評判・ブランド・ESG発信を考える", "quote": "会社の評判は、外からどう見えるかで決まる", "s2": "【メディア戦略】引いたイベントカードのプラス効果を2倍にする（台本上のイベントとマイナスには使えない）", "mng": "進行（月送り）", "mngs": "「この月を終えて次へ」で卓の進みを管理します。"}, "fin": {"n2": "真・専務", "meter": "社員理解度", "s1": ["hr"], "s2f": ["hr", "fin"], "gain": ["fin"], "r1": 67, "r2": 83, "r1s": 83, "r2s": 83, "view": "社内教育・脱炭素推進・人材育成・チーム予算管理を考える", "quote": "全社を巻き込むのも、会社の財布を守るのも、私の仕事", "s2": "【鶴の一声】盤上のプロジェクト1つを、いますぐ1段階すすめる", "mng": "予算（金庫）／アプリの操作・効果の反映", "mngs": "カード完了の登録とイベントの反映は、専務がまとめて操作します。"}, "hr": {"n2": "真・若手営業", "meter": "売上レベル", "s1": [], "s2f": ["pr"], "gain": ["pr"], "r1": 25, "r2": 50, "r1s": 25, "r2s": 67, "view": "営業視点から「市場・取引先への影響」を考える", "quote": "脱炭素も、売上につながってこそ意味がある", "s2": "【大型受注】次に完了するプロジェクト1件のコストを、支払わずに実施できる", "mng": "アプリのイベントを読み上げる", "mngs": "イベントの月に1枚引いて、卓に読み上げます（数値の反映は専務）。"}};             /* キャラクターカードの中身（本体アプリから取り込み） */
 const TUTFIX={"0": 90, "1": 91};             /* チュートリアルで進める札。3枚は見せるが選ばせない */
 const METERS=[{"k": "sales", "n": "売上レベル", "c": "#1379C4"}, {"k": "market", "n": "市場評価", "c": "#00A65A"}, {"k": "equip", "n": "設備充実度", "c": "#5A6B72"}, {"k": "supply", "n": "サプライヤー理解度", "c": "#C97B3C"}, {"k": "staff", "n": "社員理解度", "c": "#1A1A1A"}], MKM={"sales": "sales", "pr": "market", "plant": "equip", "proc": "supply", "exec": "staff"}, LVNAME=["", "GX着手企業", "GX推進企業", "GXトップランナー"], LVCOND=[null, null, {"red": 15, "met": 5}, {"red": 20, "met": 7}];
+const R2APP={"tech": "plant", "supply": "proc", "pr": "pr", "fin": "exec", "hr": "sales"};               /* リモート卓のキー → 本体のキャラ種別 */
 /* 排出量のマス目（本体と同じ）。SCOPE3＝カテゴリ1〜15の合計 */
 const EK1=["s1"], EK2=["s2"], EK3=Array.from({length:15},(_,i)=>"c"+(i+1));
 const sumK=(o,ks)=> ks.reduce((a,k)=>a+(+((o||{})[k])||0),0);
@@ -3510,7 +3511,10 @@ $("#tutPrev").onclick=()=>{ if(tutI>0){ tutI--; tutDraw(); } };
 $("#tutSkip").onclick=tutClose;
 $("#tutBtn").onclick=tutOpen;
 function appURL(){                   /* 同じフォルダの本体アプリ（同じ w/t） */
-  return `${location.href.replace(/[^/]*$/,"")}index.html?w=${encodeURIComponent(W)}&t=${encodeURIComponent(T)}`;
+  /* えらんだキャラを渡して、スコアシート側で選び直させない */
+  const ch=MYS.map(k=>R2APP[k]).filter(Boolean).join(",");
+  return `${location.href.replace(/[^/]*$/,"")}index.html?w=${encodeURIComponent(W)}`
+       + `&t=${encodeURIComponent(T)}` + (ch?`&ch=${encodeURIComponent(ch)}`:"");
 }
 /* 重いので、タブを開いたときに初めて読み込む */
 function drawApp(){
