@@ -1048,6 +1048,10 @@ body.manual .budman{display:flex}
  flex-wrap:wrap}
 .rurl b{flex:0 0 auto;min-width:46px;font-size:15px}
 .rurl span{flex:1;min-width:170px;font-size:12px;color:var(--sub);word-break:break-all}
+.tutnow{display:inline-block;margin-left:7px;font-size:10.5px;font-weight:800;color:#fff;
+ background:var(--gd);border-radius:99px;padding:1px 8px}
+.tutsee{display:inline-block;margin-left:7px;font-size:10.5px;font-weight:800;color:var(--sub);
+ background:#EDEAD9;border-radius:99px;padding:1px 8px}
 </style>
 </head>
 <body>
@@ -5010,6 +5014,14 @@ const MONTHS={"1年目":[4,5,6,7,8,9,10,11,12,1,2,3],"2年目":[4,5,6,7,8,9,10,1
 const EVMON=[5,8,11,2];
 const isTut=(y,m)=> y===YEARS[0] && (m===4||m===5);
 const isEvM=(y,m)=> EVMON.includes(m);   /* 1年目5月＝チュートリアル中でも引く */
+/* チュートリアルで進めるカード（月の並び順→カード番号）。3枚は見せるが選ばせない */
+const TUTFIX = {0:90, 1:91};
+const tutFix = ()=> isTut(S.year, monNow()) ? (TUTFIX[monIdx()]||null) : null;
+/* チュートリアル中、今月のカード以外は「見るだけ」。ふさいでいる相手を返す */
+function tutBlock(id){
+  const f=tutFix(), p=PBY[id];
+  return (f && p && p.tut && id!==f) ? PBY[f] : null;
+}
 function drawMon(){
   const ms=MONTHS[S.year]||[]; if(!$("#monV")||!ms.length) return;
   let i=Math.max(0,Math.min(ms.length-1,cell0().mon||0)); cell0().mon=i;
@@ -5228,11 +5240,15 @@ function drawPjList(){
   }
   $("#pjList").innerHTML = list.map(p=>{
     const done=isDone(p.id), ok=canStart(p);
-    const tag = done?"実行済":(ok?"":"条件未達");
+    const tf=tutFix();
+    const tmark = (tf && p.tut)
+      ? (p.id===tf ? `<span class="tutnow">今月のカード</span>`
+                   : `<span class="tutsee">見るだけ</span>`) : "";
+    const tag = done?"実行済":((tf && p.tut && p.id!==tf) ? "" : (ok?"":"条件未達"));
     return `<button class="pcd ${(!ok&&!done)?"lock":""}" data-pj="${p.id}">
       <div class="pi" style="background:${DCOLOR[p.d]}">${p.d}</div>
       <div class="pb"><div class="t">${pjIco(p.id,"pjIcoS")}${p.n}</div>
-        <div class="s"><span class="pno">No.${p.id}</span>コスト ${p.cost}　${FIELDS[p.f].nm}　${p.st}段階${p.yr?`　<span class="yrb">${p.yr}年目・${FROLE[p.f]}</span>`:""}</div></div>
+        <div class="s"><span class="pno">No.${p.id}</span>コスト ${p.cost}　${FIELDS[p.f].nm}　${p.st}段階${p.yr?`　<span class="yrb">${p.yr}年目・${FROLE[p.f]}</span>`:""}${tmark}</div></div>
       <div class="pr">${tag}</div></button>`;}).join("")
     || `<p class="note" style="margin:0">該当するカードがありません。</p>`;
   $("#pjList").querySelectorAll("[data-pj]").forEach(b=>b.onclick=()=>openBig(+b.dataset.pj));
@@ -5363,8 +5379,11 @@ function openPjBtns(id){
     return;
   }
   const ok=canStart(p);
+  const tb=tutBlock(id);
   const bz=laneBusy(id);
-  $("#pAct").innerHTML = bz
+  $("#pAct").innerHTML = tb
+    ? `<p class="note" style="margin:0">チュートリアルで今月やるのは「${tb.n}」です。このカードは<b>見るだけ</b>。</p>`
+    : bz
     ? `<p class="note" style="margin:0;color:var(--warn);font-weight:700">むずかしさ${p.d}は「${bz.n}」が実行中です。完了してから着手できます。</p>`
     : `<button class="btn" data-start="1" ${ok?"":'style="opacity:.5"'}>着手する（発案）</button>`;
   const sb=$("#pAct").querySelector("[data-start]");
@@ -6408,6 +6427,8 @@ function openBig(id){
    if(!done){
      const st = run
        ? `<p class="note" style="margin:12px 0 0">このカードは実行中です（${run.step}/${p.st}段階）。推進はキャラクターの画面から行います。</p>`
+       : tutBlock(id)
+         ? `<p class="note" style="margin:12px 0 0">チュートリアルで今月やるのは「${tutBlock(id).n}」です。このカードは<b>見るだけ</b>。</p>`
        : (laneBusy(id)
          ? `<p class="note" style="margin:12px 0 0;color:var(--warn);font-weight:700">むずかしさ${p.d}は「${laneBusy(id).n}」が実行中です。完了してから入れられます。</p>`
          : `<button class="btn" id="bcRun">実行中に入れる</button>`
@@ -6417,6 +6438,8 @@ function openBig(id){
    }}
   const gr=$("#bcRun");
   if(gr) gr.onclick=()=>{
+    const tb2=tutBlock(id);
+    if(tb2){ toast(`チュートリアルで今月やるのは「${tb2.n}」です。`); return; }
     const bz2=laneBusy(id);
     if(bz2){ toast(`むずかしさ${p.d}は「${bz2.n}」が実行中です。`); return; }
     if(!canStart(p) && !confirm("開始条件を満たしていません。それでも実行中に入れますか？")) return;
@@ -6981,10 +7004,12 @@ function phase(){
   if(tut){
     if(ev) steps.push(["イベントカードを1枚引く",
                        evGot()?"この月のカードは引き済みです。":"引いたカードの効果は、専務がアプリに反映します。"]);
-    steps.push([RT("チュートリアルのカードを3枚、卓に並べる","チュートリアルの3枚を、画面で見る"),
-                "グループで話し合って、取り組む1枚を選びます。"]);
-    steps.push(["選んだ1枚を、全員で一巡して進める",
-                "一人ずつ推進のルーレットを回します。コストは本番と同じようにかかります。"]);
+    {const f=tutFix(), fp=f?PBY[f]:null;
+     steps.push([RT("チュートリアルのカードを3枚、卓に並べる","チュートリアルの3枚を、画面で見る"),
+                 fp ? `3枚とも読んでください。今月やるのは「${fp.n}」（No.${f}）です。`
+                    : "3枚とも読んでください。"]);
+     steps.push([fp?`「${fp.n}」を、全員で一巡して進める`:"今月のカードを、全員で一巡して進める",
+                 "一人ずつ推進のルーレットを回します。コストは本番と同じようにかかります。"]);}
     steps.push(["完了したら、専務がカード番号を入れて登録する",
                 "アプリの操作と効果の反映は、専務がまとめて行います。"]);
     if(i===1) steps.push(["一巡が終わったら「この月を終えて次へ」",
