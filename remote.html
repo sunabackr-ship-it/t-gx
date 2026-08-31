@@ -97,7 +97,7 @@ h1{font-size:14px;margin:0}
 .pane>h2 button{font-size:11.5px;font-weight:800;padding:5px 11px;border-radius:8px;
  border:1px solid var(--gd);background:var(--gd);color:#fff}
 .pane>h2 button.alt{background:#fff;color:var(--warn);border-color:#E2C8BE}
-#paneL,#paneR,#paneP,#paneH{flex:1 1 auto;min-height:0}
+#paneL,#paneR,#paneP{flex:1 1 auto;min-height:0}
 #boardBox{flex:1 1 auto;position:relative;overflow:auto;padding:8px;cursor:zoom-in}
 #boardBox .pcp{cursor:grab}
 #boardIn{position:relative;width:100%;margin-inline:auto;transform-origin:0 0}
@@ -251,20 +251,14 @@ h1{font-size:14px;margin:0}
  font-size:15px;font-weight:800;padding:12px 14px;line-height:1.6}
 /* ---- スマホ ---- */
 #phWrap{max-width:560px;margin:0 auto;padding:0 0 90px}
-#phHead,#hdHead{background:#fff;border-bottom:1px solid var(--line);padding:10px 12px;
+#phHead{background:#fff;border-bottom:1px solid var(--line);padding:10px 12px;
  display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:5}
-#phHead img,#hdHead img{width:44px;height:44px;border-radius:50%;border:3px solid}
-#phHead .nm,#hdHead .nm{font-size:15px;font-weight:800}
-#phHead .sub,#hdHead .sub{font-size:11px;color:var(--sub)}
-#phBar,#hdBar{background:#fff;border-bottom:1px solid var(--line);padding:8px 12px;font-size:12px;color:var(--sub)}
-#phBar b,#hdBar b{color:var(--ink)}
+#phHead img{width:44px;height:44px;border-radius:50%;border:3px solid}
+#phHead .nm{font-size:15px;font-weight:800}
+#phHead .sub{font-size:11px;color:var(--sub)}
+#phBar{background:#fff;border-bottom:1px solid var(--line);padding:8px 12px;font-size:12px;color:var(--sub)}
+#phBar b{color:var(--ink)}
 #phList{padding:10px 12px}
-/* PCの「手札」タブ。スマホを使わなくても遊べるように、同じ中身をPCにも出す */
-#hdBox{flex:1 1 auto;overflow:auto}
-#hdList{padding:12px 14px;display:grid;gap:11px;
- grid-template-columns:repeat(auto-fill,minmax(300px,1fr));align-items:start}
-#hdList .mcd{margin-bottom:0}
-#hdFoot{padding:10px 14px;border-top:1px solid var(--line);font-size:12.5px;color:var(--sub)}
 .mcd{background:#fff;border:1px solid var(--line);border-radius:11px;padding:11px 12px;margin-bottom:9px}
 .mcd.out{border-color:var(--g);box-shadow:0 0 0 2px rgba(110,155,62,.25)}
 .mcd .t{font-size:15px;font-weight:800;line-height:1.35;display:flex;align-items:center;gap:9px}
@@ -318,8 +312,8 @@ h1{font-size:14px;margin:0}
  <h2>あなたは誰？</h2>
  <ol class="steps">
    <li><b>キャラクターをえらぶ</b>（人数が少なければ1人で2キャラ以上でも）</li>
-   <li><b>「はじめる」を押す</b>　→　手札・ボード・発案会議室・推進ボードが開きます</li>
-   <li><b>スマホは無くてもかまいません。</b>手札をスマホで見たい人だけ、QRを出して読んでください</li>
+   <li>出た<b>QRコードを、自分のスマホのカメラで読む</b>　→　手札がスマホに開きます</li>
+   <li>この<b>PCの画面はみんなで見る画面</b>（ボード／発案会議室／推進ボード）です</li>
  </ol>
  <div id="pick"></div>
  <div id="qrPane" class="hide"></div>
@@ -330,7 +324,6 @@ h1{font-size:14px;margin:0}
   <button id="tabBoard" class="on"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9.5h18M9.5 3v18"/></svg>ボード</button>
   <button id="tabRoom"><svg viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3v4l5-4h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/></svg>発案会議室<span class="bdg" id="roomBdg"></span></button>
   <button id="tabRun"><svg viewBox="0 0 24 24"><path d="M12 21v-8"/><path d="M12 13C12 9.5 9.4 7.5 5.5 7.5c0 3.5 2.6 5.5 6.5 5.5z"/><path d="M12 13c0-3 2.3-5 5.6-5 0 3-2.3 5-5.6 5z"/></svg>推進ボード<span class="bdg" id="runBdg"></span></button>
-  <button id="tabHand"><svg viewBox="0 0 24 24"><path d="M4 8.6 11 5.1a2 2 0 0 1 2 0l7 3.5"/><path d="M4 8.6V17a2 2 0 0 0 1.2 1.8l5.8 2.2a2 2 0 0 0 2 0l5.8-2.2A2 2 0 0 0 20 17V8.6"/><path d="M12 12.6v8.4"/></svg>手札<span class="bdg" id="handBdg"></span></button>
  </div>
  <section class="pane" id="paneL">
   <h2><span>ボード</span>
@@ -359,13 +352,6 @@ h1{font-size:14px;margin:0}
   <h2><span>推進ボード</span>
    <span class="mini">本体アプリの「実行中」を映しています／ここでは動かせません</span></h2>
   <div id="runBox"></div>
- </section>
- <section class="pane hide" id="paneH">
-  <h2><span>手札</span>
-   <span class="mini">自分の担当カード。ここから場に出せます（スマホでも見られます）</span></h2>
-  <div id="hdHead"></div><div id="hdBar"></div>
-  <div id="hdBox"><div id="hdList"></div></div>
-  <div id="hdFoot"></div>
  </section>
 </div>
 
@@ -2823,12 +2809,9 @@ function drawPick(){
     +`<div style="grid-column:1/-1;text-align:center;margin-top:6px">
       <button id="pickGo" class="pk" style="padding:13px 26px;font-weight:800;font-size:15px;
         ${MYS.length?'background:var(--gd);color:#fff;border-color:var(--gd)':''}"
-        ${MYS.length?"":"disabled"}>この組み合わせではじめる（${MYS.length}キャラ）</button>
-      <button id="pickQR" class="pk" style="margin-left:9px;padding:13px 18px;font-weight:800;font-size:13px"
-        ${MYS.length?"":"disabled"}>スマホでも見る（QRを出す）</button>
+        ${MYS.length?"":"disabled"}>この組み合わせでQRを出す（${MYS.length}キャラ）</button>
       <div class="fd" style="margin-top:9px;line-height:1.8">
-        <b>手札はこのPCの「手札」タブで見られます。スマホは無くてもかまいません。</b><br>
-        スマホで見たい人だけ、QRを出して自分のスマホで読んでください。<br>
+        出たQRを<b>自分のスマホ</b>のカメラで読むと、手札がスマホに開きます。<br>
         人数が少ない卓では、1人で2キャラ以上を受け持てます。</div></div>`;
   $("#pick").querySelectorAll(".pk[data-k]").forEach(b=>b.onclick=()=>{
     const k=b.dataset.k, i=MYS.indexOf(k);
@@ -2840,10 +2823,7 @@ function drawPick(){
     drawPick();
   });
   const go=$("#pickGo");
-  if(go) go.onclick=()=>{ $("#pickWrap").classList.add("hide");
-    $("#pcWrap").classList.remove("hide"); render(); tutMaybe(); };
-  const qb=$("#pickQR");
-  if(qb) qb.onclick=()=>{ qrOpen=true; drawQR();
+  if(go) go.onclick=()=>{ qrOpen=true; drawQR();
     $("#qrPane").scrollIntoView({behavior:"smooth",block:"center"}); };
 }
 function phoneURL(ks){
@@ -3247,14 +3227,9 @@ function drawHandInto(pfx, chars, cur, setCur, footDefault){
     render();
   });
 }
-let hdCur=0;
 function drawPhone(){
   drawHandInto("ph", MYCHS, phCur, i=>{phCur=i;render();},
     "見えるのは自分の担当カードだけ。場を見て決めるのはPCの画面です。");
-}
-function drawHand(){
-  drawHandInto("hd", MYS, hdCur, i=>{hdCur=i;render();},
-    "見えるのは自分の担当カードだけ。みんなの場は「発案会議室」のタブで見られます。");
 }
 /* ===== 画面の出し分け ===== */
 function render(){
@@ -3273,27 +3248,22 @@ function render(){
   const n=allOffered().length;
   $("#roomBdg").textContent = R.chosen ? "決まり" : (n?`${n}枚`:"");
   drawRunBoard();
-  {const m=MYS.reduce((a,k)=>a+offerIds(k).length,0);
-   $("#handBdg").textContent = MYS.length ? `${m}／${MYS.length*2}` : "";}
   if(pcTab==="board") drawBoard();
   else if(pcTab==="room") drawTable();
-  else if(pcTab==="hand") drawHand();
+
 }
 let pcTab="board";
 function setTab(t){ pcTab=t;
   $("#paneL").classList.toggle("hide", t!=="board");
   $("#paneR").classList.toggle("hide", t!=="room");
   $("#paneP").classList.toggle("hide", t!=="run");
-  $("#paneH").classList.toggle("hide", t!=="hand");
   $("#tabBoard").classList.toggle("on", t==="board");
   $("#tabRoom").classList.toggle("on", t==="room");
   $("#tabRun").classList.toggle("on", t==="run");
-  $("#tabHand").classList.toggle("on", t==="hand");
   if(t==="room") drawTable(); else if(t==="board") drawBoard();
-  else if(t==="hand") drawHand(); else drawRunBoard();
+  else drawRunBoard();
 }
 $("#tabRun").onclick=()=>setTab("run");
-$("#tabHand").onclick=()=>setTab("hand");
 $("#tabBoard").onclick=()=>setTab("board");
 let bz=1, bfit=100;
 const BAR=1694/2400;                 /* 盤画像の縦横比 */
@@ -3363,8 +3333,8 @@ const TUT=[
   p:"みんながスマホから出したカードが、むずかしさの3列に並びます。カードをクリックすると全員の画面で光って「◯◯が見ています」と出ます。どれにするか決めるのは、このPCからです。"},
  {tab:"run",   h:"推進ボード",
   p:"いま実行中のプロジェクトを映します。むずかしさ 低・中・高 それぞれ1枠までです。同じむずかしさが埋まっているあいだは、新しく決められません。"},
- {tab:"hand",  h:"手札",
-  p:"自分の担当カードです。ここから「場に出す」で発案会議室に持ち寄ります（1キャラ2枚まで）。スマホで見たい人は、キャラクター選択の画面から QR を出せます。メーター・予算・推進のダイスは、右上の「スコアシート」から開きます。"}
+ {tab:null,    h:"手札はスマホに出ます",
+  p:"QRコードを自分のスマホで読むと、担当ぶんの手札が開きます。スマホでやるのは「場に出す」と「下げる」だけ（1キャラ2枚まで）。この画面は、みんなで見るための画面です。メーター・予算・推進のダイスは、右上の「スコアシート」から開きます。"}
 ];
 let tutI=0, tutDone=false;
 function tutDraw(){
