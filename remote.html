@@ -311,8 +311,8 @@ h1{font-size:14px;margin:0}
 <div id="pickWrap" class="hide">
  <h2>あなたは誰？</h2>
  <ol class="steps">
-   <li><b>キャラクターをえらぶ</b>（人数が少なければ1人で2キャラ以上でも）</li>
-   <li>出た<b>QRコードを、自分のスマホのカメラで読む</b>　→　手札がスマホに開きます</li>
+   <li><b>キャラクターをえらぶ</b>（人数が少なければ1人で2キャラ以上でも）　→　下にQRが出ます</li>
+   <li>その<b>QRコードを、自分のスマホのカメラで読む</b>　→　手札がスマホに開きます</li>
    <li>この<b>PCの画面はみんなで見る画面</b>（ボード／発案会議室／推進ボード）です</li>
  </ol>
  <div id="pick"></div>
@@ -2807,11 +2807,9 @@ function drawPick(){
       ${tk?'<span class="tk">選ばれています</span>':(mineSel?'<span class="tk" style="background:var(--gd);color:#fff">あなた</span>':"")}
       ${charBody(c)}</button>`;}).join("")
     +`<div style="grid-column:1/-1;text-align:center;margin-top:6px">
-      <button id="pickGo" class="pk" style="padding:13px 26px;font-weight:800;font-size:15px;
-        ${MYS.length?'background:var(--gd);color:#fff;border-color:var(--gd)':''}"
-        ${MYS.length?"":"disabled"}>この組み合わせでQRを出す（${MYS.length}キャラ）</button>
-      <div class="fd" style="margin-top:9px;line-height:1.8">
-        出たQRを<b>自分のスマホ</b>のカメラで読むと、手札がスマホに開きます。<br>
+      <div class="fd" style="margin-top:2px;line-height:1.8">
+        ${MYS.length ? `下に出ているQRを<b>自分のスマホ</b>のカメラで読むと、手札がスマホに開きます。`
+                     : `キャラクターをえらぶと、下にQRが出ます。`}<br>
         人数が少ない卓では、1人で2キャラ以上を受け持てます。</div></div>`;
   $("#pick").querySelectorAll(".pk[data-k]").forEach(b=>b.onclick=()=>{
     const k=b.dataset.k, i=MYS.indexOf(k);
@@ -2820,19 +2818,15 @@ function drawPick(){
       if(R.taken[k]==="1" && !confirm(`${CH.find(c=>c.k===k).n} はもう選ばれています。かわりに使いますか？`)) return;
       MYS.push(k); R.taken[k]="1"; put({[`taken/${k}`]:"1"});
     }
-    drawPick();
+    drawPick(); drawQR();          /* えらんだ時点でQRを出し直す */
   });
-  const go=$("#pickGo");
-  if(go) go.onclick=()=>{ qrOpen=true; drawQR();
-    $("#qrPane").scrollIntoView({behavior:"smooth",block:"center"}); };
 }
 function phoneURL(ks){
   const u=new URL(location.origin+location.pathname);   /* 余計なパラメータは持ち込まない */
   u.searchParams.set("w",W); u.searchParams.set("t",T); u.searchParams.set("char",ks.join(","));
   return u.toString();
 }
-let qrOpen=false;                    /* QRは押されたときだけ出す（既定は出さない） */
-function drawQR(){
+function drawQR(){                   /* スマホで見るのが前提なので、えらんだ時点で出す */
   if(!MYS.length){ $("#qrPane").classList.add("hide"); return; }
   const url=phoneURL(MYS);
   const qr=qrcode(0,"M"); qr.addData(url); qr.make();
@@ -3244,7 +3238,7 @@ function render(){
   $("#hState").textContent = R.chosen ? `決まり：${(CBY[R.chosen]||{}).n||""}` : "";
   if(!MYS.length){ $("#pickWrap").classList.remove("hide"); drawPick(); return; }
   drawPick();                                      /* taken の表示更新 */
-  if(qrOpen && !$("#pickWrap").classList.contains("hide")) drawQR();
+  if(!$("#pickWrap").classList.contains("hide")) drawQR();
   const n=allOffered().length;
   $("#roomBdg").textContent = R.chosen ? "決まり" : (n?`${n}枚`:"");
   drawRunBoard();
@@ -3319,8 +3313,7 @@ $("#bzOut").onclick=()=>setBz(bz-0.25);
 
 $("#tabRoom").onclick=()=>setTab("room");
 $("#btnQR") && ($("#btnQR").onclick=()=>{
-  $("#pcWrap").classList.add("hide"); $("#pickWrap").classList.remove("hide");
-  qrOpen=false; $("#qrPane").classList.add("hide"); drawPick(); });
+  $("#pcWrap").classList.add("hide"); $("#pickWrap").classList.remove("hide"); drawPick(); });
 addEventListener("resize",()=>{ if(MODE!=="pc"||!MYS.length) return;
   if(pcTab==="board") applyFit(); else drawTable(); });
 
