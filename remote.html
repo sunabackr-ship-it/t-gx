@@ -31,12 +31,18 @@ h1{font-size:14px;margin:0}
  border:1px solid var(--gd);background:var(--gd);color:#fff}
 #tut button.alt{background:#fff;color:var(--gd)}
 #tut button.sk{background:#fff;color:var(--sub);border-color:var(--line);margin-right:auto}
-#tutBtn{font-size:11.5px;font-weight:800;padding:5px 11px;border-radius:8px;
+#tutBtn,#appBtn{font-size:11.5px;font-weight:800;padding:5px 11px;border-radius:8px;
  border:1px solid var(--line);background:#fff;color:var(--gd)}
 /* ---- キャラ選択（PC） ---- */
 #pickWrap{max-width:1180px;margin:0 auto;padding:18px 14px}
 #pickWrap h2{font-size:15px;margin:0 0 4px}
 #pickWrap .note{font-size:12px;color:var(--sub);margin:0 0 14px;line-height:1.7}
+#pickWrap .steps{margin:0 0 16px;padding-left:0;list-style:none;counter-reset:st}
+#pickWrap .steps li{counter-increment:st;position:relative;padding:7px 0 7px 38px;
+ font-size:14.5px;line-height:1.7;color:var(--ink)}
+#pickWrap .steps li::before{content:counter(st);position:absolute;left:0;top:8px;
+ width:25px;height:25px;border-radius:50%;background:var(--gd);color:#fff;
+ font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center}
 #pick{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:12px;
  align-items:start}
 .pk{background:#fff;border:1px solid var(--line);border-radius:13px;padding:15px 16px;
@@ -293,6 +299,7 @@ h1{font-size:14px;margin:0}
  <span class="mini" id="hMeta"></span>
  <span id="net">接続中…</span>
  <span class="mini" id="hState" style="margin-left:auto"></span>
+ <button id="appBtn" class="hide">スコアシート</button>
  <button id="tutBtn" class="hide">使い方</button>
 </header>
 
@@ -303,8 +310,11 @@ h1{font-size:14px;margin:0}
 
 <div id="pickWrap" class="hide">
  <h2>あなたは誰？</h2>
- <p class="note">自分が動かすキャラクターをえらんでください（人数が少なければ2キャラ以上でも）。<br>
- えらび終えたらQRコードを出して、<b>自分のスマホ</b>で読むと手札の画面がスマホに開きます。</p>
+ <ol class="steps">
+   <li><b>キャラクターをえらぶ</b>（人数が少なければ1人で2キャラ以上でも）</li>
+   <li>出た<b>QRコードを、自分のスマホのカメラで読む</b>　→　手札がスマホに開きます</li>
+   <li>この<b>PCの画面はみんなで見る画面</b>（ボード／発案会議室／推進ボード）です</li>
+ </ol>
  <div id="pick"></div>
  <div id="qrPane" class="hide"></div>
 </div>
@@ -3310,7 +3320,7 @@ const TUT=[
  {tab:"run",   h:"推進ボード",
   p:"いま実行中のプロジェクトを映します。むずかしさ 低・中・高 それぞれ1枠までです。同じむずかしさが埋まっているあいだは、新しく決められません。"},
  {tab:null,    h:"手札はスマホに出ます",
-  p:"QRコードを自分のスマホで読むと、担当ぶんの手札が開きます。スマホでやるのは「場に出す」と「下げる」だけ（1キャラ2枚まで）。この画面は、みんなで見るための画面です。"}
+  p:"QRコードを自分のスマホで読むと、担当ぶんの手札が開きます。スマホでやるのは「場に出す」と「下げる」だけ（1キャラ2枚まで）。この画面は、みんなで見るための画面です。メーター・予算・推進のダイスは、右上の「スコアシート」から開きます。"}
 ];
 let tutI=0, tutDone=false;
 function tutDraw(){
@@ -3331,10 +3341,15 @@ $("#tutNext").onclick=()=>{ if(tutI<TUT.length-1){ tutI++; tutDraw(); } else tut
 $("#tutPrev").onclick=()=>{ if(tutI>0){ tutI--; tutDraw(); } };
 $("#tutSkip").onclick=tutClose;
 $("#tutBtn").onclick=tutOpen;
+function appURL(){                   /* 同じフォルダの本体アプリ（同じ w/t） */
+  return `${location.href.replace(/[^/]*$/,"")}index.html?w=${encodeURIComponent(W)}&t=${encodeURIComponent(T)}`;
+}
+$("#appBtn") && ($("#appBtn").onclick=()=>window.open(appURL(),"_blank"));
 function tutMaybe(){                 /* PCの画面に入った初回だけ */
   if(tutDone || MODE!=="pc") return;
   tutDone=true;
   $("#tutBtn").classList.remove("hide");
+  $("#appBtn") && $("#appBtn").classList.remove("hide");
   let seen=false; try{ seen=!!localStorage.getItem(TUTK); }catch(e){}
   if(!seen) tutOpen();
 }

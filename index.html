@@ -4070,13 +4070,17 @@ function remoteURL(w,t){
 /* HTMLに直接書いてある文言は、meta が届いてから書き換える */
 function applyStyleText(){
   const q=$("#qrNote");
-  if(q) q.textContent = RT(
+  if(q) q.innerHTML = RT(
     "各チームの卓に1枚ずつ置いてください。読み取るとそのチームの画面が開きます。",
-    "各チームにURLを送ってください。開くとそのチームの画面になります。");
+    "完全リモートでは<b>紙のQRは使いません</b>。配るのは下の<b>リモート卓のURLだけ</b>です。"
+    + "<br>Zoomのチャットに、チームごとに1本ずつ送ってください。"
+    + "<br>参加者は　①PCでURLを開く　→　②キャラクターを選ぶ　→　③出たQRを自分のスマホで読む　の順です。");
   const n=$("#numNote");
   if(n) n.innerHTML = RT(
     'アプリの操作は<b>専務</b>がまとめて行います。カードに刷ってある番号を入れてください。',
     'アプリの操作は<b>専務</b>がまとめて行います。発案会議室で決めたカードの番号を入れてください。');
+  const cb=$("#copyAll");
+  if(cb) cb.textContent = RT("全チームのURLをまとめてコピー","リモート卓のURLをまとめてコピー");
 }
 const save = ()=>{ try{ localStorage.setItem(BASE+":last", KEY); localStorage.setItem(KEY, JSON.stringify(
   {mode:S.mode,wid:S.wid,wmeta:S.wmeta,team:S.team,year:S.year,view:S.view,
@@ -7658,12 +7662,16 @@ function drawQR(){
     b.onclick=()=>copyText(b.dataset.copy, b));
   $("#qrWrap").querySelectorAll("[data-open]").forEach(b=>
     b.onclick=()=>window.open(b.dataset.open,"_blank"));
-  const rem = (isRemote() && teams.length)
-    ? `\n\n【リモート卓】Zoomのチャットに、チームごとに1本ずつ送ってください\n`
-      + teams.map(t=>`${t}: ${remoteURL(S.wid,t)}`).join("\n")
-    : "";
-  $("#urlList").value = teams.map(t=>`${t}: ${teamURL(S.wid,t)}`).join("\n")
-    + (teams.length?`\n進行役: ${adminURL(S.wid)}`:"") + rem;
+  /* 完全リモートでは、配るのはリモート卓のURLだけ。紙のQRは使わない */
+  const rem = isRemote();
+  applyStyleText();                 /* 案内文も実施形態に合わせて出し直す */
+  $("#qrWrap").classList.toggle("hide", rem);
+  $("#printQR").classList.toggle("hide", rem);
+  $("#urlList").value = rem
+    ? teams.map(t=>`${t}: ${remoteURL(S.wid,t)}`).join("\n")
+      + (teams.length?`\n進行役: ${adminURL(S.wid)}`:"")
+    : teams.map(t=>`${t}: ${teamURL(S.wid,t)}`).join("\n")
+      + (teams.length?`\n進行役: ${adminURL(S.wid)}`:"");
 }
 function copyText(txt, btn){
   const done=()=>{ if(!btn) return; const o=btn.textContent;
