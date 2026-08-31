@@ -97,7 +97,7 @@ h1{font-size:14px;margin:0}
 .pane>h2 button{font-size:11.5px;font-weight:800;padding:5px 11px;border-radius:8px;
  border:1px solid var(--gd);background:var(--gd);color:#fff}
 .pane>h2 button.alt{background:#fff;color:var(--warn);border-color:#E2C8BE}
-#paneL,#paneR{flex:1 1 auto;min-height:0}
+#paneL,#paneR,#paneP,#paneH,#paneC,#paneK,#paneA{flex:1 1 auto;min-height:0}
 #boardBox{flex:1 1 auto;position:relative;overflow:auto;padding:8px;cursor:zoom-in}
 #boardBox .pcp{cursor:grab}
 #boardIn{position:relative;width:100%;margin-inline:auto;transform-origin:0 0}
@@ -270,6 +270,10 @@ h1{font-size:14px;margin:0}
 .colv .lv{background:var(--gd);color:#fff;border-radius:9px;font-size:15px;font-weight:900;padding:4px 11px}
 .colv .nm{font-size:17px;font-weight:800}
 .conext{font-size:12.5px;color:var(--warn);line-height:1.7;font-weight:700}
+/* スコアシートは本体アプリをそのまま埋め込む。同じ w/t・同じFirebaseなので、
+   ダイスや完了登録の作りを作り直さない（二重に書くと後勝ちで壊れる） */
+#appBox{flex:1 1 auto;min-height:0;display:flex}
+#appBox iframe{flex:1 1 auto;width:100%;height:100%;border:0;border-radius:0 0 11px 11px}
 #chBox{flex:1 1 auto;overflow:auto;padding:14px;display:grid;gap:13px;
  grid-template-columns:repeat(auto-fit,minmax(330px,1fr));align-items:start}
 #tutBar{background:#EAF1E1;border-bottom:1px solid #D3E2C2;color:#3F6B2A;
@@ -332,7 +336,6 @@ h1{font-size:14px;margin:0}
  <span class="mini" id="hMeta"></span>
  <span id="net">接続中…</span>
  <span class="mini" id="hState" style="margin-left:auto"></span>
- <button id="appBtn" class="hide">スコアシート</button>
  <button id="tutBtn" class="hide">使い方</button>
 </header>
 
@@ -360,6 +363,7 @@ h1{font-size:14px;margin:0}
   <button id="tabHand"><svg viewBox="0 0 24 24"><path d="M4 8.6 11 5.1a2 2 0 0 1 2 0l7 3.5"/><path d="M4 8.6V17a2 2 0 0 0 1.2 1.8l5.8 2.2a2 2 0 0 0 2 0l5.8-2.2A2 2 0 0 0 20 17V8.6"/><path d="M12 12.6v8.4"/></svg>手札<span class="bdg" id="handBdg"></span></button>
   <button id="tabCo"><svg viewBox="0 0 24 24"><path d="M4 21V6.2L11 3.4V21"/><path d="M11 9.5h6.8A2 2 0 0 1 20 11.5V21"/><path d="M14.4 13.2h2M14.4 17h2M7.2 9.5h.6M7.2 13.2h.6M7.2 17h.6"/><path d="M3 21h18"/></svg>会社<span class="bdg" id="coBdg"></span></button>
   <button id="tabChar"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.9"/><path d="M4.8 21a7.2 7.2 0 0 1 14.4 0"/></svg>キャラクター</button>
+  <button id="tabApp"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2.4"/><path d="M8 8h8M8 12h8M8 16h4"/></svg>スコアシート</button>
  </div>
  <section class="pane" id="paneL">
   <h2><span>ボード</span>
@@ -404,6 +408,11 @@ h1{font-size:14px;margin:0}
  <section class="pane hide" id="paneK">
   <h2><span>キャラクター</span><span class="mini">あなたが動かすキャラクター</span></h2>
   <div id="chBox"></div>
+ </section>
+ <section class="pane hide" id="paneA">
+  <h2><span>スコアシート</span>
+   <span class="mini">移動ルーレット・推進ダイス・完了の登録はここで（本体アプリ）</span></h2>
+  <div id="appBox"></div>
  </section>
 </div>
 
@@ -3115,6 +3124,10 @@ function drawRunBoard(){
 function drawCo(){
   const box=$("#coBox"); if(!box) return;
   const y=(TEAM.years||{})[curYear()]||{}, m=y.m||{}, v=y.v||{};
+  if(!y.v && !y.m){        /* まだ本体アプリが動いていない（数字が来ていない） */
+    box.innerHTML=`<p class="empty">まだ数字がありません。「スコアシート」のタブを開いて、`
+      + `チームの入力がはじまると、ここに出ます。</p>`;
+    const b0=$("#coBdg"); if(b0) b0.textContent=""; return; }
   const y1=(TEAM.years||{})[YEARSL[0]]||{};
   const base0=netEmit(y1.b)||100, net=netEmit(v), red=Math.max(0, r1n(base0-net));
   const allAt=n=>METERS.every(x=>(+m[x.k]||0)>=n);
@@ -3364,8 +3377,7 @@ function render(){
     drawPhone(); return;
   }
   /* PC */
-  $("#hState").textContent = R.chosen ? `決まり：${(CBY[R.chosen]||{}).n||""}` :
-    (MYS.length?`あなた：${MYS.map(k=>(CH.find(c=>c.k===k)||{}).n).join("・")}`:"");
+  $("#hState").textContent = R.chosen ? `決まり：${(CBY[R.chosen]||{}).n||""}` : "";
   if(!MYS.length){ $("#pickWrap").classList.remove("hide"); drawPick(); return; }
   drawPick();                                      /* taken の表示更新 */
   if(qrOpen && !$("#pickWrap").classList.contains("hide")) drawQR();
@@ -3388,20 +3400,24 @@ function setTab(t){ pcTab=t;
   $("#paneH").classList.toggle("hide", t!=="hand");
   $("#paneC").classList.toggle("hide", t!=="co");
   $("#paneK").classList.toggle("hide", t!=="char");
+  $("#paneA").classList.toggle("hide", t!=="app");
   $("#tabBoard").classList.toggle("on", t==="board");
   $("#tabRoom").classList.toggle("on", t==="room");
   $("#tabRun").classList.toggle("on", t==="run");
   $("#tabHand").classList.toggle("on", t==="hand");
   $("#tabCo").classList.toggle("on", t==="co");
   $("#tabChar").classList.toggle("on", t==="char");
+  $("#tabApp").classList.toggle("on", t==="app");
   if(t==="room") drawTable(); else if(t==="board") drawBoard();
   else if(t==="hand") drawHand(); else if(t==="co") drawCo();
-  else if(t==="char") drawChar(); else drawRunBoard();
+  else if(t==="char") drawChar(); else if(t==="app") drawApp();
+  else drawRunBoard();
 }
 $("#tabRun").onclick=()=>setTab("run");
 $("#tabHand").onclick=()=>setTab("hand");
 $("#tabCo").onclick=()=>setTab("co");
 $("#tabChar").onclick=()=>setTab("char");
+$("#tabApp").onclick=()=>setTab("app");
 $("#tabBoard").onclick=()=>setTab("board");
 let bz=1, bfit=100;
 const BAR=1694/2400;                 /* 盤画像の縦横比 */
@@ -3496,12 +3512,17 @@ $("#tutBtn").onclick=tutOpen;
 function appURL(){                   /* 同じフォルダの本体アプリ（同じ w/t） */
   return `${location.href.replace(/[^/]*$/,"")}index.html?w=${encodeURIComponent(W)}&t=${encodeURIComponent(T)}`;
 }
-$("#appBtn") && ($("#appBtn").onclick=()=>window.open(appURL(),"_blank"));
+/* 重いので、タブを開いたときに初めて読み込む */
+function drawApp(){
+  const box=$("#appBox"); if(!box || box.dataset.on) return;
+  box.dataset.on="1";
+  box.innerHTML=`<iframe src="${appURL()}" title="スコアシート"
+    allow="autoplay" referrerpolicy="no-referrer"></iframe>`;
+}
 function tutMaybe(){                 /* PCの画面に入った初回だけ */
   if(tutDone || MODE!=="pc") return;
   tutDone=true;
   $("#tutBtn").classList.remove("hide");
-  $("#appBtn") && $("#appBtn").classList.remove("hide");
   let seen=false; try{ seen=!!localStorage.getItem(TUTK); }catch(e){}
   if(!seen) tutOpen();
 }
