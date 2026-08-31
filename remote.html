@@ -245,6 +245,33 @@ h1{font-size:14px;margin:0}
 #runDone .dt{font-size:13px;font-weight:800;color:#3F6B2A;margin-bottom:3px}
 #runDone .dl{font-size:14px;line-height:1.7;color:#3A4632}
 #busyNote{font-size:12px;font-weight:800;color:var(--warn)}
+/* ---- 会社タブ ---- */
+#coBox{flex:1 1 auto;overflow:auto;padding:14px;display:grid;gap:13px;
+ grid-template-columns:repeat(auto-fit,minmax(330px,1fr));align-items:start}
+.cobx{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 15px}
+.cobx h3{font-size:13px;margin:0 0 11px;color:var(--sub);font-weight:800}
+.mtr2{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid #F0EEE2}
+.mtr2:first-of-type{border-top:none}
+.mtr2 .nm{flex:1;min-width:0;font-size:14px;font-weight:700;line-height:1.4}
+.mtr2 .nm small{display:block;font-size:10.5px;color:var(--sub);font-weight:700}
+.mtr2 .bar{flex:0 0 130px;height:9px;background:#EFEDE0;border-radius:99px;position:relative}
+.mtr2 .bar i{display:block;height:100%;border-radius:99px}
+.mtr2 .bar u{position:absolute;top:-3px;width:2px;height:15px;background:#8E8B78;opacity:.55;left:66.6%}
+.mtr2 .vv{flex:0 0 34px;text-align:right;font-size:19px;font-weight:800}
+.mtr2.aw .vv{color:#B4553A}
+.awb2{background:#B4553A;color:#fff;border-radius:99px;font-size:9.5px;padding:1px 6px;font-weight:800;margin-left:5px}
+.corow{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;
+ border-top:1px solid #F0EEE2;font-size:13.5px;color:var(--sub)}
+.corow:first-of-type{border-top:none}
+.corow b{font-size:20px;color:var(--ink);font-variant-numeric:tabular-nums}
+.corow.big b{font-size:27px}
+.corow.red b{color:#2E6C4A}
+.colv{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.colv .lv{background:var(--gd);color:#fff;border-radius:9px;font-size:15px;font-weight:900;padding:4px 11px}
+.colv .nm{font-size:17px;font-weight:800}
+.conext{font-size:12.5px;color:var(--warn);line-height:1.7;font-weight:700}
+#chBox{flex:1 1 auto;overflow:auto;padding:14px;display:grid;gap:13px;
+ grid-template-columns:repeat(auto-fit,minmax(330px,1fr));align-items:start}
 #tutBar{background:#EAF1E1;border-bottom:1px solid #D3E2C2;color:#3F6B2A;
  font-size:14px;font-weight:800;padding:10px 13px}
 #phTut{background:#EAF1E1;border-bottom:1px solid #D3E2C2;color:#3F6B2A;
@@ -331,6 +358,8 @@ h1{font-size:14px;margin:0}
   <button id="tabRoom"><svg viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3v4l5-4h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/></svg>発案会議室<span class="bdg" id="roomBdg"></span></button>
   <button id="tabRun"><svg viewBox="0 0 24 24"><path d="M12 21v-8"/><path d="M12 13C12 9.5 9.4 7.5 5.5 7.5c0 3.5 2.6 5.5 6.5 5.5z"/><path d="M12 13c0-3 2.3-5 5.6-5 0 3-2.3 5-5.6 5z"/></svg>推進ボード<span class="bdg" id="runBdg"></span></button>
   <button id="tabHand"><svg viewBox="0 0 24 24"><path d="M4 8.6 11 5.1a2 2 0 0 1 2 0l7 3.5"/><path d="M4 8.6V17a2 2 0 0 0 1.2 1.8l5.8 2.2a2 2 0 0 0 2 0l5.8-2.2A2 2 0 0 0 20 17V8.6"/><path d="M12 12.6v8.4"/></svg>手札<span class="bdg" id="handBdg"></span></button>
+  <button id="tabCo"><svg viewBox="0 0 24 24"><path d="M4 21V6.2L11 3.4V21"/><path d="M11 9.5h6.8A2 2 0 0 1 20 11.5V21"/><path d="M14.4 13.2h2M14.4 17h2M7.2 9.5h.6M7.2 13.2h.6M7.2 17h.6"/><path d="M3 21h18"/></svg>会社<span class="bdg" id="coBdg"></span></button>
+  <button id="tabChar"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.9"/><path d="M4.8 21a7.2 7.2 0 0 1 14.4 0"/></svg>キャラクター</button>
  </div>
  <section class="pane" id="paneL">
   <h2><span>ボード</span>
@@ -366,6 +395,15 @@ h1{font-size:14px;margin:0}
   <div id="hdHead"></div><div id="hdBar"></div>
   <div id="hdBox"><div id="hdList"></div></div>
   <div id="hdFoot"></div>
+ </section>
+ <section class="pane hide" id="paneC">
+  <h2><span>会社</span>
+   <span class="mini">本体アプリ（スコアシート）の数字を映しています／ここでは動かせません</span></h2>
+  <div id="coBox"></div>
+ </section>
+ <section class="pane hide" id="paneK">
+  <h2><span>キャラクター</span><span class="mini">あなたが動かすキャラクター</span></h2>
+  <div id="chBox"></div>
  </section>
 </div>
 
@@ -2691,6 +2729,12 @@ const CARDS=[{"id": 4, "n": "ユーザーへのエコ使用ガイド提供", "co
 const ALLP={"1": ["社内の電球LED化", "低"], "2": ["効率的な輸送ルートの最適化", "低"], "3": ["低燃費車両の導入", "低"], "4": ["ユーザーへのエコ使用ガイド提供", "低"], "5": ["社員研修", "低"], "6": ["サプライヤー向け研修", "低"], "7": ["既存顧客との関係強化", "低"], "8": ["設備の予防保全", "低"], "9": ["圧縮空気配管の漏れ診断", "低"], "10": ["電気の環境価値を購入(非化石証書)", "低"], "11": ["建物・空調診断・改善計画", "低"], "12": ["屋根への遮熱塗装", "低"], "13": ["原材料素材研究", "低"], "14": ["社員寮開設", "低"], "15": ["環境配慮型建材の使用", "低"], "16": ["モーダルシフトの検証", "中"], "17": ["近隣地域からの原材料調達", "中"], "18": ["地域別の集中配送", "中"], "19": ["再生可能エネルギー会社とのタイアップ", "中"], "20": ["省エネ商品の国内販売強化", "中"], "21": ["配送業者との協力強化", "低"], "22": ["メンテナンスサービスの提供", "中"], "23": ["製品のリサイクルプログラムの展開", "中"], "24": ["延長保証や修理サービスの提供", "中"], "25": ["再生可能エネルギーの導入", "中"], "26": ["梱包材料の軽量化", "中"], "27": ["積載率を最適化", "中"], "28": ["高効率空調設備の導入", "中"], "29": ["サプライヤーとの共同研究PJ発足", "中"], "30": ["ステークホルダー対話イベント", "低"], "31": ["環境技術のリサーチプロジェクト", "中"], "32": ["環境配慮型提案営業", "中"], "33": ["取引先の脱炭素要請対応", "中"], "34": ["現場改善(カイゼン)活動", "中"], "35": ["マネジメントシステム構築", "中"], "36": ["CO2排出量の算定・見える化", "中"], "37": ["業務プロセスの標準化", "中"], "38": ["認証活用→取引・入札・採用強化", "中"], "39": ["継続改善の推進", "中"], "40": ["サプライヤーを含む展開", "中"], "41": ["エア漏れ修理", "中"], "42": ["スチームトラップの更新", "中"], "43": ["排水熱回収装置の導入", "中"], "44": ["脱炭素戦略・再エネ調達計画", "中"], "45": ["再エネ電力への切替え", "中"], "46": ["シェアサイクルステーション設置", "低"], "47": ["従業員・来訪者の移動手段転換", "中"], "48": ["原材料素材変更", "高"], "49": ["再利用・リサイクル原材料の利用", "高"], "50": ["エネルギー効率の高い設備の導入", "高"], "51": ["モーダルシフト実行", "中"], "52": ["中間加工先との脱炭素連携", "高"], "53": ["省エネ性能の高い商品開発", "高"], "54": ["IOTを活用したリモートアップデートの活用", "高"], "55": ["省エネ商品の海外展開", "高"], "56": ["製品デザインの見直しによる軽量化", "高"], "57": ["共同減排プロジェクト計画", "高"], "58": ["全社エネルギー監査", "高"], "59": ["認証取得", "高"], "60": ["削減目標と実行計画の策定(SBT)", "高"], "61": ["サプライチェーンESG・循環型調達", "高"], "62": ["自社屋根で太陽光発電(オンサイトPPA)", "高"], "63": ["社外の発電所から再エネ購入(オフサイトPPA)", "高"], "64": ["遮熱・空調省エネ施工", "中"], "65": ["出張・移動方針の見直し", "低"], "66": ["廃棄物ゼロ活動(3R現場改善)", "中"], "67": ["リース資産の運用ルール整備", "中"], "68": ["全社省エネ行動キャンペーン", "低"], "69": ["脱炭素人材の育成・資格取得支援", "低"], "70": ["カーボンニュートラル製品として販売", "高"], "71": ["削減貢献量の提案営業", "中"], "72": ["顧客と組む低炭素製品の共同開発", "高"], "73": ["環境情報の開示(統合報告・CDP回答)", "中"], "74": ["グリーン調達方針の策定", "中"], "90": ["社内の照明をすべてLED化", "低"], "91": ["エコドライブ講習", "低"], "92": ["ごみの分別と削減ルールづくり", "低"]};                 /* 全カードの[名前, むずかしさ]。実行中の表示用 */
 const CHINFO={"tech": {"n2": "真・工場長", "meter": "設備充実度", "s1": ["tech"], "s2f": ["tech", "hr"], "gain": ["hr"], "r1": 50, "r2": 67, "r1s": 67, "r2s": 83, "view": "製造現場の視点から「設備投資」「実行性」を考える", "quote": "現場が動かなければ、どんな計画も絵に描いた餅", "s2": "【現場改善】設備充実度または社員理解度を1上げる", "mng": "", "mngs": "卓の管理担当はありません。盤上のプロジェクト推進に専念します。"}, "supply": {"n2": "真・ベテラン購買", "meter": "サプライヤー理解度", "s1": ["supply"], "s2f": ["supply", "tech"], "gain": ["tech"], "r1": 67, "r2": 83, "r1s": 83, "r2s": 83, "view": "サプライチェーン・取引先の視点で考える", "quote": "サプライチェーン全体を動かさないと、削減は完結しない", "s2": "【戦略的調達】次に完了するプロジェクト1件のコストを2減らす", "mng": "プロジェクトカード（1年目）", "mngs": "1年目のあいだ預かります（2年目は解除）。"}, "pr": {"n2": "真・中堅広報", "meter": "市場評価", "s1": ["pr"], "s2f": ["pr", "fin"], "gain": ["fin"], "r1": 50, "r2": 67, "r1s": 67, "r2s": 83, "view": "企業の評判・ブランド・ESG発信を考える", "quote": "会社の評判は、外からどう見えるかで決まる", "s2": "【メディア戦略】引いたイベントカードのプラス効果を2倍にする（台本上のイベントとマイナスには使えない）", "mng": "進行（月送り）", "mngs": "「この月を終えて次へ」で卓の進みを管理します。"}, "fin": {"n2": "真・専務", "meter": "社員理解度", "s1": ["hr"], "s2f": ["hr", "fin"], "gain": ["fin"], "r1": 67, "r2": 83, "r1s": 83, "r2s": 83, "view": "社内教育・脱炭素推進・人材育成・チーム予算管理を考える", "quote": "全社を巻き込むのも、会社の財布を守るのも、私の仕事", "s2": "【鶴の一声】盤上のプロジェクト1つを、いますぐ1段階すすめる", "mng": "予算（金庫）／アプリの操作・効果の反映", "mngs": "カード完了の登録とイベントの反映は、専務がまとめて操作します。"}, "hr": {"n2": "真・若手営業", "meter": "売上レベル", "s1": [], "s2f": ["pr"], "gain": ["pr"], "r1": 25, "r2": 50, "r1s": 25, "r2s": 67, "view": "営業視点から「市場・取引先への影響」を考える", "quote": "脱炭素も、売上につながってこそ意味がある", "s2": "【大型受注】次に完了するプロジェクト1件のコストを、支払わずに実施できる", "mng": "アプリのイベントを読み上げる", "mngs": "イベントの月に1枚引いて、卓に読み上げます（数値の反映は専務）。"}};             /* キャラクターカードの中身（本体アプリから取り込み） */
 const TUTFIX={"0": 90, "1": 91};             /* チュートリアルで進める札。3枚は見せるが選ばせない */
+const METERS=[{"k": "sales", "n": "売上レベル", "c": "#1379C4"}, {"k": "market", "n": "市場評価", "c": "#00A65A"}, {"k": "equip", "n": "設備充実度", "c": "#5A6B72"}, {"k": "supply", "n": "サプライヤー理解度", "c": "#C97B3C"}, {"k": "staff", "n": "社員理解度", "c": "#1A1A1A"}], MKM={"sales": "sales", "pr": "market", "plant": "equip", "proc": "supply", "exec": "staff"}, LVNAME=["", "GX着手企業", "GX推進企業", "GXトップランナー"], LVCOND=[null, null, {"red": 15, "met": 5}, {"red": 20, "met": 7}];
+/* 排出量のマス目（本体と同じ）。SCOPE3＝カテゴリ1〜15の合計 */
+const EK1=["s1"], EK2=["s2"], EK3=Array.from({length:15},(_,i)=>"c"+(i+1));
+const sumK=(o,ks)=> ks.reduce((a,k)=>a+(+((o||{})[k])||0),0);
+const netEmit=o=> sumK(o,EK1)+sumK(o,EK2)+sumK(o,EK3)-(+((o||{}).off)||0);
+const r1n=v=> Math.round(v*10)/10;
 const CH=[{k:"tech",n:"工場長"},{k:"supply",n:"ベテラン購買"},{k:"pr",n:"中堅広報"},
           {k:"fin",n:"専務"},{k:"hr",n:"若手営業"}];
 /* チュートリアルの3枚は読み込み係の手札に混ぜない（4月・5月だけ卓に出る） */
@@ -2786,36 +2830,39 @@ const dots=(n,px)=>[1,2,3,4,5].map(i=>`<span class="dot ${i<=n?"":"off"}"></span
 
 /* ===== PC：キャラ選択とQR ===== */
 const pkRow=(l,v)=>`<div class="pr"><span class="pl">${l}</span><span class="pv">${v}</span></div>`;
+/* キャラクターカードの中身。選ぶ画面と「キャラクター」タブで同じものを使う */
+function charBody(c){
+  const q=CHINFO[c.k]||{};
+  const tag=(f,dim)=>`<span class="ftag${dim?" dim":""}" style="background:${FCO[f]||"#888"}">${FNM[f]||f}</span>`;
+  const now =(q.s1||[]).length ? (q.s1||[]).map(f=>tag(f,0)).join("") : `<i>なし</i>`;
+  /* 覚醒で増えるぶんは、まだ持っていないので薄く出す */
+  const gain=(q.gain||[]).length ? (q.gain||[]).map(f=>tag(f,1)).join("") : `<i>増えません</i>`;
+  const rate=(q.s1||[]).length
+    ? `ふつう <b>${q.r1}%</b>　得意分野なら <b>${q.r1s}%</b>`
+    : `どの分野でも <b>${q.r1}%</b><i>　（覚醒するまで得意分野なし）</i>`;
+  const rate2=(q.s2f||[]).length
+    ? `覚醒すると ${q.r2}%／得意分野 ${q.r2s}%`
+    : `覚醒すると ${q.r2}%`;
+  return `<div class="ph"><img src="${FACES[c.k]}" style="border-color:${FCO[c.k]}">
+      <div><div class="nm">${c.n}</div>
+      <div class="aw">覚醒すると「${q.n2||""}」</div></div></div>
+    ${pkRow("担当メーター", `${q.meter||""}<i>　7になると覚醒</i>`)}
+    ${pkRow("推進の成功率", rate + `<i><br>${rate2}</i>`)}
+    ${pkRow("得意分野", `${now}<i><br>覚醒すると追加：</i>${gain}`)}
+    ${pkRow("みかた", q.view||"")}
+    ${pkRow("ひとこと", `<span class="qt">「${q.quote||""}」</span>`)}
+    ${pkRow("覚醒スキル", q.s2||"")}
+    ${pkRow("卓での担当", q.mng ? `${q.mng}<i><br>${q.mngs||""}</i>` : `<i>${q.mngs||"なし"}</i>`)}
+    ${pkRow("読み込み係", `${FNM[c.k]}　${(BY[c.k]||[]).length}枚を読んでチームに提案します`)}`;
+}
 function drawPick(){
   $("#pick").innerHTML=CH.map(c=>{
     const mineSel=MYS.includes(c.k);
     const tk=R.taken[c.k]==="1" && !mineSel;
-    const q=CHINFO[c.k]||{};
-    const tag=(f,dim)=>`<span class="ftag${dim?" dim":""}" style="background:${FCO[f]||"#888"}">${FNM[f]||f}</span>`;
-    const now =(q.s1||[]).length ? (q.s1||[]).map(f=>tag(f,0)).join("") : `<i>なし</i>`;
-    /* 覚醒で増えるぶんは、まだ持っていないので薄く出す */
-    const gain=(q.gain||[]).length ? (q.gain||[]).map(f=>tag(f,1)).join("") : `<i>増えません</i>`;
-    const rate=(q.s1||[]).length
-      ? `ふつう <b>${q.r1}%</b>　得意分野なら <b>${q.r1s}%</b>`
-      : `どの分野でも <b>${q.r1}%</b><i>　（覚醒するまで得意分野なし）</i>`;
-    const rate2=(q.s2f||[]).length
-      ? `覚醒すると ${q.r2}%／得意分野 ${q.r2s}%`
-      : `覚醒すると ${q.r2}%`;
     return `<button class="pk" data-k="${c.k}" data-taken="${tk?1:0}"
       style="${mineSel?'border-color:var(--gd);box-shadow:0 0 0 2px rgba(110,155,62,.3)':''}">
       ${tk?'<span class="tk">選ばれています</span>':(mineSel?'<span class="tk" style="background:var(--gd);color:#fff">あなた</span>':"")}
-      <div class="ph"><img src="${FACES[c.k]}" style="border-color:${FCO[c.k]}">
-        <div><div class="nm">${c.n}</div>
-        <div class="aw">覚醒すると「${q.n2||""}」</div></div></div>
-      ${pkRow("担当メーター", `${q.meter||""}<i>　7になると覚醒</i>`)}
-      ${pkRow("推進の成功率", rate + `<i><br>${rate2}</i>`)}
-      ${pkRow("得意分野", `${now}<i><br>覚醒すると追加：</i>${gain}`)}
-      ${pkRow("みかた", q.view||"")}
-      ${pkRow("ひとこと", `<span class="qt">「${q.quote||""}」</span>`)}
-      ${pkRow("覚醒スキル", q.s2||"")}
-      ${pkRow("卓での担当", q.mng ? `${q.mng}<i><br>${q.mngs||""}</i>` : `<i>${q.mngs||"なし"}</i>`)}
-      ${pkRow("読み込み係", `${FNM[c.k]}　${(BY[c.k]||[]).length}枚を読んでチームに提案します`)}
-      </button>`;}).join("")
+      ${charBody(c)}</button>`;}).join("")
     +`<div style="grid-column:1/-1;text-align:center;margin-top:6px">
       <button id="pickGo" class="pk" style="padding:13px 26px;font-weight:800;font-size:15px;
         ${MYS.length?'background:var(--gd);color:#fff;border-color:var(--gd)':''}"
@@ -2839,7 +2886,7 @@ function drawPick(){
   if(go) go.onclick=()=>{ $("#pickWrap").classList.add("hide");
     $("#pcWrap").classList.remove("hide"); render(); tutMaybe(); };
   const qb=$("#pickQR");
-  if(qb) qb.onclick=()=>{ drawQR(); render();
+  if(qb) qb.onclick=()=>{ qrOpen=true; drawQR();
     $("#qrPane").scrollIntoView({behavior:"smooth",block:"center"}); };
 }
 function phoneURL(ks){
@@ -2847,8 +2894,9 @@ function phoneURL(ks){
   u.searchParams.set("w",W); u.searchParams.set("t",T); u.searchParams.set("char",ks.join(","));
   return u.toString();
 }
+let qrOpen=false;                    /* QRは押されたときだけ出す（既定は出さない） */
 function drawQR(){
-  if(!MYS.length) return;
+  if(!MYS.length){ $("#qrPane").classList.add("hide"); return; }
   const url=phoneURL(MYS);
   const qr=qrcode(0,"M"); qr.addData(url); qr.make();
   const names=MYS.map(k=>CH.find(c=>c.k===k).n).join("・");
@@ -3063,6 +3111,59 @@ function drawRunBoard(){
   $("#runBdg").textContent = busy?`${busy}／3`:"";
 }
 
+/* ===== PC：会社（本体アプリの数字を映すだけ。書き込みはしない） ===== */
+function drawCo(){
+  const box=$("#coBox"); if(!box) return;
+  const y=(TEAM.years||{})[curYear()]||{}, m=y.m||{}, v=y.v||{};
+  const y1=(TEAM.years||{})[YEARSL[0]]||{};
+  const base0=netEmit(y1.b)||100, net=netEmit(v), red=Math.max(0, r1n(base0-net));
+  const allAt=n=>METERS.every(x=>(+m[x.k]||0)>=n);
+  const lv=(red>=LVCOND[3].red && allAt(LVCOND[3].met)) ? 3
+          :(red>=LVCOND[2].red && allAt(LVCOND[2].met)) ? 2 : 1;
+  let need="";
+  if(lv<3){ const c=LVCOND[lv+1], la=[];
+    if(red<c.red) la.push(`CO2削減 あと${r1n(c.red-red)}`);
+    const low=METERS.filter(x=>(+m[x.k]||0)<c.met).map(x=>x.n);
+    if(low.length) la.push(`${low.join("・")}を${c.met}以上に`);
+    if(la.length) need=`${LVNAME[lv+1]}まで：${la.join("／")}`; }
+  const own={}; Object.keys(MKM).forEach(t=>{ const cc=CH.find(x=>x.k===t); if(cc) own[MKM[t]]=cc.n; });
+  const s3=sumK(v,EK3), gross=sumK(v,EK1)+sumK(v,EK2)+s3, off=+(v.off)||0;
+  const bud=(y.bud===undefined||y.bud===null)?null:y.bud, bud0=(y.bud0==null)?null:y.bud0;
+  box.innerHTML =
+    `<div class="cobx"><h3>会社レベル</h3>
+       <div class="colv"><span class="lv">Lv${lv}</span><span class="nm">${LVNAME[lv]||""}</span></div>
+       <div class="corow red big"><span>CO2削減量</span><b>${red}</b></div>
+       ${need?`<div class="conext" style="margin-top:9px">${need}</div>`:""}
+       <div class="corow"><span>残りの予算</span><b>${bud==null?"—":bud}${bud0!=null?`<i style="font-size:12px;color:var(--sub);font-style:normal">　/ ${bud0}</i>`:""}</b></div>
+     </div>
+     <div class="cobx"><h3>担当メーター（7で覚醒）</h3>${
+       METERS.map(x=>{ const val=+m[x.k]||0, aw=val>=7;
+         return `<div class="mtr2 ${aw?"aw":""}">
+           <span class="nm">${x.n}${aw?`<span class="awb2">覚醒</span>`:""}
+             <small>${own[x.k]||""}</small></span>
+           <span class="bar"><i style="width:${Math.max(0,Math.min(100,val*10))}%;background:${x.c}"></i><u></u></span>
+           <span class="vv">${val}</span></div>`; }).join("")}
+     </div>
+     <div class="cobx"><h3>排出量</h3>
+       <div class="corow"><span>SCOPE1</span><b>${r1n(sumK(v,EK1))}</b></div>
+       <div class="corow"><span>SCOPE2</span><b>${r1n(sumK(v,EK2))}</b></div>
+       <div class="corow"><span>SCOPE3</span><b>${r1n(s3)}</b></div>
+       <div class="corow"><span>排出合計</span><b>${r1n(gross)}</b></div>
+       <div class="corow"><span>カーボンオフセット</span><b>${off?"−"+r1n(off):0}</b></div>
+       <div class="corow big"><span>実質排出量</span><b>${r1n(net)}</b></div>
+       <div class="corow"><span>初期設定値</span><b>${r1n(base0)}</b></div>
+     </div>`;
+  const bdg=$("#coBdg"); if(bdg) bdg.textContent = red? `−${red}` : "";
+}
+/* ===== PC：キャラクター（自分が動かすキャラのカード） ===== */
+function drawChar(){
+  const box=$("#chBox"); if(!box) return;
+  box.innerHTML = MYS.length
+    ? MYS.map(k=>{ const c=CH.find(x=>x.k===k); return c
+        ? `<div class="pk" data-k="${k}" style="text-align:left">${charBody(c)}</div>` : ""; }).join("")
+    : `<p class="empty">キャラクターがえらばれていません。</p>`;
+}
+
 /* ===== PC：みんなの場（難易度レーン・決定的レイアウト） ===== */
 const CW=236, CHH=196, GAP=13, LH=24;   /* 場のカードもスマホの手札と同じ読みやすさにする */
 const LANES=[["低","low"],["中","mid"],["高","high"]];
@@ -3267,15 +3368,17 @@ function render(){
     (MYS.length?`あなた：${MYS.map(k=>(CH.find(c=>c.k===k)||{}).n).join("・")}`:"");
   if(!MYS.length){ $("#pickWrap").classList.remove("hide"); drawPick(); return; }
   drawPick();                                      /* taken の表示更新 */
-  if(!$("#pickWrap").classList.contains("hide")) drawQR();
+  if(qrOpen && !$("#pickWrap").classList.contains("hide")) drawQR();
   const n=allOffered().length;
   $("#roomBdg").textContent = R.chosen ? "決まり" : (n?`${n}枚`:"");
   drawRunBoard();
   {const m=MYS.reduce((a,k)=>a+offerIds(k).length,0);
    $("#handBdg").textContent = MYS.length ? `${m}／${MYS.length*2}` : "";}
+  drawCo();
   if(pcTab==="board") drawBoard();
   else if(pcTab==="room") drawTable();
   else if(pcTab==="hand") drawHand();
+  else if(pcTab==="char") drawChar();
 }
 let pcTab="board";
 function setTab(t){ pcTab=t;
@@ -3283,15 +3386,22 @@ function setTab(t){ pcTab=t;
   $("#paneR").classList.toggle("hide", t!=="room");
   $("#paneP").classList.toggle("hide", t!=="run");
   $("#paneH").classList.toggle("hide", t!=="hand");
+  $("#paneC").classList.toggle("hide", t!=="co");
+  $("#paneK").classList.toggle("hide", t!=="char");
   $("#tabBoard").classList.toggle("on", t==="board");
   $("#tabRoom").classList.toggle("on", t==="room");
   $("#tabRun").classList.toggle("on", t==="run");
   $("#tabHand").classList.toggle("on", t==="hand");
+  $("#tabCo").classList.toggle("on", t==="co");
+  $("#tabChar").classList.toggle("on", t==="char");
   if(t==="room") drawTable(); else if(t==="board") drawBoard();
-  else if(t==="hand") drawHand(); else drawRunBoard();
+  else if(t==="hand") drawHand(); else if(t==="co") drawCo();
+  else if(t==="char") drawChar(); else drawRunBoard();
 }
 $("#tabRun").onclick=()=>setTab("run");
 $("#tabHand").onclick=()=>setTab("hand");
+$("#tabCo").onclick=()=>setTab("co");
+$("#tabChar").onclick=()=>setTab("char");
 $("#tabBoard").onclick=()=>setTab("board");
 let bz=1, bfit=100;
 const BAR=1694/2400;                 /* 盤画像の縦横比 */
@@ -3347,7 +3457,8 @@ $("#bzOut").onclick=()=>setBz(bz-0.25);
 
 $("#tabRoom").onclick=()=>setTab("room");
 $("#btnQR") && ($("#btnQR").onclick=()=>{
-  $("#pcWrap").classList.add("hide"); $("#pickWrap").classList.remove("hide"); drawQR(); });
+  $("#pcWrap").classList.add("hide"); $("#pickWrap").classList.remove("hide");
+  qrOpen=false; $("#qrPane").classList.add("hide"); drawPick(); });
 addEventListener("resize",()=>{ if(MODE!=="pc"||!MYS.length) return;
   if(pcTab==="board") applyFit(); else drawTable(); });
 
