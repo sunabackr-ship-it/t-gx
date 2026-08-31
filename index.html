@@ -5061,7 +5061,8 @@ function monMove(d){
   evPopCheck();
 }
 /* ---- 予算（アプリ管理。完了確定で自動支払い） ---- */
-/* 標準の年度予算（スライド準拠：1年目25=2500万円。2年目は決算の計算式で自動セット） */
+/* 標準の年度予算（スライド準拠：1年目は 本番25＝2500万円 ＋ チュートリアル3＝300万円。
+   2年目は決算の計算式で自動セット） */
 const BUD0={"1年目":28};   /* 25（本番ぶん）＋3（チュートリアルの1枚 No.90 のコスト） */
 /* 決算：削減量・会社レベル・来年度予算
    会社レベル（削減量が主・メーターが足切り）
@@ -5103,7 +5104,13 @@ function drawBud(){
   $("#budV").textContent = v==null ? "—" : v;
   const li=[];
   if(v==null) li.push("未設定（年度の切り替えで自動計算されます）");
-  else if(c.bud0!=null) li.push(`年度はじめ ${c.bud0}／使った ${r2(c.bud0-v)}`);
+  else if(c.bud0!=null){
+    li.push(`年度はじめ ${c.bud0}／使った ${r2(c.bud0-v)}`);
+    /* 1年目は「本番ぶん＋チュートリアルの1枚」で渡している。内わけを出しておく */
+    const tc = (YEARS.indexOf(S.year)===0 && PBY[TUTFIX]) ? PBY[TUTFIX].cost : 0;
+    if(tc && c.bud0===BUD0[S.year])
+      li.push(`内わけ：本番 ${r2(c.bud0-tc)}　＋　チュートリアル ${tc}`);
+  }
   if(BUDLAST) li.push(BUDLAST);
   $("#budS").innerHTML = li.join("<br>");
 }
