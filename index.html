@@ -5004,7 +5004,7 @@ function drawMeters(){
 const MONTHS={"1年目":[4,5,6,7,8,9,10,11,12,1,2,3],"2年目":[4,5,6,7,8,9,10,11,12,1,2,3]};
 const EVMON=[5,8,11,2];
 const isTut=(y,m)=> y===YEARS[0] && (m===4||m===5);
-const isEvM=(y,m)=> EVMON.includes(m) && !(y===YEARS[0] && m===5);
+const isEvM=(y,m)=> EVMON.includes(m);   /* 1年目5月＝チュートリアル中でも引く */
 function drawMon(){
   const ms=MONTHS[S.year]||[]; if(!$("#monV")||!ms.length) return;
   let i=Math.max(0,Math.min(ms.length-1,cell0().mon||0)); cell0().mon=i;
@@ -6645,9 +6645,7 @@ function drawEvtBox(){
   $("#evtBox").innerHTML =
     `<div class="cnd ${ev?(got?"ok":"ng"):"man"}" style="margin-bottom:10px">${S.year} ${monNow()}月　${
       ev ? (got?"イベントの月：この月のカードは引き済みです。":"イベントの月です。1枚引いてください。")
-         : ((YEARS.indexOf(S.year)===0 && monNow()===5)
-             ? "1年目の5月はチュートリアル中のためお休みです。最初のイベントは8月です。"
-             : "イベントの月ではありません（5・8・11・2月に引きます）")}</div>`
+         : "イベントの月ではありません（5・8・11・2月に引きます）"}</div>`
     + (e ? `<div class="evb"><div class="evbRow">${(typeof EVIMG!=="undefined"&&EVIMG[e.id])?`<img class="evIco" src="${EVIMG[e.id]}" alt="">`:""}<div><div style="font-weight:800">${e.n}</div>
         <div style="font-size:12px;color:var(--sub);line-height:1.6;margin-top:5px">${e.desc}</div></div></div></div>
        <p class="note" style="margin:0">全${EV.length}枚のうち ${S.evt.drawn.length}枚を使いました。</p>`
@@ -6976,6 +6974,8 @@ function phase(){
   const start2 = y2 && i===0;
   const steps=[];
   if(tut){
+    if(ev) steps.push(["イベントカードを1枚引く",
+                       evGot()?"この月のカードは引き済みです。":"引いたカードの効果は、専務がアプリに反映します。"]);
     steps.push([RT("チュートリアルのカードを3枚、卓に並べる","チュートリアルの3枚を、画面で見る"),
                 "グループで話し合って、取り組む1枚を選びます。"]);
     steps.push(["選んだ1枚を、全員で一巡して進める",
