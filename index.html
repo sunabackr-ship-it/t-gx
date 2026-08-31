@@ -1052,6 +1052,21 @@ body.manual .budman{display:flex}
  background:var(--gd);border-radius:99px;padding:1px 8px}
 .tutsee{display:inline-block;margin-left:7px;font-size:10.5px;font-weight:800;color:var(--sub);
  background:#EDEAD9;border-radius:99px;padding:1px 8px}
+@media (min-width:1040px){
+  main{max-width:1380px;margin:0 auto;padding:14px 20px}
+  #single{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    column-gap:18px;align-items:start}
+  #single>.gcard   {grid-column:1/-1; grid-row:1}
+  #single>#mcard   {grid-column:1; grid-row:2}   /* 担当メーター */
+  #single>#scard   {grid-column:2; grid-row:2}   /* 排出量　←横に並べる */
+  #single>#runCard {grid-column:1; grid-row:3}
+  #single>#rows    {grid-column:2; grid-row:3}
+  #single>#roleCard{grid-column:1/-1; grid-row:4}
+  #all{max-width:960px;margin:0 auto}
+  /* 数字が横に伸びきらないようにする */
+  .mtr .mbar{max-width:none}
+}
+@media (min-width:1600px){ main{max-width:1560px} }
 </style>
 </head>
 <body>
