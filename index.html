@@ -1044,6 +1044,10 @@ body.manual .budman{display:flex}
 .stnow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .stnow select{font-size:14px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;
  background:#fff;font-family:inherit}
+.rurl{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);
+ flex-wrap:wrap}
+.rurl b{flex:0 0 auto;min-width:46px;font-size:15px}
+.rurl span{flex:1;min-width:170px;font-size:12px;color:var(--sub);word-break:break-all}
 </style>
 </head>
 <body>
@@ -1469,6 +1473,7 @@ window.onerror=function(m,src,line,col){
         </select>
         <span class="note" style="margin:0">卓への指示の言い方が変わります。ルールは同じです。</span>
       </div>
+      <div id="remBox" class="hide" style="margin-top:14px"></div>
     </div>
     <div class="card noprint">
       <button class="btn alt" id="csv">CSVで書き出す</button>
@@ -7546,6 +7551,7 @@ function adminURL(w){ return `${baseURL()}?w=${encodeURIComponent(w)}&admin=1`; 
 function drawAdmin(){
   if(!S.wid) openNewForm();
   if($("#stSel")) $("#stSel").value = isRemote() ? "remote" : "real";
+  drawRemote();
   $("#ayear").innerHTML = YEARS.map(y=>`<option${y===S.year?" selected":""}>${y}</option>`).join("");
   const m=S.wmeta;
   $("#wsline").innerHTML = m
@@ -7699,8 +7705,32 @@ $("#stSel") && ($("#stSel").onchange=()=>{
   if(S.wmeta) S.wmeta.style=v;
   if(S.wid && S.index[S.wid]) S.index[S.wid].style=v;
   if(S.wid) FB && FB.setStyle(S.wid, v);
-  save(); applyStyleText(); drawAdmin(); drawQR();
+  save(); applyStyleText(); drawAdmin(); drawQR(); drawRemote();
 });
+/* 完全リモートのときだけ、リモート卓のURLをチームごとに出す */
+function drawRemote(){
+  const box=$("#remBox"); if(!box) return;
+  const on=isRemote(), teams=teamList();
+  box.classList.toggle("hide", !on);
+  if(!on) return;
+  if(!S.wid || !teams.length){
+    box.innerHTML=`<p class="note" style="margin:0">チームを追加すると、リモート卓のURLが出ます。</p>`;
+    return; }
+  box.innerHTML =
+    `<h2 style="margin:0 0 6px">リモート卓のURL</h2>
+     <p class="note" style="margin:0 0 4px">Zoomのチャットに、<b>チームごとに1本ずつ</b>送ってください。
+       開くとそのチームのリモート卓（ボード／発案会議室／推進ボード）になります。
+       手札はそこからQRを出して、各自のスマホで読みます。</p>`
+    + teams.map(t=>{ const u=remoteURL(S.wid,t);
+        return `<div class="rurl"><b>${t}</b><span>${u}</span>
+          <button class="tbtn" data-rc="${u}">コピー</button>
+          <button class="tbtn" data-ro="${u}">開く</button></div>`; }).join("")
+    + `<button class="btn alt" id="remAll" style="margin-top:12px">全チームぶんをまとめてコピー</button>`;
+  box.querySelectorAll("[data-rc]").forEach(b=>b.onclick=()=>copyText(b.dataset.rc, b));
+  box.querySelectorAll("[data-ro]").forEach(b=>b.onclick=()=>window.open(b.dataset.ro,"_blank"));
+  $("#remAll").onclick=()=>copyText(
+    teams.map(t=>`${t}: ${remoteURL(S.wid,t)}`).join("\n"), $("#remAll"));
+}
 $("#printQR").onclick=()=>{adView("a2");window.print();};
 function openNewForm(){
   $("#adNew").classList.remove("hide"); $("#adList").classList.add("hide");
