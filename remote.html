@@ -42,23 +42,25 @@ h1{font-size:14px;margin:0}
   background:linear-gradient(#fbfdf7,#fff)}
 #hostBox h2{margin:0 0 6px}
 #hostBox .lead{font-size:12.5px;color:var(--sub);line-height:1.8;margin:0 0 12px}
-.hostLinks{display:flex;flex-direction:column;gap:6px;margin:0 0 12px}
-.hostLinks .lk{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--ln);
-  border-radius:10px;padding:6px 9px}
-.hostLinks .lk img{width:30px;height:30px;border-radius:50%;object-fit:cover;border:2px solid #ccc;flex:0 0 auto}
-.hostLinks .lk .fc{display:flex;flex:0 0 auto}
-.hostLinks .lk .fc img+img{margin-left:-9px}
-.hostLinks .lk b{font-size:12.5px;flex:0 0 148px;line-height:1.35}
+/* Zoomで画面共有したものを、参加者がスマホのカメラで読む。だからQRで並べる */
+.hostLinks{display:grid;grid-template-columns:repeat(auto-fit,minmax(196px,1fr));
+  gap:10px;margin:0 0 12px}
+.hostLinks .lk{display:flex;flex-direction:column;align-items:center;gap:6px;background:#fff;
+  border:1px solid var(--ln);border-radius:12px;padding:11px 9px 9px}
+.hostLinks .lk .fc{display:flex}
+.hostLinks .lk .fc img{width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid #ccc}
+.hostLinks .lk .fc img+img{margin-left:-10px}
+.hostLinks .lk b{font-size:12.5px;line-height:1.4;text-align:center}
 .hostLinks .lk b .ct{display:block;font-size:10.5px;color:var(--sub);font-weight:400;font-style:normal}
+.hostLinks .lk .qr{width:100%;max-width:210px;aspect-ratio:1/1}
+.hostLinks .lk .qr svg{width:100%;height:100%;display:block}
 #hostNum{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 10px;font-size:12.5px}
 #hostNum b{font-weight:800}
 #hostNum button{font-size:12.5px;font-weight:800;padding:6px 13px;border-radius:8px;
   border:1px solid var(--ln);background:#fff;cursor:pointer}
 #hostNum button[aria-pressed="true"]{background:var(--gd);color:#fff;border-color:var(--gd)}
-.hostLinks .lk code{font-size:10.5px;color:var(--sub);flex:1 1 auto;overflow:hidden;
-  white-space:nowrap;text-overflow:ellipsis;min-width:0}
-.hostLinks .lk button{font-size:11px;font-weight:800;padding:5px 10px;border-radius:7px;
-  border:1px solid var(--ln);background:#fff;cursor:pointer;flex:0 0 auto}
+.hostLinks .lk button{font-size:11px;font-weight:800;padding:5px 12px;border-radius:7px;
+  border:1px solid var(--ln);background:#fff;cursor:pointer}
 #hostBtns{display:flex;gap:8px;flex-wrap:wrap}
 #hostBtns button{font-size:13px;font-weight:800;padding:10px 16px;border-radius:10px;cursor:pointer}
 #copyAll{border:1px solid var(--ln);background:#fff}
@@ -357,8 +359,9 @@ h1{font-size:14px;margin:0}
   <p class="lead">
    この画面を<b>Zoomで画面共有</b>してください。ボード・発案会議室・推進ボード・スコアシートの操作は、
    すべて進行役がおこないます。<br>
-   参加者は<b>スマホだけ</b>です。下のリンクをZoomのチャットに貼って、1人1つずつ開いてもらってください。
+   参加者は<b>スマホだけ</b>です。下のQRを<b>1人1つずつ、自分のスマホのカメラで読んで</b>もらってください。
    自分の手札が出て、そこからカードを出せます。<br>
+   （読めない人がいたら「リンクをコピー」でZoomのチャットに貼ってください）<br>
    <b>5人そろわないときは人数を押してください。</b>1人が2キャラ受け持つ形にまとめ直します
    （手札は両方ぶん出ます）。進行役も1人ぶん持ちたいときは、リンクの1本を自分のスマホで開いてください。</p>
   <div id="hostNum"><b>参加者の人数</b>
@@ -2913,13 +2916,15 @@ function drawHostLinks(box){
   box = box || $("#hostLinks"); if(!box) return;
   box.innerHTML = hostGroups().map((g,i)=>{
     const ks=g.map(c=>c.k);
+    const url=phoneURL(ks), q=qrcode(0,"M"); q.addData(url); q.make();
     return `<div class="lk">
       <span class="fc">${g.map(c=>`<img src="${FACES[c.k]}" style="border-color:${FCO[c.k]}">`).join("")}</span>
-      <b>${g.map(c=>c.n).join("＋")}<i class="ct">${ks.reduce((a,k)=>a+nCard(k),0)}枚</i></b><code>${phoneURL(ks)}</code>
-      <button data-ks="${ks.join(",")}">コピー</button></div>`;}).join("");
+      <b>${g.map(c=>c.n).join("＋")}<i class="ct">${ks.reduce((a,k)=>a+nCard(k),0)}枚</i></b>
+      <span class="qr">${q.createSvgTag({cellSize:4,margin:1,scalable:true})}</span>
+      <button data-ks="${ks.join(",")}">リンクをコピー</button></div>`;}).join("");
   box.querySelectorAll("button[data-ks]").forEach(b=>b.onclick=()=>{
     copyText(phoneURL(b.dataset.ks.split(",")));
-    b.textContent="コピーした"; setTimeout(()=>b.textContent="コピー",1400); });
+    b.textContent="コピーした"; setTimeout(()=>b.textContent="リンクをコピー",1400); });
   const nb=$("#hostNum");
   if(nb) nb.querySelectorAll("button[data-n]").forEach(b=>
     b.setAttribute("aria-pressed", (+b.dataset.n===hostN)?"true":"false"));
@@ -2957,9 +2962,9 @@ function qrOpenOv(){
   const ov=$("#qrOv"); if(!ov) return;
   if(!MYS.length){                   /* 進行役：5人ぶんのリンクを配り直せるように */
     ov.querySelector(".qrOvIn").innerHTML =
-      `<div class="who"><b>参加者に配るリンク</b></div>
+      `<div class="who"><b>参加者に配るQR</b></div>
        <div class="hostLinks"></div>
-       <div class="note">Zoomのチャットに貼ってください。1人1つずつ、スマホで開きます。</div>
+       <div class="note">1人1つずつ、スマホのカメラで読んでもらってください。</div>
        <button id="qrOvX">とじる</button>`;
     drawHostLinks(ov.querySelector(".hostLinks"));
   }else{
