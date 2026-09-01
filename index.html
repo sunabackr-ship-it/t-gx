@@ -6458,7 +6458,7 @@ function openBig(id){
          ? `<p class="note" style="margin:12px 0 0">チュートリアルで今月やるのは「${tutBlock(id).n}」です。このカードは<b>見るだけ</b>。</p>`
        : (laneBusy(id)
          ? `<p class="note" style="margin:12px 0 0;color:var(--warn);font-weight:700">むずかしさ${p.d}は「${laneBusy(id).n}」が実行中です。完了してから入れられます。</p>`
-         : `<button class="btn" id="bcRun">実行中に入れる</button>`
+         : `<button class="btn" id="bcRun">${RT("推進ボードにのせる","実行中に入れる")}</button>`
            + `<p class="note" style="margin:8px 0 0">${RT("推進ボードにのせるときに押してください。","発案会議室で決めたカードを、推進ボードにのせます。")}`
            + `以降は「推進」でこのカードを選んで進めます。</p>`);
      $("#bcAct").insertAdjacentHTML("afterbegin", st + `<div style="height:12px"></div>`);
@@ -7036,10 +7036,11 @@ function phase(){
                     : RT("チュートリアルのカードを卓に出す","チュートリアルのカードを画面で見る"),
                  !fp ? "まず読んでください。"
                  : fin ? `このカードは完了しました。`
-                       : `No.${f}。まず読んでください。開いて「実行中に入れる」を押すと始まります。`]);
+                       : `No.${f}。まず読んでください。`]);
      if(fp && !fin)
-       steps.push([`「${fp.n}」に着手して、全員で一巡して進める`,
-                   "「カード」タブ →「チュートリアル」から着手します。"
+       steps.push([`「${fp.n}」を実行中に入れて、全員で一巡して進める`,
+                   RT("「カード」タブから開いて「推進ボードにのせる」を押します。",
+                      "発案会議室で「このカードで始める」を押します。")
                    + "そのあと一人ずつ推進のルーレットを回します。コストは本番と同じようにかかります。"]);}
     {const f=tutFix();
      if(!(f && isDone(f)))
