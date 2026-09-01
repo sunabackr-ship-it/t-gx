@@ -46,7 +46,15 @@ h1{font-size:14px;margin:0}
 .hostLinks .lk{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--ln);
   border-radius:10px;padding:6px 9px}
 .hostLinks .lk img{width:30px;height:30px;border-radius:50%;object-fit:cover;border:2px solid #ccc;flex:0 0 auto}
-.hostLinks .lk b{font-size:12.5px;flex:0 0 118px}
+.hostLinks .lk .fc{display:flex;flex:0 0 auto}
+.hostLinks .lk .fc img+img{margin-left:-9px}
+.hostLinks .lk b{font-size:12.5px;flex:0 0 148px;line-height:1.35}
+.hostLinks .lk b .ct{display:block;font-size:10.5px;color:var(--sub);font-weight:400;font-style:normal}
+#hostNum{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 10px;font-size:12.5px}
+#hostNum b{font-weight:800}
+#hostNum button{font-size:12.5px;font-weight:800;padding:6px 13px;border-radius:8px;
+  border:1px solid var(--ln);background:#fff;cursor:pointer}
+#hostNum button[aria-pressed="true"]{background:var(--gd);color:#fff;border-color:var(--gd)}
 .hostLinks .lk code{font-size:10.5px;color:var(--sub);flex:1 1 auto;overflow:hidden;
   white-space:nowrap;text-overflow:ellipsis;min-width:0}
 .hostLinks .lk button{font-size:11px;font-weight:800;padding:5px 10px;border-radius:7px;
@@ -350,11 +358,16 @@ h1{font-size:14px;margin:0}
    この画面を<b>Zoomで画面共有</b>してください。ボード・発案会議室・推進ボード・スコアシートの操作は、
    すべて進行役がおこないます。<br>
    参加者は<b>スマホだけ</b>です。下のリンクをZoomのチャットに貼って、1人1つずつ開いてもらってください。
-   自分の手札が出て、そこからカードを出せます。</p>
+   自分の手札が出て、そこからカードを出せます。<br>
+   <b>5人そろわないときは人数を押してください。</b>1人が2キャラ受け持つ形にまとめ直します
+   （手札は両方ぶん出ます）。進行役も1人ぶん持ちたいときは、リンクの1本を自分のスマホで開いてください。</p>
+  <div id="hostNum"><b>参加者の人数</b>
+   <button data-n="2">2人</button><button data-n="3">3人</button>
+   <button data-n="4">4人</button><button data-n="5">5人</button></div>
   <div id="hostLinks" class="hostLinks"></div>
   <div id="hostBtns">
    <button id="hostGo">進行役としてボードをひらく</button>
-   <button id="copyAll">5人ぶんをまとめてコピー</button>
+   <button id="copyAll">まとめてコピー</button>
   </div>
  </div>
 
@@ -2879,15 +2892,37 @@ function drawPick(){
 }
 /* 進行役モード：キャラを持たずに卓だけをあずかる。参加者はスマホで入る */
 let asHost=false;
+let hostN=5;                       /* 参加者の人数。5人そろわなければ1人で2キャラ持つ */
+const nCard = k => (BY[k]||[]).length;
+/* 5キャラを hostN 人に分ける。ただの順番で切ると工場長(8枚)とベテラン購買(5枚)が
+   同じ人になって読む量がかたよるので、多い人から順に、いちばん少ない組へ入れていく */
+function hostGroups(){
+  const n=Math.max(1,Math.min(CH.length,hostN));
+  const cap=[]; let left=CH.length;
+  for(let j=0;j<n;j++){ const size=Math.ceil(left/(n-j)); cap.push(size); left-=size; }
+  const g=cap.map(()=>[]), sum=cap.map(()=>0);
+  CH.slice().sort((a,b)=>nCard(b.k)-nCard(a.k)).forEach(c=>{
+    let t=-1;
+    for(let j=0;j<n;j++) if(g[j].length<cap[j] && (t<0||sum[j]<sum[t])) t=j;
+    g[t].push(c); sum[t]+=nCard(c.k);
+  });
+  return g.map(x=>x.sort((a,b)=>CH.indexOf(a)-CH.indexOf(b)))
+          .sort((a,b)=>CH.indexOf(a[0])-CH.indexOf(b[0]));
+}
 function drawHostLinks(box){
   box = box || $("#hostLinks"); if(!box) return;
-  box.innerHTML = CH.map(c=>`<div class="lk">
-      <img src="${FACES[c.k]}" style="border-color:${FCO[c.k]}">
-      <b>${c.n}</b><code>${phoneURL([c.k])}</code>
-      <button data-k="${c.k}">コピー</button></div>`).join("");
-  box.querySelectorAll("button[data-k]").forEach(b=>b.onclick=()=>{
-    copyText(phoneURL([b.dataset.k]));
+  box.innerHTML = hostGroups().map((g,i)=>{
+    const ks=g.map(c=>c.k);
+    return `<div class="lk">
+      <span class="fc">${g.map(c=>`<img src="${FACES[c.k]}" style="border-color:${FCO[c.k]}">`).join("")}</span>
+      <b>${g.map(c=>c.n).join("＋")}<i class="ct">${ks.reduce((a,k)=>a+nCard(k),0)}枚</i></b><code>${phoneURL(ks)}</code>
+      <button data-ks="${ks.join(",")}">コピー</button></div>`;}).join("");
+  box.querySelectorAll("button[data-ks]").forEach(b=>b.onclick=()=>{
+    copyText(phoneURL(b.dataset.ks.split(",")));
     b.textContent="コピーした"; setTimeout(()=>b.textContent="コピー",1400); });
+  const nb=$("#hostNum");
+  if(nb) nb.querySelectorAll("button[data-n]").forEach(b=>
+    b.setAttribute("aria-pressed", (+b.dataset.n===hostN)?"true":"false"));
 }
 function copyText(t){
   if(navigator.clipboard && location.protocol!=="file:") return navigator.clipboard.writeText(t);
@@ -3424,10 +3459,12 @@ $("#hostGo") && ($("#hostGo").onclick=()=>{
   asHost=true;                       /* キャラは持たないが、卓の操作はぜんぶできる */
   $("#pickWrap").classList.add("hide"); $("#pcWrap").classList.remove("hide");
   render(); tutMaybe(); });
+$("#hostNum") && $("#hostNum").querySelectorAll("button[data-n]").forEach(b=>
+  b.onclick=()=>{ hostN=+b.dataset.n; drawHostLinks(); });
 $("#copyAll") && ($("#copyAll").onclick=()=>{
   const b=$("#copyAll");
-  copyText(CH.map(c=>`${c.n}　${phoneURL([c.k])}`).join("\n"));
-  b.textContent="コピーした"; setTimeout(()=>b.textContent="5人ぶんをまとめてコピー",1400); });
+  copyText(hostGroups().map(g=>`${g.map(c=>c.n).join("＋")}　${phoneURL(g.map(c=>c.k))}`).join("\n"));
+  b.textContent="コピーした"; setTimeout(()=>b.textContent="まとめてコピー",1400); });
 
 $("#tabRoom").onclick=()=>setTab("room");
 $("#btnQR") && ($("#btnQR").onclick=()=>{
