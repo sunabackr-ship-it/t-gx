@@ -449,12 +449,12 @@ h1{font-size:14px;margin:0}
  <div id="phPane">
   <div id="phBar"></div>
   <div id="phList"></div>
-  <div id="phFoot">見えるのは自分の担当カードだけ。場を見て決めるのはPCの画面です。</div>
+  <div id="phFoot">見えるのは自分の担当カードだけ。会社のメーターや排出量は「スコアシート」で見られます。</div>
  </div>
  <div id="phApp" class="hide"><iframe id="phFrame" title="スコアシート"></iframe></div>
  <div id="phTabs">
   <button id="phTabHand" class="on">手札</button>
-  <button id="phTabApp">移動・推進</button>
+  <button id="phTabApp">スコアシート</button>
  </div>
 </div>
 
@@ -3413,7 +3413,7 @@ function drawHandInto(pfx, chars, cur, setCur, footDefault){
 }
 function drawPhone(){
   drawHandInto("ph", MYCHS, phCur, i=>{phCur=i;render();},
-    "見えるのは自分の担当カードだけ。場を見て決めるのはPCの画面です。");
+    "見えるのは自分の担当カードだけ。会社のメーターや排出量は「スコアシート」で見られます。");
 }
 /* 同じフォルダの本体アプリを、担当キャラを渡してひらく */
 function appURLFor(ks){
