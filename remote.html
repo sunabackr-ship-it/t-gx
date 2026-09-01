@@ -31,7 +31,7 @@ h1{font-size:14px;margin:0}
  border:1px solid var(--gd);background:var(--gd);color:#fff}
 #tut button.alt{background:#fff;color:var(--gd)}
 #tut button.sk{background:#fff;color:var(--sub);border-color:var(--line);margin-right:auto}
-#tutBtn,#appBtn{font-size:11.5px;font-weight:800;padding:5px 11px;border-radius:8px;
+#tutBtn,#appBtn,#qrBtn{font-size:11.5px;font-weight:800;padding:5px 11px;border-radius:8px;
  border:1px solid var(--line);background:#fff;color:var(--gd)}
 /* ---- キャラ選択（PC） ---- */
 #pickWrap{max-width:1180px;margin:0 auto;padding:18px 14px}
@@ -69,6 +69,18 @@ h1{font-size:14px;margin:0}
  background:#EDEAD9;color:var(--sub);border-radius:99px;padding:2px 8px}
 .pk[data-taken="1"]{opacity:.55}
 /* ---- QRパネル（PC） ---- */
+#qrOv{position:fixed;inset:0;z-index:22;background:rgba(20,26,16,.55);
+ display:flex;align-items:center;justify-content:center;padding:20px}
+#qrOv .qrOvIn{background:#fff;border-radius:16px;padding:18px 20px;max-width:430px;width:100%;
+ text-align:center;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+#qrOv .who{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:8px}
+#qrOv .who img{width:44px;height:44px;border-radius:50%;border:3px solid}
+#qrOv .who b{font-size:15px}
+#qrOv svg{width:230px;height:230px}
+#qrOv .url{font-size:10px;color:var(--sub);word-break:break-all;margin-top:6px}
+#qrOv .note{font-size:13px;color:var(--sub);line-height:1.7;margin-top:9px}
+#qrOv button{margin-top:13px;font-size:14px;font-weight:800;padding:10px 22px;border-radius:9px;
+ border:1px solid var(--gd);background:var(--gd);color:#fff}
 #qrPane{background:#fff;border:1px solid var(--line);border-radius:12px;
  padding:14px;max-width:430px;margin:14px auto;text-align:center}
 #qrPane .who{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:8px}
@@ -299,6 +311,7 @@ h1{font-size:14px;margin:0}
  <span class="mini" id="hMeta"></span>
  <span id="net">接続中…</span>
  <span class="mini" id="hState" style="margin-left:auto"></span>
+ <button id="qrBtn" class="hide">スマホ用QR</button>
  <button id="appBtn" class="hide">スコアシート</button>
  <button id="tutBtn" class="hide">使い方</button>
 </header>
@@ -343,7 +356,7 @@ h1{font-size:14px;margin:0}
     <span id="busyNote" class="hide"></span>
     <button id="btnTake" class="hide">このカードにする</button>
     <button id="btnUndo" class="hide alt">決め直す</button>
-    <button id="btnQR" class="alt" style="border-color:var(--line);color:var(--gd)">QR</button>
+    <button id="btnQR" class="alt" style="border-color:var(--line);color:var(--gd)">キャラを選び直す</button>
     <span class="mini" id="cnt"></span></span></h2>
   <div id="tutBar" class="hide"></div>
   <div id="tableBox"><div id="tbl"></div></div>
@@ -368,6 +381,8 @@ h1{font-size:14px;margin:0}
   <button class="alt hide" id="tutPrev">もどる</button>
   <button id="tutNext">つぎへ</button></div>
 </div></div>
+
+<div id="qrOv" class="hide"><div class="qrOvIn"></div></div>
 
 <div id="loupe"><div id="loupeIn"></div></div>
 <div id="tip"></div>
@@ -2826,20 +2841,33 @@ function phoneURL(ks){
   u.searchParams.set("w",W); u.searchParams.set("t",T); u.searchParams.set("char",ks.join(","));
   return u.toString();
 }
-function drawQR(){                   /* スマホで見るのが前提なので、えらんだ時点で出す */
-  if(!MYS.length){ $("#qrPane").classList.add("hide"); return; }
+/* QRの中身。キャラ選択の画面と、ヘッダの「スマホ用QR」の両方で使う */
+function qrBody(){
   const url=phoneURL(MYS);
   const qr=qrcode(0,"M"); qr.addData(url); qr.make();
   const names=MYS.map(k=>CH.find(c=>c.k===k).n).join("・");
-  $("#qrPane").classList.remove("hide");
-  $("#qrPane").innerHTML=`
-    <div class="who">${MYS.map(k=>`<img src="${FACES[k]}" style="border-color:${FCO[k]}">`).join("")}<b>${names}</b></div>
+  return `<div class="who">${MYS.map(k=>`<img src="${FACES[k]}" style="border-color:${FCO[k]}">`).join("")}<b>${names}</b></div>
     ${qr.createSvgTag({cellSize:4,margin:2,scalable:true})}
     <div class="url">${url}</div>
-    <div class="note">このQRを<b>自分のスマホ</b>のカメラで読むと、${names}の手札がスマホに開きます。</div>
-    <button id="qrGo">読み取れた（ボードへすすむ）</button>`;
+    <div class="note">このQRを<b>自分のスマホ</b>のカメラで読むと、${names}の手札がスマホに開きます。</div>`;
+}
+function drawQR(){                   /* スマホで見るのが前提なので、えらんだ時点で出す */
+  if(!MYS.length){ $("#qrPane").classList.add("hide"); return; }
+  $("#qrPane").classList.remove("hide");
+  $("#qrPane").innerHTML = qrBody()
+    + `<button id="qrGo">読み取れた（ボードへすすむ）</button>`;
   $("#qrGo").onclick=()=>{ $("#pickWrap").classList.add("hide"); $("#pcWrap").classList.remove("hide");
     render(); tutMaybe(); };
+}
+/* 読み損ねた・スマホの画面を閉じてしまったときのために、いつでも出せるようにする */
+function qrOpenOv(){
+  if(!MYS.length) return;
+  const ov=$("#qrOv"); if(!ov) return;
+  ov.querySelector(".qrOvIn").innerHTML = qrBody()
+    + `<button id="qrOvX">とじる</button>`;
+  ov.classList.remove("hide");
+  $("#qrOvX").onclick=()=>ov.classList.add("hide");
+  ov.onclick=e=>{ if(e.target===ov) ov.classList.add("hide"); };
 }
 
 /* ===== マスの説明（マウスを乗せると出る） ===== */
@@ -3355,11 +3383,13 @@ function appURL(){                   /* 同じフォルダの本体アプリ（�
        + `&t=${encodeURIComponent(T)}` + (ch?`&ch=${encodeURIComponent(ch)}`:"");
 }
 $("#appBtn") && ($("#appBtn").onclick=()=>window.open(appURL(),"_blank"));
+$("#qrBtn")  && ($("#qrBtn").onclick=qrOpenOv);
 function tutMaybe(){                 /* PCの画面に入った初回だけ */
   if(tutDone || MODE!=="pc") return;
   tutDone=true;
   $("#tutBtn").classList.remove("hide");
   $("#appBtn") && $("#appBtn").classList.remove("hide");
+  $("#qrBtn")  && $("#qrBtn").classList.remove("hide");
   let seen=false; try{ seen=!!localStorage.getItem(TUTK); }catch(e){}
   if(!seen) tutOpen();
 }
