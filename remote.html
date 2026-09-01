@@ -2697,7 +2697,6 @@ const CH=[{k:"tech",n:"工場長"},{k:"supply",n:"ベテラン購買"},{k:"pr",n
           {k:"fin",n:"専務"},{k:"hr",n:"若手営業"}];
 /* チュートリアルの3枚は読み込み係の手札に混ぜない（4月・5月だけ卓に出る） */
 const BY={}; CARDS.forEach(c=>{ if(c.tut) return; (BY[c.f]=BY[c.f]||[]).push(c); });
-const TUTC=CARDS.filter(c=>c.tut);
 const CBY={}; CARDS.forEach(c=>CBY[c.id]=c);
 const $=s=>document.querySelector(s);
 /* Firebaseは配列を、抜けがあるとオブジェクトで返す（引き継ぎ書§4） */
@@ -2724,7 +2723,7 @@ let FBup=null;                    /* update 関数（接続後に差し込む）
 
 const offerIds = k => (R.offer[k]||"").split(",").filter(Boolean).map(Number);
 const allOffered = () => isTut()
-  ? TUTC.map(c=>({id:c.id, ck:null}))          /* チュートリアルは3枚が最初から場にある */
+  ? (tutFix() ? [{id:tutFix(), ck:null}] : [])   /* チュートリアルは今月やる1枚だけ */
   : CH.flatMap(c=>offerIds(c.k).map(id=>({id,ck:c.k})));
 const put = o => { if(FBup) FBup(o); };
 
@@ -3100,8 +3099,8 @@ function drawTable(){
   if(tb2){ tb2.classList.toggle("hide", !isTut());
     tb2.textContent = isTut()
       ? (()=>{ const f=tutFix(), p=f&&CBY[f];
-          return `チュートリアル（${curMon()}月）　3枚とも読んでください。`
-            + (p?`今月やるのは「${p.n}」です`:""); })()
+          return `チュートリアル（${curMon()}月）　`+(p?`今月やるのは「${p.n}」。`:"")
+            + `着手と推進は右上の「スコアシート」から`; })()
       : ""; }
   if(!off.length){ tb.innerHTML=`<p class="empty">まだ誰も出していません。各自スマホでカードを出すと、ここに並びます。</p>`;
     tb.style.height="auto"; $("#cnt").textContent=""; drawActs(); return; }
@@ -3216,13 +3215,13 @@ function drawHandInto(pfx, chars, cur, setCur, footDefault){
     ? `決まり：<b>${(CBY[R.chosen]||{}).n||""}</b>`
     : tut
       ? (()=>{ const f=tutFix(), q=f&&CBY[f];
-           return `チュートリアル（${curMon()}月）　`+(q?`今月やるのは「${q.n}」`:"3枚とも読んでください"); })()
+           return `チュートリアル（${curMon()}月）　`+(q?`今月やるのは「${q.n}」`:""); })()
       : `${c.n}が出しているのは <b>${mine.length}／2枚</b>`;
   const foot = tut
-    ? "チュートリアルの3枚です。今月やる1枚は決まっています。3枚とも読んでください。"
+    ? "チュートリアルの1枚です。<b>着手と推進は、PCの「スコアシート」から</b>おこないます。"
     : footDefault;
-  $$("Foot").textContent = foot;
-  $$("List").innerHTML=(tut?TUTC:(BY[ck]||[])).map(p=>{
+  $$("Foot").innerHTML = foot;
+  $$("List").innerHTML=(tut?(CBY[tutFix()]?[CBY[tutFix()]]:[]):(BY[ck]||[])).map(p=>{
     const out=!tut && mine.includes(p.id);
     return `<div class="mcd ${out?"out":""}">
       <div class="t"><span class="ic" data-i="${p.id}" style="--ic:${FCO[p.f]}"></span>
@@ -3241,7 +3240,7 @@ function drawHandInto(pfx, chars, cur, setCur, footDefault){
     else{ if(curIds.length>=2){
         $$("Foot").textContent="1キャラ2枚までです。どれかを下げてから出してください。";
         clearTimeout(window["_nt"+pfx]); window["_nt"+pfx]=setTimeout(()=>{
-          $$("Foot").textContent=foot;},2800);
+          $$("Foot").innerHTML=foot;},2800);
         return; }
       curIds.push(id); }
     R.offer[ck]=curIds.join(",");

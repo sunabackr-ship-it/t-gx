@@ -3977,7 +3977,7 @@ const CTYPE = {
    quote1:"全社を巻き込むのも、会社の財布を守るのも、私の仕事",
    quote2:"全社の結束が、脱炭素経営を成功に導く",
    view:"社内教育・脱炭素推進・人材育成・チーム予算管理を考える",mng:"予算",
-   s2:"【鶴の一声】盤上のプロジェクト1つを、いますぐ1段階すすめる"}
+   s2:"【鶴の一声】推進ボードのプロジェクト1つを、いますぐ1段階すすめる"}
 };
 /* 特殊スキル（完了者の担当メーターが +1）は廃止。アプリの操作は専務に集約したため、誰が完了させたかで数値が変わらないようにした。スキルは覚醒スキル（CTYPE の s2）だけを使う */
 /* チュートリアル札のコストを免除するか。false＝ふつうに払う（最初の予算に含める） */
@@ -4531,7 +4531,7 @@ function doRoll(kind){
                     + `<small class="todo">「実行中」からこのカードをひらいて、`
                     + `コスト ${RP.cost} を支払って完了を確定してください</small>`
                   : `成功　1段階すすんだ（${RUN.step}/${RP.st}）`
-                    + `<small class="todo">${RT("盤上のカードを右へ1つ動かしてください","推進ボードが1つすすみます")}</small>`)
+                    + `<small class="todo">${RT("推進ボードのカードを右へ1つ動かしてください","推進ボードが1つすすみます")}</small>`)
               : `成功　プロジェクトを1段階進める`
                 + `<small class="todo">プロジェクトボードのカードを右へ1つ動かしてください</small>`)
           : `失敗　今回は進まない`
@@ -5245,7 +5245,7 @@ function drawPjList(){
     if(PF.f!=="all" && p.f!==PF.f) return false;
     if(PF.d==="ext") return !!p.ext;                 // 拡張タブ：拡張だけ
     if(p.ext) return false;                          // 通常表示は基本セットのみ
-    if(PF.d==="tut") return !!p.tut;                 // チュートリアルの3枚
+    if(PF.d==="tut") return !!p.tut && (!tutFix() || p.id===tutFix());  // 今月やる1枚だけ
     if(p.tut) return false;
     if(PF.d==="mine"){                               // 自分の担当分野（2年目は1年目の使い残しも）
       if(!myFields().includes(p.f)) return false;
@@ -6137,8 +6137,8 @@ function skGo(){
     FXUPD=Object.assign(FXUPD||{}, {[`chars/${S.devId}`]:S.chars});
     $("#csheet").classList.add("hide");
     applyAndShow(`覚醒スキル【${sn}】`, [],
-      {badge:"スキル発動", sub:`${cname(cc)}が発動`, skill:{t:t,n:sn,sub:RT("盤上のカードを1段階すすめる","プロジェクトを1段階すすめる")},
-       none:RT("盤上の好きなプロジェクトカードを、いますぐ1段階すすめてください。<br>完了まで進んだら、専務がカード番号で登録します。","実行中のプロジェクトを1つ選んで、いますぐ1段階すすめてください。<br>完了まで進んだら、専務がカード番号で登録します。")});
+      {badge:"スキル発動", sub:`${cname(cc)}が発動`, skill:{t:t,n:sn,sub:RT("推進ボードのカードを1段階すすめる","プロジェクトを1段階すすめる")},
+       none:RT("推進ボードの好きなプロジェクトカードを、いますぐ1段階すすめてください。<br>完了まで進んだら、専務がカード番号で登録します。","実行中のプロジェクトを1つ選んで、いますぐ1段階すすめてください。<br>完了まで進んだら、専務がカード番号で登録します。")});
     return;
   }
   /* sales・proc・pr：発動待ちにして、次の完了登録／イベントで自動発動 */
@@ -6447,7 +6447,7 @@ function openBig(id){
         ? `<button class="btn" id="bcGo">完了する（コスト ${p.cost}・<b>免除</b>）</button>`
           + `<p class="note" style="margin:8px 0 0;color:var(--g);font-weight:700">チュートリアルのためコストは免除されます。予算は減りません。</p>`
         : `<button class="btn" id="bcGo">完了する（コスト ${p.cost} を支払う${bud!=null?`　残 ${bud}`:""}）</button>`
-          + (short?`<p class="note" style="margin:8px 0 0;color:var(--warn)">予算が足りません（残 ${bud}）。予算が増えてから登録してください。${RT("カードは盤上に置いたままでかまいません。","カードはそのままでかまいません。")}</p>`:""))
+          + (short?`<p class="note" style="margin:8px 0 0;color:var(--warn)">予算が足りません（残 ${bud}）。予算が増えてから登録してください。${RT("カードは推進ボードにのせたままでかまいません。","カードはそのままでかまいません。")}</p>`:""))
       + `<button class="tbtn" id="bcGo0" style="margin-top:9px">支払わずに完了（覚醒スキルの使用時）</button>`;
   /* 実行中に入れる。ここで番号を読み込んでおけば、あとは推進で選ぶだけになる */
   {const run=(S.proj.run||[]).find(r=>r.id===id);
@@ -6459,7 +6459,7 @@ function openBig(id){
        : (laneBusy(id)
          ? `<p class="note" style="margin:12px 0 0;color:var(--warn);font-weight:700">むずかしさ${p.d}は「${laneBusy(id).n}」が実行中です。完了してから入れられます。</p>`
          : `<button class="btn" id="bcRun">実行中に入れる</button>`
-           + `<p class="note" style="margin:8px 0 0">${RT("盤上のスロットに移すときに押してください。","発案会議室で決めたカードを、実行中に入れます。")}`
+           + `<p class="note" style="margin:8px 0 0">${RT("推進ボードにのせるときに押してください。","発案会議室で決めたカードを、推進ボードにのせます。")}`
            + `以降は「推進」でこのカードを選んで進めます。</p>`);
      $("#bcAct").insertAdjacentHTML("afterbegin", st + `<div style="height:12px"></div>`);
    }}
@@ -6539,9 +6539,9 @@ function bigFinish(id, pay, short, bud){
   let sk=null; const cost0=cost;
   if(use.sales){ sk={t:"sales", n:skName("sales"), sub:`コスト ${cost0} → 0`}; cost=0; }
   else if(use.proc){ cost=Math.max(0,cost0-2); sk={t:"proc", n:skName("proc"), sub:`コスト ${cost0} → ${cost}`}; }
-  /* 予算が足りなければ登録できない（保留は持たない。カードは盤上に置いたまま） */
+  /* 予算が足りなければ登録できない（保留は持たない。カードは推進ボードにのせたまま） */
   if(pay!=="skip" && pay!=="tut" && c0.bud!=null && c0.bud<cost){
-    alert(`予算が足りません（残 ${c0.bud}／コスト ${cost}）。\n予算が増えてから登録してください。${RT("カードは盤上に置いたままでかまいません。","カードはそのままでかまいません。")}`);
+    alert(`予算が足りません（残 ${c0.bud}／コスト ${cost}）。\n予算が増えてから登録してください。${RT("カードは推進ボードにのせたままでかまいません。","カードはそのままでかまいません。")}`);
     return;
   }
   /* ここで初めてチャージ・予約ボーナスを消費する */
@@ -7032,13 +7032,15 @@ function phase(){
     if(ev) steps.push(["イベントカードを1枚引く",
                        evGot()?"この月のカードは引き済みです。":"引いたカードの効果は、専務がアプリに反映します。"]);
     {const f=tutFix(), fp=f?PBY[f]:null, fin=!!(f&&isDone(f));
-     steps.push([RT("チュートリアルのカードを3枚、卓に並べる","チュートリアルの3枚を、画面で見る"),
-                 !fp ? "3枚とも読んでください。"
-                 : fin ? `3枚とも読んでください。チュートリアルでやる「${fp.n}」は完了しました。`
-                       : `3枚とも読んでください。チュートリアルでやるのは「${fp.n}」（No.${f}）だけです。`]);
+     steps.push([fp ? RT(`「${fp.n}」を卓に出す`, `「${fp.n}」を画面で見る`)
+                    : RT("チュートリアルのカードを卓に出す","チュートリアルのカードを画面で見る"),
+                 !fp ? "まず読んでください。"
+                 : fin ? `このカードは完了しました。`
+                       : `No.${f}。まず読んでください。開いて「実行中に入れる」を押すと始まります。`]);
      if(fp && !fin)
-       steps.push([`「${fp.n}」を、全員で一巡して進める`,
-                   "一人ずつ推進のルーレットを回します。コストは本番と同じようにかかります。"]);}
+       steps.push([`「${fp.n}」に着手して、全員で一巡して進める`,
+                   "「カード」タブ →「チュートリアル」から着手します。"
+                   + "そのあと一人ずつ推進のルーレットを回します。コストは本番と同じようにかかります。"]);}
     {const f=tutFix();
      if(!(f && isDone(f)))
        steps.push(["完了したら、専務がカード番号を入れて登録する",
@@ -7084,7 +7086,7 @@ function drawGuide(){
   const g=$("#guide"); if(!g) return;
   const p=phase(), b=[];
   /* 濃い色（go）はいちばん先にやることだけ。押す順番が見た目でわかるようにする */
-  if(p.tut)    b.push([`gTut`,`チュートリアルの3枚を見る`,true]);
+  if(p.tut)    b.push([`gTut`,`チュートリアルのカードを見る`,true]);
   if(p.start2) b.push([`gDeck`,`場札（1年目の残り＋2年目40枚）を見る`,true]);
   if(p.ev && roleOK("ev")) b.push([`gEv`, evGot()?`イベント引き済み`:`イベントカードを引く`, !evGot()]);
   if(p.last)   b.push([`gFin`,`${S.year}を終了して決算`,true]);
@@ -7152,7 +7154,7 @@ const MNGAPP = {
   pr:   {n:"進行（月送り）",
          s:"「この月を終えて次へ」で卓の進みを管理します。"},
   plant:{n:null,
-         s:"卓の管理担当はありません。盤上のプロジェクト推進に専念します。"},
+         s:"卓の管理担当はありません。プロジェクトの推進に専念します。"},
   proc: {n:"プロジェクトカード（1年目）",
          s:"1年目のあいだ預かります（2年目は解除）。"},
   exec: {n:"予算（金庫）／アプリの操作・効果の反映",
