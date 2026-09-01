@@ -267,6 +267,18 @@ h1{font-size:14px;margin:0}
 .track .arw{flex:0 0 20px;align-self:center;text-align:center;font-size:13px;color:#B9B7A6}
 .cell{flex:1 1 0;min-width:0;background:#fff;border:2px solid var(--line);border-radius:11px;
  padding:9px 6px 8px;text-align:center}
+/* カードが乗っているマスは、そのカードを実物大に近い形で置く（マウスオーバーで全文） */
+.cell.has{flex:3 1 0;padding:9px 9px 10px;cursor:default}
+.rcd{text-align:left;margin-top:6px}
+.rcd .t{display:flex;align-items:flex-start;gap:7px;font-size:16px;font-weight:800;
+ line-height:1.35;color:var(--ink)}
+.rcd .cost{display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:800;
+ color:var(--sub);margin-top:6px}
+.rcd .cost b{font-size:15px;color:var(--ink)}
+.rcd .cond2{font-size:11.5px;font-weight:700;color:#7A5A12;background:#FBF1D6;
+ border-radius:7px;padding:4px 7px;margin-top:6px;line-height:1.5}
+.rcd .fx{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}
+.cell.has .sub{margin-top:8px;text-align:center}
 .cell .lbl{font-size:11.5px;font-weight:800;color:var(--sub);line-height:1.3}
 .cell .sub{font-size:11px;font-weight:700;color:#A9A695;margin-top:3px}
 .cell svg{width:42px;height:42px;display:block;margin:6px auto 4px;fill:none;
@@ -408,8 +420,8 @@ h1{font-size:14px;margin:0}
   <h2><span>みんなの場</span>
    <span style="display:flex;gap:8px;align-items:center">
     <span id="busyNote" class="hide"></span>
-    <button id="btnTake" class="hide">このカードにする</button>
-    <button id="btnUndo" class="hide alt">実行中から外す</button>
+    <button id="btnTake" class="hide">このカードを推進ボードにのせる</button>
+    <button id="btnUndo" class="hide alt">推進ボードから下ろす</button>
     <button id="btnQR" class="alt" style="border-color:var(--line);color:var(--gd)">キャラを選び直す</button>
     <span class="mini" id="cnt"></span></span></h2>
   <div id="tutBar" class="hide"></div>
@@ -417,7 +429,7 @@ h1{font-size:14px;margin:0}
  </section>
  <section class="pane hide" id="paneP">
   <h2><span>推進ボード</span>
-   <span class="mini">本体アプリの「実行中」を映しています／ここでは動かせません</span></h2>
+   <span class="mini">のせるのは発案会議室から／すすめる（推進ダイス）と完了の登録はスコアシートで</span></h2>
   <div id="runBox"></div>
  </section>
 </div>
@@ -3131,6 +3143,15 @@ function cellLabel(i, st){
   if(i===0) return "発案";
   return (i===st-1) ? "あと一歩" : "進行中";
 }
+/* 推進ボードのマスに置くカード。発案会議室のカードと同じ見た目にそろえる */
+function runCard(id){
+  const p=CBY[id]; if(!p) return "";
+  return `<div class="rcd" data-p="${id}">
+    <div class="t"><span class="ic" data-i="${p.id}" style="--ic:#3F6B2A"></span>${p.n}</div>
+    <div class="cost"><b>${p.cost}</b>${dots(p.cost)}<span>コスト</span></div>
+    ${p.cond.length?`<div class="cond2">🔒 ${p.cond.map(c=>c.t).join(" ／ ")}</div>`:""}
+    <div class="fx">${fxChips(p)}</div></div>`;
+}
 function drawRunBoard(){
   const box=$("#runBox"); if(!box) return;
   const tutTop = isTut()
@@ -3141,35 +3162,38 @@ function drawRunBoard(){
   box.innerHTML = tutTop + LV.map(([d,cls])=>{
     const st=DST[d], r=laneOf(d)[0];
     const step = r ? Math.max(0, Math.min(st, +r.step||0)) : -1;   /* -1＝空き */
+    const atGoal = r && step>=st;
     const cells = Array.from({length:st},(_,i)=>{
       const past = step>i, now = step===i;
-      return `<div class="cell ${past?"past":""} ${now?"now":""}">
+      const has  = now && r;                       /* ここにカードが乗っている */
+      return `<div class="cell ${past?"past":""} ${now?"now":""} ${has?"has":""}">
         <div class="lbl">${cellLabel(i,st)}</div>
-        ${PLANT[STAGE[st][i]]}
+        ${has ? runCard(r.id) : PLANT[STAGE[st][i]]}
         <div class="sub">推進 ${i}／${st}</div>
-        ${now?`<div class="here">いまここ</div>`:""}</div>`;
+        ${now&&!has?`<div class="here">いまここ</div>`:""}</div>`;
     }).join(`<div class="arw">▶</div>`);
     const goalNow = step>=st && step>=0;
     return `<div class="rl ${cls} ${r?"":"free"}">
       <div class="rh">
         <span class="dchip"><b>${d}</b><i>むずかしさ</i></span>
         <span class="rt">
-          <span class="nm ${r?"":"free"}">${r?pname(r.id):"空いています（ここに1枚おけます）"}</span>
+          <span class="nm ${r?"":"free"}">${r?"取り組み中":"空いています（ここに1枚おけます）"}</span>
           <div class="cap">${st}段階すすめると完了／同時に置けるのは1枚</div>
         </span>
         <span class="stn">${r?`推進 ${step}／${st}`:"—"}</span>
       </div>
       <div class="track"><span class="stt">スタート</span>${cells}<div class="arw">▶</div>
-        <div class="cell goal ${goalNow?"now":""}">
-          <div class="lbl">GOAL</div>${PLANT[2]}
+        <div class="cell goal ${goalNow?"now":""} ${atGoal?"has":""}">
+          <div class="lbl">GOAL</div>${atGoal ? runCard(r.id) : PLANT[2]}
           <div class="sub">完了</div>
-          ${goalNow?`<div class="here">登録まち</div>`:""}</div>
+          ${goalNow&&!atGoal?`<div class="here">登録まち</div>`:""}</div>
       </div></div>`;
   }).join("");
   const done=asArr(RUN.done);
   box.insertAdjacentHTML("beforeend",
     `<div id="runDone">${PLANT[2]}<div><div class="dt">完了 ${done.length}件</div>
      <div class="dl">${done.length?done.map(pname).join("／"):"まだありません"}</div></div></div>`);
+  box.querySelectorAll(".rcd[data-p]").forEach(el=>tipBind(el,+el.dataset.p));
   const busy=LV.filter(([d])=>laneOf(d).length).length;
   $("#runBdg").textContent = busy?`${busy}／3`:"";
 }
@@ -3207,7 +3231,7 @@ function drawTable(){
     tb2.textContent = isTut()
       ? (()=>{ const f=tutFix(), p=f&&CBY[f];
           return `チュートリアル（${curMon()}月）　`+(p?`今月やるのは「${p.n}」。`:"")
-            + `「このカードで始める」を押すと実行中に入ります`; })()
+            + `「このカードを推進ボードにのせる」を押してください`; })()
       : ""; }
   if(!off.length){ tb.innerHTML=`<p class="empty">まだ誰も出していません。各自スマホでカードを出すと、ここに並びます。</p>`;
     tb.style.height="auto"; $("#cnt").textContent=""; drawActs(); return; }
@@ -3267,7 +3291,7 @@ function drawActs(){
   const id = tf || (focusOnTable() ? R.focus : null);   /* チュートリアルは指さし不要 */
   const on = id && inRun(id);
   const busy = (id && !on) ? laneBusy(id) : null;
-  t.textContent = tf ? "このカードで始める" : "このカードにする";
+  t.textContent = "このカードを推進ボードにのせる";
   t.classList.toggle("hide", !(id && !on && !busy));
   u.classList.toggle("hide", !on);
   if(nb){ nb.classList.toggle("hide", !busy);
@@ -3340,7 +3364,7 @@ function drawHandInto(pfx, chars, cur, setCur, footDefault){
            return `チュートリアル（${curMon()}月）　`+(q?`今月やるのは「${q.n}」`:""); })()
       : `${c.n}が出しているのは <b>${mine.length}／2枚</b>`;
   const foot = tut
-    ? "チュートリアルの1枚です。PCの発案会議室で<b>「このカードで始める」</b>を押すと実行中に入ります。"
+    ? "チュートリアルの1枚です。PCの発案会議室で<b>「このカードを推進ボードにのせる」</b>を押します。"
     : footDefault;
   $$("Foot").innerHTML = foot;
   $$("List").innerHTML=(tut?(CBY[tutFix()]?[CBY[tutFix()]]:[]):(BY[ck]||[])).map(p=>{

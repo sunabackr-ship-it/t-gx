@@ -1171,7 +1171,7 @@ window.onerror=function(m,src,line,col){
       <div id="guide"></div>
     </div>
     <div class="card" id="runCard">
-      <div class="hcol"><h2 style="margin:0">実行中</h2>
+      <div class="hcol"><h2 style="margin:0">推進ボード</h2>
         <button class="tbtn" id="runAdd">カード番号を入れる</button></div>
       <div id="runList" style="margin-top:8px"></div>
     </div>
@@ -1310,7 +1310,7 @@ window.onerror=function(m,src,line,col){
       <button class="btn" id="rollProj" style="margin:0">推進</button>
     </div>
     <p class="note">まず<b>移動</b>を回して盤上でコマを動かし、そのあと<b>推進</b>を押して、
-       実行中のプロジェクトから1つ選びます。全段階そろったら「実行中」からひらいて、
+       推進ボードのプロジェクトから1つ選びます。全段階そろったら推進ボードからひらいて、
        コストを払って完了を確定します。</p>
 
     <div id="skillBox" class="skillbox hide">
@@ -4389,17 +4389,17 @@ function updRate(){
    成功率と得意判定は既存の rateOf／isStrong をそのまま使う（計算は一切変えない）。
    選択肢をタップ＝宣言確定→そのまま推進ダイスを振る。 */
 const FSIMPLE=[["hr","人材"],["fin","制度"],["pr","広報"],["supply","調達"],["tech","設備"]];
-/* 推進するカードを選ぶ。実行中のカードだけが出る。
+/* 推進するカードを選ぶ。推進ボードにのっているカードだけが出る。
    分野はカードが持っているので、ここで分野を聞く必要はもうない */
 function openPjPick(){
   const c=S.chars[CI];
   const rs=(S.proj.run||[]).filter(r=>PBY[r.id] && r.step<PBY[r.id].st);
   $("#fmT") && ($("#fmT").textContent = "どのプロジェクトを推進しますか？");
-  $("#fmS") && ($("#fmS").textContent = "実行中のカードだけが出ます");
+  $("#fmS") && ($("#fmS").textContent = "推進ボードにのっているカードだけが出ます");
   if(!rs.length){
     $("#fmB").innerHTML =
-      `<p class="note" style="margin:4px 2px 0">実行中のプロジェクトがありません。<br>`
-      + `先にカードを実行中に入れてください（「カード」タブで番号を読み込みます）。</p>`;
+      `<p class="note" style="margin:4px 2px 0">推進ボードにカードがありません。<br>`
+      + `先にカードを推進ボードにのせてください（「カード」タブで番号を読み込みます）。</p>`;
   } else {
     $("#fmB").innerHTML = rs.map(r=>{
       const p=PBY[r.id], st=isStrong(c,p.f), rt=rateOf(c,p.f), ct=CTYPE[c.t];
@@ -4528,7 +4528,7 @@ function doRoll(kind){
           ? (RUN && RP
               ? (RUN.step>=RP.st
                   ? `成功　全段階を達成`
-                    + `<small class="todo">「実行中」からこのカードをひらいて、`
+                    + `<small class="todo">推進ボードからこのカードをひらいて、`
                     + `コスト ${RP.cost} を支払って完了を確定してください</small>`
                   : `成功　1段階すすんだ（${RUN.step}/${RP.st}）`
                     + `<small class="todo">${RT("推進ボードのカードを右へ1つ動かしてください","推進ボードが1つすすみます")}</small>`)
@@ -5290,7 +5290,7 @@ function drawRun(){
         <span>No.${p.id}　${FIELDS[p.f].nm}　${fin?`完了待ち　コスト${p.cost}`:`${r.step}/${p.st}段階`}</span></span>
       <span class="rs">${Array.from({length:p.st},(_,j)=>`<s class="${j<r.step?"on":""}"></s>`).join("")}</span>
       <span class="rg">${fin?"確定":"ひらく"}</span></button>`;}).join("")
-    : `<p class="runNo">まだありません。カードを実行中に入れるときに、番号を読み込んでください。</p>`;
+    : `<p class="runNo">まだありません。カードを推進ボードにのせるときに、番号を読み込んでください。</p>`;
   $("#runList").querySelectorAll("[data-run]").forEach(b=>b.onclick=()=>openPj(+b.dataset.run));
 }
 
@@ -5411,7 +5411,7 @@ function openPjBtns(id){
   $("#pAct").innerHTML = tb
     ? `<p class="note" style="margin:0">チュートリアルで今月やるのは「${tb.n}」です。このカードは<b>見るだけ</b>。</p>`
     : bz
-    ? `<p class="note" style="margin:0;color:var(--warn);font-weight:700">むずかしさ${p.d}は「${bz.n}」が実行中です。完了してから着手できます。</p>`
+    ? `<p class="note" style="margin:0;color:var(--warn);font-weight:700">むずかしさ${p.d}は「${bz.n}」が推進ボードにあります。完了してからのせられます。</p>`
     : `<button class="btn" data-start="1" ${ok?"":'style="opacity:.5"'}>着手する（発案）</button>`;
   const sb=$("#pAct").querySelector("[data-start]");
   if(sb) sb.onclick=()=>{
@@ -6138,7 +6138,7 @@ function skGo(){
     $("#csheet").classList.add("hide");
     applyAndShow(`覚醒スキル【${sn}】`, [],
       {badge:"スキル発動", sub:`${cname(cc)}が発動`, skill:{t:t,n:sn,sub:RT("推進ボードのカードを1段階すすめる","プロジェクトを1段階すすめる")},
-       none:RT("推進ボードの好きなプロジェクトカードを、いますぐ1段階すすめてください。<br>完了まで進んだら、専務がカード番号で登録します。","実行中のプロジェクトを1つ選んで、いますぐ1段階すすめてください。<br>完了まで進んだら、専務がカード番号で登録します。")});
+       none:RT("推進ボードの好きなプロジェクトカードを、いますぐ1段階すすめてください。<br>完了まで進んだら、専務がカード番号で登録します。","推進ボードのプロジェクトを1つ選んで、いますぐ1段階すすめてください。<br>完了まで進んだら、専務がカード番号で登録します。")});
     return;
   }
   /* sales・proc・pr：発動待ちにして、次の完了登録／イベントで自動発動 */
@@ -6449,16 +6449,16 @@ function openBig(id){
         : `<button class="btn" id="bcGo">完了する（コスト ${p.cost} を支払う${bud!=null?`　残 ${bud}`:""}）</button>`
           + (short?`<p class="note" style="margin:8px 0 0;color:var(--warn)">予算が足りません（残 ${bud}）。予算が増えてから登録してください。${RT("カードは推進ボードにのせたままでかまいません。","カードはそのままでかまいません。")}</p>`:""))
       + `<button class="tbtn" id="bcGo0" style="margin-top:9px">支払わずに完了（覚醒スキルの使用時）</button>`;
-  /* 実行中に入れる。ここで番号を読み込んでおけば、あとは推進で選ぶだけになる */
+  /* 推進ボードにのせる。ここで番号を読み込んでおけば、あとは推進で選ぶだけになる */
   {const run=(S.proj.run||[]).find(r=>r.id===id);
    if(!done){
      const st = run
-       ? `<p class="note" style="margin:12px 0 0">このカードは実行中です（${run.step}/${p.st}段階）。推進はキャラクターの画面から行います。</p>`
+       ? `<p class="note" style="margin:12px 0 0">このカードは推進ボードにあります（${run.step}/${p.st}段階）。推進はキャラクターの画面から行います。</p>`
        : tutBlock(id)
          ? `<p class="note" style="margin:12px 0 0">チュートリアルで今月やるのは「${tutBlock(id).n}」です。このカードは<b>見るだけ</b>。</p>`
        : (laneBusy(id)
-         ? `<p class="note" style="margin:12px 0 0;color:var(--warn);font-weight:700">むずかしさ${p.d}は「${laneBusy(id).n}」が実行中です。完了してから入れられます。</p>`
-         : `<button class="btn" id="bcRun">${RT("推進ボードにのせる","実行中に入れる")}</button>`
+         ? `<p class="note" style="margin:12px 0 0;color:var(--warn);font-weight:700">むずかしさ${p.d}は「${laneBusy(id).n}」が推進ボードにあります。完了してからのせられます。</p>`
+         : `<button class="btn" id="bcRun">推進ボードにのせる</button>`
            + `<p class="note" style="margin:8px 0 0">${RT("推進ボードにのせるときに押してください。","発案会議室で決めたカードを、推進ボードにのせます。")}`
            + `以降は「推進」でこのカードを選んで進めます。</p>`);
      $("#bcAct").insertAdjacentHTML("afterbegin", st + `<div style="height:12px"></div>`);
@@ -6468,12 +6468,12 @@ function openBig(id){
     const tb2=tutBlock(id);
     if(tb2){ toast(`チュートリアルで今月やるのは「${tb2.n}」です。`); return; }
     const bz2=laneBusy(id);
-    if(bz2){ toast(`むずかしさ${p.d}は「${bz2.n}」が実行中です。`); return; }
-    if(!canStart(p) && !confirm("開始条件を満たしていません。それでも実行中に入れますか？")) return;
+    if(bz2){ toast(`むずかしさ${p.d}は「${bz2.n}」が推進ボードにあります。`); return; }
+    if(!canStart(p) && !confirm("開始条件を満たしていません。それでも推進ボードにのせますか？")) return;
     S.proj.run.push({id, step:0}); save(); pushProj();
     $("#nsheet").classList.add("hide");
     S.view="single"; save(); drawTeam(); window.scrollTo(0,0);
-    toast(`「${p.n}」を実行中に入れました。`);
+    toast(`「${p.n}」を推進ボードにのせました。`);
   };
   const g=$("#bcGo");  if(g)  g.onclick =()=>bigFinish(id,null,short,bud);
   const g0=$("#bcGo0");if(g0) g0.onclick=()=>{ if(!confirm("コストを支払わずに完了します（覚醒スキルの使用など）。よろしいですか？")) return;
@@ -6767,7 +6767,7 @@ function roster(){
   return CORDER.filter(t=>out.indexOf(t)>=0);
 }
 const turnMvRest = ()=> roster().filter(t=>!turnMvOK(t));
-/* 実行中に、まだ進められるカードがあるか。1枚も無ければ推進のしようがない */
+/* 推進ボードに、まだ進められるカードがあるか。1枚も無ければ推進のしようがない */
 const canPush = ()=> (S.proj.run||[]).some(r=>PBY[r.id] && r.step<PBY[r.id].st);
 const turnPjRest = ()=> canPush() ? roster().filter(t=>!turnPjOK(t)) : [];
 /* いまどの段階か。移動が全員そろってから推進に移る */
@@ -7038,7 +7038,7 @@ function phase(){
                  : fin ? `このカードは完了しました。`
                        : `No.${f}。まず読んでください。`]);
      if(fp && !fin)
-       steps.push([`「${fp.n}」を実行中に入れて、全員で一巡して進める`,
+       steps.push([`「${fp.n}」を推進ボードにのせて、全員で一巡して進める`,
                    RT("「カード」タブから開いて「推進ボードにのせる」を押します。",
                       "発案会議室で「このカードで始める」を押します。")
                    + "そのあと一人ずつ推進のルーレットを回します。コストは本番と同じようにかかります。"]);}
@@ -7066,7 +7066,7 @@ function phase(){
     steps.push(["進行役の「せーの」で、全員そろって移動を回す",
                 RT("移動のルーレットを全員で同時に回し、盤上でコマを動かします。","移動のルーレットを全員で同時に回し、リモート卓のボードでコマを動かします。")]);
     steps.push(["ひとりずつ、プロジェクトを推進する",
-                "「推進」を押して、実行中のカードから1つ選びます。成功すると1段階すすみます。"]);
+                "「推進」を押して、推進ボードのカードから1つ選びます。成功すると1段階すすみます。"]);
     steps.push(["完了したプロジェクトを、専務がアプリに登録する",
                 "カードの No.（番号）を入れて「完了」。効果はチーム全員のスマホに同時に出ます。"]);
     if(last) steps.push([`${y}の決算をする`,
