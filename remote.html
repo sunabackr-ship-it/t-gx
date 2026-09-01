@@ -37,6 +37,28 @@ h1{font-size:14px;margin:0}
 #pickWrap{max-width:1180px;margin:0 auto;padding:18px 14px}
 #pickWrap h2{font-size:15px;margin:0 0 4px}
 #pickWrap .note{font-size:12px;color:var(--sub);margin:0 0 14px;line-height:1.7}
+/* 進行役が卓をあずかる形（Zoomで画面共有し、参加者はスマホだけ）のための入口 */
+#hostBox{border:2px solid var(--gd);border-radius:14px;padding:16px 16px 14px;margin:0 0 18px;
+  background:linear-gradient(#fbfdf7,#fff)}
+#hostBox h2{margin:0 0 6px}
+#hostBox .lead{font-size:12.5px;color:var(--sub);line-height:1.8;margin:0 0 12px}
+.hostLinks{display:flex;flex-direction:column;gap:6px;margin:0 0 12px}
+.hostLinks .lk{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--ln);
+  border-radius:10px;padding:6px 9px}
+.hostLinks .lk img{width:30px;height:30px;border-radius:50%;object-fit:cover;border:2px solid #ccc;flex:0 0 auto}
+.hostLinks .lk b{font-size:12.5px;flex:0 0 118px}
+.hostLinks .lk code{font-size:10.5px;color:var(--sub);flex:1 1 auto;overflow:hidden;
+  white-space:nowrap;text-overflow:ellipsis;min-width:0}
+.hostLinks .lk button{font-size:11px;font-weight:800;padding:5px 10px;border-radius:7px;
+  border:1px solid var(--ln);background:#fff;cursor:pointer;flex:0 0 auto}
+#hostBtns{display:flex;gap:8px;flex-wrap:wrap}
+#hostBtns button{font-size:13px;font-weight:800;padding:10px 16px;border-radius:10px;cursor:pointer}
+#copyAll{border:1px solid var(--ln);background:#fff}
+#hostGo{border:0;background:var(--gd);color:#fff}
+#selfBox{border:1px solid var(--ln);border-radius:12px;padding:0 14px;margin:0 0 10px}
+#selfBox summary{cursor:pointer;font-size:12.5px;font-weight:800;padding:11px 0;list-style:revert}
+#selfBox[open] summary{border-bottom:1px solid var(--ln);margin-bottom:12px}
+#selfBox .sn{font-size:11.5px;color:var(--sub);font-weight:400;margin-left:6px}
 #pickWrap .steps{margin:0 0 16px;padding-left:0;list-style:none;counter-reset:st}
 #pickWrap .steps li{counter-increment:st;position:relative;padding:7px 0 7px 38px;
  font-size:14.5px;line-height:1.7;color:var(--ink)}
@@ -322,14 +344,30 @@ h1{font-size:14px;margin:0}
 </div>
 
 <div id="pickWrap" class="hide">
- <h2>あなたは誰？</h2>
- <ol class="steps">
-   <li><b>キャラクターをえらぶ</b>（人数が少なければ1人で2キャラ以上でも）　→　下にQRが出ます</li>
-   <li>その<b>QRコードを、自分のスマホのカメラで読む</b>　→　手札がスマホに開きます</li>
-   <li>この<b>PCの画面はみんなで見る画面</b>（ボード／発案会議室／推進ボード）です</li>
- </ol>
- <div id="pick"></div>
- <div id="qrPane" class="hide"></div>
+ <div id="hostBox">
+  <h2>進行役のかた</h2>
+  <p class="lead">
+   この画面を<b>Zoomで画面共有</b>してください。ボード・発案会議室・推進ボード・スコアシートの操作は、
+   すべて進行役がおこないます。<br>
+   参加者は<b>スマホだけ</b>です。下のリンクをZoomのチャットに貼って、1人1つずつ開いてもらってください。
+   自分の手札が出て、そこからカードを出せます。</p>
+  <div id="hostLinks" class="hostLinks"></div>
+  <div id="hostBtns">
+   <button id="hostGo">進行役としてボードをひらく</button>
+   <button id="copyAll">5人ぶんをまとめてコピー</button>
+  </div>
+ </div>
+
+ <details id="selfBox">
+  <summary>進行役も参加する／このPCで手札も見る<span class="sn">ふだんの卓（1人1台）はこちら</span></summary>
+  <ol class="steps">
+    <li><b>キャラクターをえらぶ</b>（人数が少なければ1人で2キャラ以上でも）　→　下にQRが出ます</li>
+    <li>その<b>QRコードを、自分のスマホのカメラで読む</b>　→　手札がスマホに開きます</li>
+    <li>この<b>PCの画面はみんなで見る画面</b>（ボード／発案会議室／推進ボード）です</li>
+  </ol>
+  <div id="pick"></div>
+  <div id="qrPane" class="hide"></div>
+ </details>
 </div>
 
 <div id="pcWrap" class="hide">
@@ -2839,6 +2877,23 @@ function drawPick(){
     drawPick(); drawQR();          /* えらんだ時点でQRを出し直す */
   });
 }
+/* 進行役モード：キャラを持たずに卓だけをあずかる。参加者はスマホで入る */
+let asHost=false;
+function drawHostLinks(box){
+  box = box || $("#hostLinks"); if(!box) return;
+  box.innerHTML = CH.map(c=>`<div class="lk">
+      <img src="${FACES[c.k]}" style="border-color:${FCO[c.k]}">
+      <b>${c.n}</b><code>${phoneURL([c.k])}</code>
+      <button data-k="${c.k}">コピー</button></div>`).join("");
+  box.querySelectorAll("button[data-k]").forEach(b=>b.onclick=()=>{
+    copyText(phoneURL([b.dataset.k]));
+    b.textContent="コピーした"; setTimeout(()=>b.textContent="コピー",1400); });
+}
+function copyText(t){
+  if(navigator.clipboard && location.protocol!=="file:") return navigator.clipboard.writeText(t);
+  const a=document.createElement("textarea"); a.value=t; document.body.appendChild(a);
+  a.select(); try{ document.execCommand("copy"); }catch(e){} a.remove();
+}
 function phoneURL(ks){
   const u=new URL(location.origin+location.pathname);   /* 余計なパラメータは持ち込まない */
   u.searchParams.set("w",W); u.searchParams.set("t",T); u.searchParams.set("char",ks.join(","));
@@ -2864,10 +2919,18 @@ function drawQR(){                   /* スマホで見るのが前提なので�
 }
 /* 読み損ねた・スマホの画面を閉じてしまったときのために、いつでも出せるようにする */
 function qrOpenOv(){
-  if(!MYS.length) return;
   const ov=$("#qrOv"); if(!ov) return;
-  ov.querySelector(".qrOvIn").innerHTML = qrBody()
-    + `<button id="qrOvX">とじる</button>`;
+  if(!MYS.length){                   /* 進行役：5人ぶんのリンクを配り直せるように */
+    ov.querySelector(".qrOvIn").innerHTML =
+      `<div class="who"><b>参加者に配るリンク</b></div>
+       <div class="hostLinks"></div>
+       <div class="note">Zoomのチャットに貼ってください。1人1つずつ、スマホで開きます。</div>
+       <button id="qrOvX">とじる</button>`;
+    drawHostLinks(ov.querySelector(".hostLinks"));
+  }else{
+    ov.querySelector(".qrOvIn").innerHTML = qrBody()
+      + `<button id="qrOvX">とじる</button>`;
+  }
   ov.classList.remove("hide");
   $("#qrOvX").onclick=()=>ov.classList.add("hide");
   ov.onclick=e=>{ if(e.target===ov) ov.classList.add("hide"); };
@@ -3147,7 +3210,8 @@ function bindCard(el){
     if(!moved){
       const same=(R.focus==el.dataset.p);
       R.focus=same?"":el.dataset.p;
-      R.focusBy=same?"":MYS.map(k=>(CH.find(c=>c.k===k)||{}).n).join("・")||"";
+      /* 進行役はキャラを持たないので、名前のかわりに「進行役」と出す */
+      R.focusBy=same?"":(MYS.map(k=>(CH.find(c=>c.k===k)||{}).n).join("・")||(asHost?"進行役":""));
       put({focus:R.focus, focusBy:R.focusBy}); render();
     }else{
       put({[`pos/${el.dataset.p}`]:R.pos[el.dataset.p]});
@@ -3281,7 +3345,7 @@ function render(){
   }
   /* PC */
   $("#hState").textContent = R.chosen ? `決まり：${(CBY[R.chosen]||{}).n||""}` : "";
-  if(!MYS.length){ $("#pickWrap").classList.remove("hide"); drawPick(); return; }
+  if(!MYS.length && !asHost){ $("#pickWrap").classList.remove("hide"); drawPick(); drawHostLinks(); return; }
   drawPick();                                      /* taken の表示更新 */
   if(!$("#pickWrap").classList.contains("hide")) drawQR();
   const n=allOffered().length;
@@ -3356,10 +3420,21 @@ function setBz(z, fx, fy){
 $("#bzIn").onclick=()=>setBz(bz+0.25);
 $("#bzOut").onclick=()=>setBz(bz-0.25);
 
+$("#hostGo") && ($("#hostGo").onclick=()=>{
+  asHost=true;                       /* キャラは持たないが、卓の操作はぜんぶできる */
+  $("#pickWrap").classList.add("hide"); $("#pcWrap").classList.remove("hide");
+  render(); tutMaybe(); });
+$("#copyAll") && ($("#copyAll").onclick=()=>{
+  const b=$("#copyAll");
+  copyText(CH.map(c=>`${c.n}　${phoneURL([c.k])}`).join("\n"));
+  b.textContent="コピーした"; setTimeout(()=>b.textContent="5人ぶんをまとめてコピー",1400); });
+
 $("#tabRoom").onclick=()=>setTab("room");
 $("#btnQR") && ($("#btnQR").onclick=()=>{
-  $("#pcWrap").classList.add("hide"); $("#pickWrap").classList.remove("hide"); drawPick(); });
-addEventListener("resize",()=>{ if(MODE!=="pc"||!MYS.length) return;
+  asHost=false;
+  $("#pcWrap").classList.add("hide"); $("#pickWrap").classList.remove("hide");
+  drawPick(); drawHostLinks(); });
+addEventListener("resize",()=>{ if(MODE!=="pc"||(!MYS.length&&!asHost)) return;
   if(pcTab==="board") applyFit(); else drawTable(); });
 
 /* ===== はじめての人向けの案内（PCの初回だけ自動で出る） ===== */
@@ -3395,7 +3470,9 @@ $("#tutSkip").onclick=tutClose;
 $("#tutBtn").onclick=tutOpen;
 function appURL(){                   /* 同じフォルダの本体アプリ（同じ w/t） */
   /* えらんだキャラを渡して、スコアシート側で選び直させない */
-  const ch=MYS.map(k=>R2APP[k]).filter(Boolean).join(",");
+  /* 進行役はキャラを持たないので、5人ぶんを渡して全員ぶんを操作できるようにする */
+  const ks = MYS.length ? MYS : CH.map(c=>c.k);
+  const ch=ks.map(k=>R2APP[k]).filter(Boolean).join(",");
   return `${location.href.replace(/[^/]*$/,"")}index.html?w=${encodeURIComponent(W)}`
        + `&t=${encodeURIComponent(T)}` + (ch?`&ch=${encodeURIComponent(ch)}`:"");
 }
