@@ -3481,7 +3481,8 @@ function drawHandInto(pfx, chars, cur, setCur, footDefault){
       + (fl.length ? `　／　推進ボードの空きは <b>${fl.join("・")}</b>`
                    : `　／　推進ボードは3枚とも埋まっています`);
   const foot = tut
-    ? "チュートリアルの1枚です。PCの発案会議室で<b>「このカードを推進ボードにのせる」</b>を押します。"
+    ? "チュートリアルの1枚です。PCの発案会議室で<b>「このカードを推進ボードにのせる」</b>を押します。<br>"
+      + "この月は<b>止まったマスの分野を合わせなくてかまいません</b>。待たずに順番に回してください。"
     : footDefault;
   $$("Foot").innerHTML = foot;
   const gone=goneIds();
