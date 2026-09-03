@@ -4030,6 +4030,7 @@ const PRESET = {s1:12,s2:15,c1:13,c2:3,c3:4,c4:11,c5:3,c6:2,c7:2,c8:2,
    同じブラウザで「進行役」と「Aチーム」を別タブに開いても混ざらない */
 const Q  = new URLSearchParams(location.search);
 const qw = Q.get("w"), qt = Q.get("t"), qa = Q.get("admin");
+const qpj = Q.get("pj");   /* リモート卓の推進ボードから飛んできたカード番号 */
 const BASE = "trygx-v3";
 const KEY = qa            ? BASE+":admin"
           : (qw && qt)    ? `${BASE}:t:${qw}:${qt}`
@@ -7883,6 +7884,10 @@ window.__remote = d=>{
   autoAwake();                 /* 受信した値で、この端末のキャラの覚醒も反映する */
   if(d.fxev) onFxEv(d.fxev);   /* 完了イベント：チーム全員の画面で同じ演出を流す */
   FXINIT = true;               /* 最初のスナップショットは基準にするだけで演出しない */
+  /* リモート卓の推進ボードから「完了を登録する」で来たとき、そのカードをひらく。
+     データが届いてからでないとカードの状態が出ないので、ここで1回だけ */
+  if(qpj && !window.__pjOpened && PBY[+qpj]){ window.__pjOpened=1;
+    setTimeout(()=>{ try{ openPj(+qpj); }catch(e){} }, 500); }
   if(d.hist) S.hist=Object.values(d.hist);
   if(d.done){ S.done=d.done;
     const cu=YEARS.find(y=>!S.done[y]); if(cu && S.done[S.year]) S.year=cu; }

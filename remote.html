@@ -246,6 +246,13 @@ h1{font-size:14px;margin:0}
 #loupeIn{position:absolute;left:0;top:0;transform-origin:0 0}
 #loupeIn img{display:block}
 #loupeIn svg{position:absolute;inset:0}
+#fxBn{position:fixed;left:50%;top:64px;transform:translate(-50%,-14px);z-index:20;
+ background:#26331C;color:#F3F1E6;border-radius:12px;padding:13px 20px;cursor:pointer;
+ box-shadow:0 10px 30px rgba(0,0,0,.3);opacity:0;pointer-events:none;
+ transition:opacity .25s,transform .25s;text-align:center;max-width:86vw}
+#fxBn.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+#fxBn b{display:block;font-size:16px;font-weight:800}
+#fxBn span{display:block;font-size:12px;color:#B9C4A8;margin-top:3px}
 #tip{position:fixed;z-index:8;max-width:440px;background:#26331C;color:#F3F1E6;border-radius:11px;
  padding:14px 17px;font-size:17px;line-height:1.75;box-shadow:0 8px 26px rgba(0,0,0,.34);
  pointer-events:none;opacity:0;transition:opacity .12s;display:none}
@@ -299,6 +306,9 @@ h1{font-size:14px;margin:0}
  border-radius:7px;padding:4px 7px;margin-top:6px;line-height:1.5}
 .rcd .fx{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}
 .cell.has .sub{margin-top:8px;text-align:center}
+.cell .fin{display:block;width:100%;margin-top:8px;border:0;border-radius:8px;cursor:pointer;
+ background:#4B7A2E;color:#fff;font-size:12.5px;font-weight:800;padding:9px 6px}
+.cell .fin:hover{background:#3F6B2A}
 .cell .lbl{font-size:11.5px;font-weight:800;color:var(--sub);line-height:1.3}
 .cell .sub{font-size:11px;font-weight:700;color:#A9A695;margin-top:3px}
 .cell svg{width:42px;height:42px;display:block;margin:6px auto 4px;fill:none;
@@ -2874,6 +2884,18 @@ async function connect(){
       TEAM.years=s.val()||{}; render(); });
     onValue(ref(db,`workshops/${W}/teams/${T}/done`), s=>{
       TEAM.done=s.val()||{};  render(); });
+    /* 完了の演出。スコアシートが裏にいると気づけないので、
+       スマホはスコアシートに切り替え、PCは帯で知らせる */
+    onValue(ref(db,`workshops/${W}/teams/${T}/fxev`), s=>{
+      const ev=s.val();
+      /* 最初の1回は基準にするだけ。fxev がまだ無い卓でも「見た」ことにしないと、
+         次に来た本物の1件目を初回あつかいで飲みこんでしまう */
+      if(!FXINIT){ FXINIT=true; FXSEEN=(ev&&ev.seq)||0; return; }
+      if(!ev || !ev.seq) return;
+      if(ev.seq<=FXSEEN) return; FXSEEN=ev.seq;
+      if(MODE==="phone"){ setPhTab("app"); return; }
+      fxBanner(ev);
+    });
     onValue(ref(db,`workshops/${W}/teams/${T}/proj`), s=>{
       const v=s.val()||{};
       RUN={run:asArr(v.run), done:asArr(v.done)};
@@ -2892,6 +2914,18 @@ async function connect(){
     $("#net").textContent="オフライン（この端末だけ）"; console.warn("firebase:", e&&e.message);
     render();
   }
+}
+
+/* ===== 完了の知らせ（PC） ===== */
+let FXSEEN=0, FXINIT=false, fxT=null;
+function fxBanner(ev){
+  const t=(ev.meta&&ev.meta.awonly) ? "覚醒しました" : (ev.title||"カードが完了しました");
+  let el=$("#fxBn");
+  if(!el){ el=document.createElement("div"); el.id="fxBn"; document.body.appendChild(el); }
+  el.innerHTML=`<b>${t}</b><span>スコアシートに演出が出ています</span>`;
+  el.classList.add("on");
+  clearTimeout(fxT); fxT=setTimeout(()=>el.classList.remove("on"), 6000);
+  el.onclick=()=>el.classList.remove("on");
 }
 
 /* ===== 部品 ===== */
@@ -3253,6 +3287,7 @@ function drawRunBoard(){
         <div class="cell goal ${goalNow?"now":""} ${atGoal?"has":""}">
           <div class="lbl">GOAL</div>${atGoal ? runCard(r.id) : PLANT[2]}
           <div class="sub">完了</div>
+          ${atGoal?`<button class="fin" data-fin="${r.id}">完了を登録する</button>`:""}
           ${goalNow&&!atGoal?`<div class="here">登録まち</div>`:""}</div>
       </div></div>`;
   }).join("");
@@ -3261,6 +3296,12 @@ function drawRunBoard(){
     `<div id="runDone">${PLANT[2]}<div><div class="dt">完了 ${done.length}件</div>
      <div class="dl">${done.length?done.map(pname).join("／"):"まだありません"}</div></div></div>`);
   box.querySelectorAll(".rcd[data-p]").forEach(el=>tipBind(el,+el.dataset.p));
+  /* ゴールまで進んだカードは、その場からスコアシートの登録画面をひらく。
+     コストの支払いと数字の反映はスコアシートの仕事なので、開くところまで */
+  box.querySelectorAll("[data-fin]").forEach(b=>b.onclick=()=>{
+    const u = appURLFor(MYS.length ? MYS : CH.map(c=>c.k)) + "&pj=" + b.dataset.fin;
+    window.open(u, "tgx-sheet");
+  });
   const busy=LV.filter(([d])=>laneOf(d).length).length;
   $("#runBdg").textContent = busy?`${busy}／3`:"";
 }
@@ -3488,7 +3529,8 @@ let phTab="hand";
 function setPhTab(t){
   phTab=t;
   const f=$("#phFrame");
-  if(t==="app" && f && !f.src) f.src = appURLFor(MYCHS);   /* 押されるまで読み込まない */
+  /* 手札を見ていても完了の演出が出るように、スコアシートは最初から読み込んでおく */
+  if(f && !f.src) f.src = appURLFor(MYCHS);
   $("#phHead").classList.toggle("hide", t!=="hand");   /* 見出しが二重になるのを防ぐ */
   $("#phPane").classList.toggle("hide", t!=="hand");
   $("#phApp").classList.toggle("hide", t!=="app");
