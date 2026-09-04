@@ -339,6 +339,11 @@ h1{font-size:14px;margin:0}
 #phWrap{max-width:560px;margin:0 auto;padding:0 0 62px}
 /* 移動と推進はスコアシートが持っている。作り直すと計算が二重になるので、そのまま出す */
 #phApp{position:fixed;left:0;right:0;top:0;bottom:56px;background:var(--bg)}
+/* スマホでもボードを出して、自分のコマを自分で動かせるようにする */
+#pcWrap.onphone{position:fixed;left:0;right:0;top:0;bottom:56px;height:auto;padding:8px;z-index:4}
+#pcWrap.onphone #pcTabs,#pcWrap.onphone #paneR,#pcWrap.onphone #paneP{display:none}
+#pcWrap.onphone #paneL{margin:0;min-height:0}
+#pcWrap.onphone #paneL h2 .mini{display:none}
 #phApp iframe{width:100%;height:100%;border:0;display:block}
 #phTabs{position:fixed;left:0;right:0;bottom:0;z-index:9;display:flex;
  background:#fff;border-top:1px solid var(--line);
@@ -352,6 +357,14 @@ h1{font-size:14px;margin:0}
 #phHead img{width:44px;height:44px;border-radius:50%;border:3px solid}
 #phHead .nm{font-size:15px;font-weight:800}
 #phHead .sub{font-size:11px;color:var(--sub)}
+#phRole{background:#fff;border-bottom:1px solid var(--line);padding:0 12px}
+#phRole summary{cursor:pointer;font-size:13px;font-weight:800;color:var(--gd);padding:11px 0;list-style:revert}
+#phRole .rbody{padding:0 0 12px}
+#phRole .rw{display:flex;gap:9px;padding:6px 0;border-top:1px solid var(--line)}
+#phRole .rw b{flex:0 0 84px;font-size:11.5px;color:var(--sub);font-weight:800;padding-top:2px}
+#phRole .rw span{flex:1;font-size:13px;line-height:1.65}
+#phRole .aim{background:#F3F8ED;border:1px solid #D9E9C7;border-radius:9px;
+ padding:9px 11px;font-size:12.5px;line-height:1.7;color:#2F4F20;margin:0 0 4px}
 #phBar{background:#fff;border-bottom:1px solid var(--line);padding:8px 12px;font-size:12px;color:var(--sub)}
 #phBar b{color:var(--ink)}
 #phList{padding:10px 12px}
@@ -479,6 +492,7 @@ h1{font-size:14px;margin:0}
 
 <div id="phWrap" class="hide">
  <div id="phHead"></div>
+ <details id="phRole"><summary>あなたの役目とねらい</summary><div class="rbody"></div></details>
  <div id="phPane">
   <div id="phBar"></div>
   <div id="phList"></div>
@@ -487,6 +501,7 @@ h1{font-size:14px;margin:0}
  <div id="phApp" class="hide"><iframe id="phFrame" title="スコアシート"></iframe></div>
  <div id="phTabs">
   <button id="phTabHand" class="on">手札</button>
+  <button id="phTabBoard">ボード</button>
   <button id="phTabApp">スコアシート</button>
  </div>
 </div>
@@ -2809,6 +2824,7 @@ const ALLP={"1": ["社内の電球LED化", "低"], "2": ["効率的な輸送ル�
 const CHINFO={"tech": {"n2": "真・工場長", "meter": "設備充実度", "s1": ["tech"], "s2f": ["tech", "hr"], "gain": ["hr"], "r1": 50, "r2": 67, "r1s": 67, "r2s": 83, "view": "製造現場の視点から「設備投資」「実行性」を考える", "quote": "現場が動かなければ、どんな計画も絵に描いた餅", "s2": "【現場改善】設備充実度または社員理解度を1上げる", "mng": "", "mngs": "卓の管理担当はありません。プロジェクトの推進に専念します。"}, "supply": {"n2": "真・ベテラン購買", "meter": "サプライヤー理解度", "s1": ["supply"], "s2f": ["supply", "tech"], "gain": ["tech"], "r1": 67, "r2": 83, "r1s": 83, "r2s": 83, "view": "サプライチェーン・取引先の視点で考える", "quote": "サプライチェーン全体を動かさないと、削減は完結しない", "s2": "【戦略的調達】次に完了するプロジェクト1件のコストを2減らす", "mng": "プロジェクトカード（1年目）", "mngs": "1年目のあいだ預かります（2年目は解除）。"}, "pr": {"n2": "真・中堅広報", "meter": "市場評価", "s1": ["pr"], "s2f": ["pr", "fin"], "gain": ["fin"], "r1": 50, "r2": 67, "r1s": 67, "r2s": 83, "view": "企業の評判・ブランド・ESG発信を考える", "quote": "会社の評判は、外からどう見えるかで決まる", "s2": "【メディア戦略】引いたイベントカードのプラス効果を2倍にする（台本上のイベントとマイナスには使えない）", "mng": "進行（月送り）", "mngs": "「この月を終えて次へ」で卓の進みを管理します。"}, "fin": {"n2": "真・専務", "meter": "社員理解度", "s1": ["hr"], "s2f": ["hr", "fin"], "gain": ["fin"], "r1": 67, "r2": 83, "r1s": 83, "r2s": 83, "view": "社内教育・脱炭素推進・人材育成・チーム予算管理を考える", "quote": "全社を巻き込むのも、会社の財布を守るのも、私の仕事", "s2": "【鶴の一声】推進ボードのプロジェクト1つを、いますぐ1段階すすめる", "mng": "予算（金庫）／アプリの操作・効果の反映", "mngs": "カード完了の登録とイベントの反映は、専務がまとめて操作します。"}, "hr": {"n2": "真・若手営業", "meter": "売上レベル", "s1": [], "s2f": ["pr"], "gain": ["pr"], "r1": 25, "r2": 50, "r1s": 25, "r2s": 67, "view": "営業視点から「市場・取引先への影響」を考える", "quote": "脱炭素も、売上につながってこそ意味がある", "s2": "【大型受注】次に完了するプロジェクト1件のコストを、支払わずに実施できる", "mng": "アプリのイベントを読み上げる", "mngs": "イベントの月に1枚引いて、卓に読み上げます（数値の反映は専務）。"}};             /* キャラクターカードの中身（本体アプリから取り込み） */
 const TUTFIX=90;             /* チュートリアルで進める札。3枚は見せるが選ばせない */
 const R2APP={"tech": "plant", "supply": "proc", "pr": "pr", "fin": "exec", "hr": "sales"};               /* リモート卓のキー → 本体のキャラ種別 */
+const AWAKE=7;               /* 覚醒のしきい値（本体から読んだ値） */
 const CH=[{k:"tech",n:"工場長"},{k:"supply",n:"ベテラン購買"},{k:"pr",n:"中堅広報"},
           {k:"fin",n:"専務"},{k:"hr",n:"若手営業"}];
 /* チュートリアルの3枚は読み込み係の手札に混ぜない（4月・5月だけ卓に出る） */
@@ -2899,7 +2915,7 @@ async function connect(){
     onValue(ref(db,`workshops/${W}/teams/${T}/proj`), s=>{
       const v=s.val()||{};
       RUN={run:asArr(v.run), done:asArr(v.done)};
-      if(MODE==="phone"){ drawPhone(); return; }
+      if(MODE==="phone"){ drawPhone(); if(phTab==="board") drawBoard(); return; }
       drawRunBoard(); drawActs();
       if(pcTab==="board"||pcTab==="both") drawBoard();   /* 行先の表示を更新する */
       if(pcTab==="room" ||pcTab==="both") drawTable();
@@ -3516,7 +3532,28 @@ function drawHandInto(pfx, chars, cur, setCur, footDefault){
     render();
   });
 }
+function drawRole(ck){
+  const el=$("#phRole"); if(!el) return;
+  const c=CH.find(x=>x.k===ck); if(!c) return;
+  const q=CHINFO[ck]||{};                 /* 本体アプリから取り込んだキャラの中身 */
+  const row=(k,v)=> v ? `<div class="rw"><b>${k}</b><span>${v}</span></div>` : "";
+  const fnames = a => (a||[]).map(f=>FNM[f]||f).join("・") || "なし";
+  el.querySelector(".rbody").innerHTML =
+    `<div class="aim"><b>この会社のねらい</b><br>
+      2年かけてCO2を減らし、5つのメーターを上げて会社のレベルを上げます。
+      予算はかぎられているので、<b>どのカードに使うかを話し合って決める</b>のがこのゲームの中心です。</div>`
+    + row("毎月やること", "① <b>移動</b>を回してコマを動かす　→　② <b>止まったマスの分野</b>のカードを推進する")
+    + row("あなた", q.view || "")
+    + row("得意分野", (q.s1&&q.s1.length ? fnames(q.s1) : "まだなし")
+        + `<i style="font-style:normal;color:var(--sub)">　覚醒すると ${fnames(q.s2f)}</i>`)
+    + row("成功率", `いま ${q.r1s!=null?q.r1s:q.r1}%　覚醒すると ${q.r2s!=null?q.r2s:q.r2}%`)
+    + row("覚醒条件", q.meter ? `${q.meter}が ${AWAKE} に届くと覚醒します` : "")
+    + row("覚醒スキル", (q.s2||"").replace(/^【(.+?)】/, "<b>【$1】</b><br>"))
+    + row("卓での担当", q.mng ? `${q.mng}${q.mngs?`<i style="font-style:normal;color:var(--sub)">　${q.mngs}</i>`:""}` : "とくになし")
+    + row("読み込み係", `${FNM[ck]}のカードを読んで、チームに提案します`);
+}
 function drawPhone(){
+  drawRole(MYCHS[phCur]||MYCHS[0]);
   drawHandInto("ph", MYCHS, phCur, i=>{phCur=i;render();},
     "見えるのは自分の担当カードだけ。会社のメーターや排出量は「スコアシート」で見られます。");
 }
@@ -3529,6 +3566,11 @@ function appURLFor(ks){
 let phTab="hand";
 function setPhTab(t){
   phTab=t;
+  const pw=$("#pcWrap");
+  pw.classList.toggle("onphone", t==="board");
+  pw.classList.toggle("hide", t!=="board");
+  if(t==="board"){ $("#paneL").classList.remove("hide");
+    drawBoard(); setTimeout(applyFit,60); }
   const f=$("#phFrame");
   /* 手札を見ていても完了の演出が出るように、スコアシートは最初から読み込んでおく */
   if(f && !f.src) f.src = appURLFor(MYCHS);
@@ -3536,6 +3578,7 @@ function setPhTab(t){
   $("#phPane").classList.toggle("hide", t!=="hand");
   $("#phApp").classList.toggle("hide", t!=="app");
   $("#phTabHand").classList.toggle("on", t==="hand");
+  $("#phTabBoard") && $("#phTabBoard").classList.toggle("on", t==="board");
   $("#phTabApp").classList.toggle("on", t==="app");
 }
 /* ===== 画面の出し分け ===== */
@@ -3638,6 +3681,7 @@ $("#bzIn").onclick=()=>setBz(bz+0.25);
 $("#bzOut").onclick=()=>setBz(bz-0.25);
 
 $("#phTabHand") && ($("#phTabHand").onclick=()=>setPhTab("hand"));
+$("#phTabBoard")&& ($("#phTabBoard").onclick=()=>setPhTab("board"));
 $("#phTabApp")  && ($("#phTabApp").onclick =()=>setPhTab("app"));
 $("#hostGo") && ($("#hostGo").onclick=()=>{
   asHost=true;                       /* キャラは持たないが、卓の操作はぜんぶできる */

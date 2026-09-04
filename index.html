@@ -30,6 +30,12 @@ select{background:#fff;border:none;border-radius:8px;padding:6px 8px;color:var(-
 .ystrip button small{display:block;font-size:10px;font-weight:700;opacity:.95}
 .ystrip button.on{background:#fff;color:var(--gd);opacity:1;font-weight:800}
 .ystrip button.done{opacity:1;background:rgba(255,255,255,.3)}
+#rlOv{position:fixed;inset:0;z-index:78;background:rgba(30,36,24,.5);display:flex;align-items:center;justify-content:center}
+#rlOv.hide{display:none !important}
+#rlOv .rlBox{background:#fff;border-radius:18px;padding:20px 22px 18px;text-align:center;max-width:min(92vw,340px);box-shadow:0 18px 50px rgba(0,0,0,.35)}
+#rlOv .rlWho{font-size:15px;font-weight:800;color:var(--ink);margin-bottom:10px}
+#rlOv .rlRes{font-size:16px;font-weight:800;margin-top:10px;min-height:1.4em}
+#rlOv .rlRes small{display:block;font-size:12px;font-weight:700;color:var(--sub);margin-top:3px}
 #menu,#ysheet,#csheet{position:fixed;inset:0;z-index:75;background:rgba(30,36,24,.45);
  display:flex;align-items:flex-end;justify-content:center}
 #menu.hide,#ysheet.hide,#csheet.hide{display:none !important}
@@ -1394,6 +1400,7 @@ window.onerror=function(m,src,line,col){
   </div>
 </div>
 <!-- ============ 覚醒スキル発動のカットイン（チーム全員の画面で同時に流れる） ============ -->
+<div id="rlOv" class="hide"><div class="rlBox"><div class="rlWho"></div><div class="rlWheel"></div><div class="rlRes"></div></div></div>
 <div id="skshow" class="hide">
   <div class="skIn">
     <div class="awRays"></div>
@@ -4394,9 +4401,10 @@ const FSIMPLE=[["hr","人材"],["fin","制度"],["pr","広報"],["supply","調�
    分野はカードが持っているので、ここで分野を聞く必要はもうない */
 function openPjPick(){
   const c=S.chars[CI];
-  const rs=(S.proj.run||[]).filter(r=>PBY[r.id] && r.step<PBY[r.id].st);
+  const rs=(S.proj.run||[]).filter(r=>PBY[r.id]
+    && (r.step<PBY[r.id].st || (tutFix()!=null && PBY[r.id].tut)));   /* チュートリアルは全員が回すまで残す */
   $("#fmT") && ($("#fmT").textContent = "どのプロジェクトを推進しますか？");
-  $("#fmS") && ($("#fmS").textContent = "推進ボードにのっているカードだけが出ます");
+  $("#fmS") && ($("#fmS").innerHTML = "推進ボードにのっているカードが全部出ます。<br>" + "<b>いま止まっているマスの分野</b>のカードを選んでください（分野は各行に書いてあります）。");
   if(!rs.length){
     $("#fmB").innerHTML =
       `<p class="note" style="margin:4px 2px 0">推進ボードにカードがありません。<br>`
@@ -4515,6 +4523,11 @@ function doRoll(kind){
     c.last={kind,sum,ok,faces,rate,base:rBase,r0:rZero,ang:rAng,mang:mAng};                 // 画面に出したまま残す
     S.rolls.push(rec); S.rolls=S.rolls.slice(-20);
     save(); pushChars(); FB&&FB.pushRoll(rec);
+    /* 同じ輪を全端末で回せるように、止まる角度ごと流す */
+    FB && FB.set("rollev", Object.assign({}, rec,
+      {seq:Date.now(), dev:S.devId, t:c.t, col:t.move,
+       rate:(kind==="proj"?rate:null), base:rBase, r0:rZero,
+       ang:(kind==="proj"?rAng:null), mang:(kind==="move"?mAng:null)}));
     turnSet(c.t, true, kind==="proj" ? "pj" : "mv");   // 全端末で共有
     drawCStrip(); drawTurnBox(); drawGuide(); drawRollLog();
     showNextTurn(c.t);                          // 次は誰の番か＋大きな閉じるボタン
@@ -4568,7 +4581,7 @@ function rvSec(cx,cy,r,a0,a1){
 function rvLand(rate, ok){
   const S=Math.max(0,Math.min(100,rate))*3.6;
   const a0 = ok ? 0 : S, a1 = ok ? S : 360;
-  const w  = Math.max(0.2, a1-a0), m = Math.min(8, w/4);
+  const w  = Math.max(0.2, a1-a0), m = Math.min(22, w/3);
   return a0 + m + Math.random()*Math.max(0.1, w-2*m);
 }
 /* rate=最終成功率／base=覚醒まで込みの素／r0=通常時（Lv1）の素 */
@@ -4672,10 +4685,11 @@ function rvSpin(box, ang, buzz, done){
     const e=now-t0;
     if(e<GROW){ const p=e/GROW; front(B0+gain*(1-Math.pow(1-p,3))); requestAnimationFrame(step); return; }
     if(GROW) front(S);
-    const p=Math.min(1,(e-GROW)/SPIN), a=(360*3+ang)*(1-Math.pow(1-p,3));
+    const p=Math.min(1,(e-GROW)/SPIN), a=(360*3+ang)*(1-Math.pow(1-p,2.2));
     setN(a);
     const k=Math.floor(a/45); if(k!==tick){ tick=k; buzz(4); }
-    if(p<1) requestAnimationFrame(step); else end();
+    /* 最後の数%は這うだけで、止まったのか回っているのか分からなくなる */
+    if(p<0.97) requestAnimationFrame(step); else end();
   })(t0);
   setTimeout(end, GROW+SPIN+1500);
 }
@@ -4799,13 +4813,25 @@ $("#cClose").onclick=()=>$("#csheet").classList.add("hide");
 $("#csheet").onclick=e=>{ if(e.target.id==="csheet") $("#csheet").classList.add("hide"); };
 $("#cLvBtn").onclick=()=>{
   const c=S.chars[CI];
-  if(c.lv!==2 && mtrs()[MK[c.t]]<AWAKE &&
-     !confirm(`まだ${MNAME[MK[c.t]]}が${AWAKE}に届いていません。それでも覚醒させますか？`)) return;
+  if(c.lv!==2 && mtrs()[MK[c.t]]<AWAKE){
+    const now=mtrs()[MK[c.t]];
+    if(!confirm(cname(c)+"の覚醒には "+MNAME[MK[c.t]]+" が "+AWAKE+" 必要です（いま "+now+"／あと "+r2(AWAKE-now)+"）。\n\n"
+      + "これは進行役が手で直すためのボタンです。ふだんはメーターが "+AWAKE+" に届いた時点で自動で覚醒します。\n"
+      + "それでも覚醒させますか？")) return;
+  }
+  const wasUp = c.lv===2;
   c.lv=c.lv===2?1:2;
   /* 通常に戻したら「手動」の印を付ける（同期のたびに覚醒へ戻されないように）。
      手動で覚醒させたときは印を消す＝以後はメーター任せに戻す */
   if(c.lv===1 && mtrs()[MK[c.t]]>=AWAKE) c.man=1; else delete c.man;
   save(); pushChars(); drawCStrip(); openChar();
+  /* 覚醒させたときは、メーターで自動に覚醒したときと同じ演出を全員に流す */
+  if(!wasUp && c.lv===2 && !FXBUSY){
+    const awc=[{t:c.t, k:MK[c.t]}];
+    achBroadcast(awc, [MNAME[MK[c.t]]], []);
+    $("#csheet").classList.add("hide");
+    FXBUSY=true; awStart(awc, ()=>{ FXBUSY=false; drawTeam(); });
+  }
 };
 $("#cTypeBtn").onclick=()=>{
   const c=S.chars[CI]; c.t=CORDER[(CORDER.indexOf(c.t)+1)%CORDER.length]; c.last=null;
@@ -5356,15 +5382,42 @@ function openPj(id){
   openPjBtns(id);
   $("#psheet").classList.remove("hide");
 }
+/* いま完了すると実際いくら払うのか。finishPj と同じ順で数える（表示用） */
+function payPreview(p){
+  const bn=S.evt.bn||{}, chg=S.evt.chg||{}, red=pReduces(p);
+  let cost=p.cost; const why=[];
+  if(isDone(60) && red && p.id!==60){ cost=Math.max(0,cost-1); why.push("【削減目標・SBT】−1"); }
+  if(bn.b44 && [10,45,62,63].includes(p.id)){ cost=Math.max(0,cost-1); why.push("【再エネ調達計画】−1"); }
+  if(bn.b58 && red){ cost=Math.max(0,cost-1); why.push("【全社エネルギー監査】−1"); }
+  if(chg.sales){ why.push(`【${skName("sales")}】でコスト0`); cost=0; }
+  else if(chg.proc && cost>0){ const c0=cost; cost=Math.max(0,cost-2); why.push(`【${skName("proc")}】${c0}→${cost}`); }
+  return {cost, why};
+}
 function openPjBtns(id){
   const p=PBY[id], done=isDone(id), run=S.proj.run.find(r=>r.id===id);
   if(done){ $("#pAct").innerHTML=`<p class="note" style="margin:10px 0">このプロジェクトは実行済みです。</p>`; return; }
   if(run && run.step>=p.st){
-    const bud=cell0().bud, short=(bud!=null && bud<p.cost);
+    const pv=payPreview(p);
+    const bud=cell0().bud, short=(bud!=null && bud<pv.cost);
+    /* turnPjRest は「まだ進められるカードがある」ときしか返さない。
+       満タンになった直後がまさに知りたい場面なので、ここは直接かぞえる */
+    const tutWait = (p.tut && tutFix()!=null)
+      ? roster().filter(t=>!turnPjOK(t)) : [];
     $("#pAct").innerHTML =
-      ((p.tut && TUTFREE)
+      (tutWait.length
+        ? `<p class="note" style="margin:10px 0;color:var(--gd);font-weight:700">`
+          + `全段階そろいました。<b>あと ${tutWait.length}人</b>が推進してから完了します`
+          + `<small style="display:block;font-weight:400;margin-top:3px">`
+          + `まだの人：${tutWait.map(t=>esc(tname(t))).join("・")}</small></p>`
+        : "")
+      +((p.tut && TUTFREE)
         ? `<button class="btn" data-fin="1">完了を確定する（コスト ${p.cost}・<b>免除</b>）</button>`
-        : `<button class="btn" data-fin="1"${short?' style="opacity:.5"':''}>完了を確定する（コスト ${p.cost} を支払う${bud!=null?`　残 ${bud}`:""}）</button>`)
+        : `<button class="btn" data-fin="1"${(short||tutWait.length)?' style="opacity:.5"':''}>`
+          + `完了を確定する（コスト ${pv.cost} を支払う${bud!=null?`　残 ${bud}`:""}）</button>`)
+      +(pv.why.length
+        ? `<p class="note" style="margin:8px 0 0;color:var(--gd);font-weight:700">`
+          + `${pv.why.join("／")}　→　いま払うのは <b>${pv.cost}</b>（もとは ${p.cost}）</p>`
+        : "")
       +((p.tut && TUTFREE)
         ? `<p class="note" style="margin:8px 0 0;color:var(--g);font-weight:700">チュートリアルのためコストは免除されます。予算は減りません。</p>`
         : short
@@ -5373,7 +5426,8 @@ function openPjBtns(id){
       +`<button class="tbtn" data-fin0="1" style="margin-top:8px">支払わずに完了（【大型受注】などのスキル使用時）</button>
        <button class="btn alt" data-drop="1" style="margin-top:10px">このプロジェクトをやめる</button>`;
     $("#pAct").querySelector("[data-fin]").onclick=()=>{
-      if(!(p.tut&&TUTFREE) && short){ alert(`予算が足りません（残 ${bud}／コスト ${p.cost}）。`); return; }
+      if(tutWait.length){ alert("チュートリアルは全員で一巡します。\nあと " + tutWait.length + "人（" + tutWait.map(tname).join("・") + "）が推進してから完了してください。"); return; }
+      if(!(p.tut&&TUTFREE) && short){ alert(`予算が足りません（残 ${bud}／コスト ${pv.cost}）。`); return; }
       finishPj(id, run.by!=null?run.by:null);
     };
     $("#pAct").querySelector("[data-fin0]").onclick=()=>{
@@ -6132,7 +6186,34 @@ function skGo(){
     return;
   }
   if(t==="exec"){
-    /* 盤（物理）のカードを進めてもらう指示を全端末に流す。アプリの状態は変えない */
+    /* 進めるカードをその場で選んで、アプリの中でも1段階すすめる */
+    const rs=(S.proj.run||[]).filter(r=>PBY[r.id] && r.step<PBY[r.id].st);
+    if(!rs.length){ toast("推進ボードに、まだ進められるカードがありません。"); return; }
+    $("#skillGoBox").innerHTML =
+      `<div class="flabel">どのプロジェクトを1段階すすめますか</div>
+       <div class="ftabs">`
+      + rs.map(r=>`<button class="ftab" data-ske="${r.id}">${esc(PBY[r.id].n)}`
+          + `<small style="display:block;font-weight:700;opacity:.7">${r.step}／${PBY[r.id].st}段階</small></button>`).join("")
+      + `<button class="ftab" data-skx="1">やめる</button></div>`;
+    $("#skillGoBox").querySelectorAll("[data-ske]").forEach(b=>b.onclick=()=>{
+      const rid=+b.dataset.ske, rr=S.proj.run.find(x=>x.id===rid), pp=PBY[rid];
+      if(!rr||!pp) return;
+      rr.step=Math.min(pp.st, rr.step+1);
+      skLog(S.chars[CI],sn);
+      const cc=S.chars[CI]; cc.used[S.year]=1; save();
+      FXUPD=Object.assign(FXUPD||{}, {[`chars/${S.devId}`]:S.chars});
+      $("#csheet").classList.add("hide");
+      drawRun(); drawPjList();
+      applyAndShow(`覚醒スキル【${sn}】`, [],
+        {badge:"スキル発動", sub:`${cname(cc)}が発動`,
+         skill:{t:t,n:sn,sub:`${pp.n} を1段階すすめた`},
+         none:`「${pp.n}」が ${rr.step}／${pp.st}段階になりました。`
+              + (rr.step>=pp.st ? "全段階そろったので、完了を登録できます。" : "")});
+    });
+    const x2=$("#skillGoBox").querySelector("[data-skx]"); if(x2) x2.onclick=()=>openChar();
+    return;
+  }
+  if(false){
     skLog(S.chars[CI],sn);
     const cc=S.chars[CI]; cc.used[S.year]=1; save();
     FXUPD=Object.assign(FXUPD||{}, {[`chars/${S.devId}`]:S.chars});
@@ -6324,6 +6405,37 @@ function achBroadcast(awc, aw, acq){
   FB && FB.set("fxev", ev);
 }
 
+/* ---- ほかの人が回した輪を、この端末でも同じように回す ----
+   回した本人の画面にしか出ておらず、進行役が口で結果を伝えていた（12:01）。
+   数値は一切いじらない。絵を出すだけ。 */
+let RLSEEN=0, RLINIT=false, RLT=null;
+function onRollEv(ev){
+  if(!ev || !ev.seq) return;
+  if(!RLINIT){ RLINIT=true; RLSEEN=ev.seq; return; }   /* 最初の1回は基準にするだけ */
+  if(ev.seq<=RLSEEN) return; RLSEEN=ev.seq;
+  if(ev.dev===S.devId) return;                          /* 自分の端末では出し直さない */
+  const ov=$("#rlOv"); if(!ov) return;
+  const wheel=ov.querySelector(".rlWheel"), who=ov.querySelector(".rlWho"), res=ov.querySelector(".rlRes");
+  who.textContent = `${ev.who||""} の${ev.kind==="proj"?"推進":"移動"}`;
+  res.innerHTML = "";
+  const fin=()=>{
+    res.innerHTML = ev.kind==="move"
+      ? `${ev.sum} マス`
+      : `${ev.ok?"成功":"失敗"}<small>${ev.field||""}${ev.rate!=null?`　成功率 ${ev.rate}%`:""}</small>`;
+    clearTimeout(RLT); RLT=setTimeout(()=>ov.classList.add("hide"), 2600);
+  };
+  ov.classList.remove("hide");
+  ov.onclick=()=>{ clearTimeout(RLT); ov.classList.add("hide"); };
+  try{
+    if(ev.kind==="proj" && ev.rate!=null && ev.ang!=null){
+      wheel.innerHTML = rvHTML(ev.rate, ev.base, ev.r0, {ang:0});
+      rvSpin(wheel, ev.ang, ()=>{}, fin);
+    } else if(ev.kind==="move" && ev.mang!=null && ev.col){
+      wheel.innerHTML = mvHTML(ev.col, ev.mang, {});
+      mvSpin(wheel, ev.mang, ()=>{}, fin);
+    } else { wheel.innerHTML=""; fin(); }
+  }catch(e){ wheel.innerHTML=""; fin(); }
+}
 /* ---- Firebase 経由で受け取った完了イベント ---- */
 let FXSEEN=0, FXINIT=false;
 function onFxEv(ev){
@@ -7883,6 +7995,7 @@ window.__remote = d=>{
   if(S.evt){ S.evt.drawn=S.evt.drawn||[]; S.evt.done=S.evt.done||{}; }
   autoAwake();                 /* 受信した値で、この端末のキャラの覚醒も反映する */
   if(d.fxev) onFxEv(d.fxev);   /* 完了イベント：チーム全員の画面で同じ演出を流す */
+  if(d.rollev) onRollEv(d.rollev);   /* 移動・推進の輪：回した人以外の画面にも流す */
   FXINIT = true;               /* 最初のスナップショットは基準にするだけで演出しない */
   /* リモート卓の推進ボードから「完了を登録する」で来たとき、そのカードをひらく。
      データが届いてからでないとカードの状態が出ないので、ここで1回だけ */
