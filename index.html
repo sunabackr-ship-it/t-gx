@@ -4530,7 +4530,8 @@ function doRoll(kind){
        ang:(kind==="proj"?rAng:null), mang:(kind==="move"?mAng:null)}));
     turnSet(c.t, true, kind==="proj" ? "pj" : "mv");   // 全端末で共有
     drawCStrip(); drawTurnBox(); drawGuide(); drawRollLog();
-    showNextTurn(c.t);                          // 次は誰の番か＋大きな閉じるボタン
+    /* 結果を読む間をとる。すぐ「つぎは◯◯さん」に切り替わると目が追えない */
+    setTimeout(()=>showNextTurn(c.t), RMOTION()?300:2000);
   }
   function resText(){
     const fn = c.field?FIELDS[c.field].nm:"—", st = isStrong(c, c.field);
@@ -6440,8 +6441,11 @@ let RLSEEN=0, RLINIT=false, RLT=null;
 function onRollEv(ev){
   if(!ev || !ev.seq) return;
   if(!RLINIT){ RLINIT=true; RLSEEN=ev.seq; return; }   /* 最初の1回は基準にするだけ */
-  if(ev.seq<=RLSEEN) return; RLSEEN=ev.seq;
-  if(ev.dev===S.devId) return;                          /* 自分の端末では出し直さない */
+  if(ev.seq<=RLSEEN) return;
+  if(ev.dev===S.devId){ RLSEEN=ev.seq; return; }        /* 自分の端末では出し直さない */
+  if(Date.now()-(ev.at2||ev.seq||0) > 90000){ RLSEEN=ev.seq; return; }
+  if(FXBUSY){ setTimeout(()=>onRollEv(ev), 800); return; }   /* 別の演出中は待つ */
+  RLSEEN=ev.seq;
   const ov=$("#rlOv"); if(!ov) return;
   const wheel=ov.querySelector(".rlWheel"), who=ov.querySelector(".rlWho"), res=ov.querySelector(".rlRes");
   who.textContent = `${ev.who||""} の${ev.kind==="proj"?"推進":"移動"}`;
@@ -6450,7 +6454,7 @@ function onRollEv(ev){
     res.innerHTML = ev.kind==="move"
       ? `${ev.sum} マス`
       : `${ev.ok?"成功":"失敗"}<small>${ev.field||""}${ev.rate!=null?`　成功率 ${ev.rate}%`:""}</small>`;
-    clearTimeout(RLT); RLT=setTimeout(()=>ov.classList.add("hide"), 2600);
+    clearTimeout(RLT); RLT=setTimeout(()=>ov.classList.add("hide"), 3600);
   };
   ov.classList.remove("hide");
   ov.onclick=()=>{ clearTimeout(RLT); ov.classList.add("hide"); };
@@ -6470,9 +6474,13 @@ function onFxEv(ev){
   if(!ev || !ev.seq) return;
   if(!FXINIT){ FXSEEN=Math.max(FXSEEN, ev.seq); return; }   // 起動直後の1回目は流さない
   if(ev.seq<=FXSEEN) return;                                // 同じイベントは1度だけ
+  if(ev.by===S.devId){ FXSEEN=ev.seq; return; }             // 操作した端末では演出ずみ
+  /* スマホは画面が消えているあいだ受信が止まる。戻ったときに間に合うよう、
+     古いとみなすまでを25秒から90秒に延ばす */
+  if(Date.now()-(ev.at||0) > 90000){ FXSEEN=ev.seq; return; }
+  /* 別の演出中に来たら、捨てずに終わるのを待つ（FXSEEN はまだ進めない） */
+  if(FXBUSY){ setTimeout(()=>onFxEv(ev), 800); return; }
   FXSEEN=ev.seq;
-  if(ev.by===S.devId) return;                               // 操作した端末では演出ずみ
-  if(Date.now()-(ev.at||0) > 25000) return;                 // 古いイベントは無視
   const m=Object.assign({}, ev.meta||{}, {remote:true});
   if(m.awonly){                            // 手動の調整・決算ぶんの覚醒／達成だけ
     const q=m.awc||[], qa=m.achv||[];
@@ -7324,8 +7332,12 @@ function drawRole(){
     <b>②分野の読み込み係</b>… その分野のカードを読んで、チームに提案する係です。<br>
     <b>チームで相談して、取り組むプロジェクトを決めます</b>。あとは各自が自分の番に
     推進のルーレットを回して、みんなで進めます。
-    その分野が<b>得意</b>な人が回すと、成功しやすくなります
-    （担当分野と得意分野は一致しないことがあります）。<br>
+    その分野が<b>得意</b>な人が回すと、成功しやすくなります。<br>
+    キャラクターカードに分野が2つ並んでいますが、意味がちがいます。<br>
+    　<b>得意分野</b>＝推進の成功率が上がる分野。<br>
+    　<b>読み込み分野</b>＝そのカードを読んで、会議で提案する担当の分野。<br>
+    この2つは<b>同じ人もいれば、ちがう人もいます</b>（若手営業は 広報が得意／人材を読む）。<br>
+    読んだ人が回すとはかぎりません。<br>
     <b>アプリの操作・効果の反映は専務がまとめて行います</b>（結果はチーム全員の画面に同時に出ます）。</p>`;
   box.innerHTML = lead + S.chars.map((c,i)=>{
     const t=CTYPE[c.t], k=MK[c.t], v=m[k], aw=v>=AWAKE, f=CFIELD[c.t];
