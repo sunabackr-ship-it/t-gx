@@ -4030,7 +4030,8 @@ function rateOf(c, field){
   const t=CTYPE[c.t], base=c.lv===2?t.r2:t.r1;
   return isStrong(c, field) ? upStep(base) : base;
 }
-const YEARS = ["1年目","2年目"];   // 2年制（1年目は6月から本番・投資中心、2年目に本格削減）
+const YEARS = ["1年目","2年目","3年目"];   /* 3年まで用意する。どこで終えるかは進行役が決める
+   1年だけ＝約1時間／2年＝約2時間／3年＝約2.5〜3時間 */
 const PRESET = {s1:12,s2:15,c1:13,c2:3,c3:4,c4:11,c5:3,c6:2,c7:2,c8:2,
                 c9:3,c10:5,c11:18,c12:5,c13:2,c14:0,c15:0,off:0};
 /* 保存先はURLごとに分ける。
@@ -4918,7 +4919,7 @@ $("#endYear").onclick=()=>{
      CO2削減量 <b>${t.red}</b><br>
      ${METERS.map(x=>`${x.n} <b>${t.m[x.k]}</b>`).join("／")}<br>
      会社レベル <b>Lv${t.lv}　${t.lvName}</b>
-     <span style="color:var(--sub);font-size:12px"><br>Lv2 GX推進企業＝削減15以上かつ全メーター5以上／Lv3 GXトップランナー＝削減20以上かつ全メーター7以上</span>
+     <span style="color:var(--sub);font-size:12px"><br>${yrNo()}年やったときの基準：Lv2 GX推進企業＝削減${lvCondOf()[2].red}以上かつ全メーター${lvCondOf()[2].met}以上／Lv3 GXトップランナー＝削減${lvCondOf()[3].red}以上かつ全メーター${lvCondOf()[3].met}以上</span>
      ${t.need&&t.need.lack.length?`<br><span style="color:#B4553A">${t.need.to}まで：${t.need.lack.join("／")}</span>`:""}</div><br>` +
     (nx ? `<div style="text-align:left;line-height:1.9"><b>${nx}の予算 ${nb}</b><span style="color:var(--sub);font-size:13px"><br>
            ＝ 繰越 ${t.carry} ＋ 基本 20 ＋ 削減 ${t.red}
@@ -4930,19 +4931,45 @@ $("#endYear").onclick=()=>{
   $("#ysRevCopy") && ($("#ysRevCopy").onclick = function(){ revCopy(this,"#ysTA"); });
   $("#ysGo").textContent = nx ? `終了して ${nx} へ` : "終了する";
   $("#ysGo").onclick = ()=>{ endYear(); $("#ysheet").classList.add("hide"); };
+  /* 次の年があっても、ここで終えられる。時間で切りたい卓のために進行役が選ぶ */
+  {const old=$("#ysStop"); if(old) old.remove();
+   if(nx){
+     const q=document.createElement("button");
+     q.id="ysStop"; q.className="btn alt"; q.style.cssText="width:100%;margin-top:10px";
+     q.textContent=`ここで終える（${yrNo()}年でおしまい）`;
+     q.onclick=()=>{
+       if(!confirm(`${S.year}までで終わりにします。\n\n`
+         + `${yrNo()}年やったときの基準で会社レベルを出して、振り返りに進みます。\n`
+         + `${nx}以降はやりません。よろしいですか？`)) return;
+       STOPHERE=true; endYear(); $("#ysheet").classList.add("hide");
+     };
+     $("#ysGo").insertAdjacentElement("afterend", q);
+   }}
   $("#ysheet").classList.remove("hide");
 };
+let STOPHERE=false;   /* 進行役が「ここで終える」を押したか */
+let ENDING=false;   /* 年度を終える処理中。この間は受信で年を動かさない */
 function endYear(){
+  const Y0=S.year;   /* 書き込みの途中で S.year が動くので、最初に控えておく */
+  ENDING=true;
   const c=cur(), d=new Date();
   /* 決算でレベルが確定した瞬間も同じ演出（年度の途中で出ていれば、ここでは出ない） */
   const acq=achTake(achBase());
-  FB && FB.set(`years/${S.year}/ach`, cell0().ach);
+  FB && FB.set(`years/${Y0}/ach`, cell0().ach);
   if(acq.length) achBroadcast([], [], acq);
   const at=`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
-  const item={at,team:S.team,year:S.year,total:total(c),base:total(base()),rows:{...c},end:true};
+  const item={at,team:S.team,year:Y0,total:total(c),base:total(base()),rows:{...c},end:true};
   S.hist.push(item); FB&&FB.pushHist(item);
-  S.done[S.year]=true; FB&&FB.set(`done/${S.year}`, true);
-  const i=YEARS.indexOf(S.year), nx=YEARS[i+1];
+  S.done[Y0]=true; FB&&FB.set(`done/${Y0}`, true);
+  const i=YEARS.indexOf(Y0), nx=STOPHERE ? null : YEARS[i+1];
+  if(STOPHERE){                    /* ここで終える：残りの年も閉じて、記録の画面へ */
+    STOPHERE=false;
+    const o={};
+    for(let k=i+1;k<YEARS.length;k++){ S.done[YEARS[k]]=true; o[`done/${YEARS[k]}`]=true; }
+    /* 1つずつ書くと、往復のあいだに「まだ終わっていない年」と見られて
+       この年から先へ勝手に進んでしまう。まとめて1回で書く */
+    if(FB){ if(FB.upd) FB.upd(o); else Object.keys(o).forEach(k=>FB.set(k,o[k])); }
+  }
   if(nx){
     const mm={...mtrs()};
     const nb=nextBudget(settle());   // 繰越+基本20+削減+設備8以上/市場8以上ボーナス+カードボーナス
@@ -4953,7 +4980,8 @@ function endYear(){
     const na=achSnap(); cell0().ach=na; save();
     if(FB) FB.set(`years/${nx}`, {v:{...c}, b:{...c}, m:mm, bg:0, mon:0, bud:nb, bud0:nb, ach:na});
     S.view="single";
-  } else { save(); S.view="all"; }
+  } else { S.year=Y0; save(); S.view="all"; }
+  ENDING=false;
   drawTeam();
   if(acq.length && !FXBUSY){ FXBUSY=true; acStart(acq, ()=>{ FXBUSY=false; drawTeam(); }); }
 }
@@ -5097,16 +5125,31 @@ const BUD0={"1年目":28};   /* 25（本番ぶん）＋3（チュートリアル
      Lv1 GX着手企業／Lv2 GX推進企業＝削減15以上かつ全メーター5以上
      Lv3 GXトップランナー＝削減20以上かつ全メーター7以上 */
 const LVNAME=["","GX着手企業","GX推進企業","GXトップランナー"];
-const LVCOND=[null,null,{red:15,met:5},{red:20,met:7}];
+/* 会社レベルの条件は「何年やったか」で変わる。
+   途中で終えても決算が成立するように、年数ぶんの基準を持っておく。
+   （sim_v4.py で1500ゲームずつ回して、どの年数でもLv1/2/3がほぼ3等分になる値）
+     1年 … Lv1 38% / Lv2 31% / Lv3 31%
+     2年 … Lv1 33% / Lv2 35% / Lv3 32%   ← 従来の値そのまま
+     3年 … Lv1 26% / Lv2 38% / Lv3 36% */
+const LVBY = {
+  1:[null,null,{red:5, met:4},{red:8, met:5}],
+  2:[null,null,{red:15,met:5},{red:20,met:7}],
+  3:[null,null,{red:35,met:7},{red:48,met:9}]
+};
+/* いま何年目まで終えたか（決算する年を含む） */
+const yrNo = y => Math.max(1, Math.min(3, YEARS.indexOf(y||S.year)+1));
+const lvCondOf = y => LVBY[yrNo(y)] || LVBY[2];
+const LVCOND=LVBY[2];   /* 旧いコードが直接読んでいるぶんの保険 */
 function settle(){
   const net=total(cur()), base0=total((S.data[YEARS[0]]||{}).b||{})||100;
   const m=mtrs(), red=Math.max(0, r2(base0-net));
   const allAt=n=>METERS.every(x=>m[x.k]>=n);
-  const lv=(red>=20&&allAt(7))?3:((red>=15&&allAt(5))?2:1);
+  const LC=lvCondOf(S.year);        /* その年数ぶんの基準で見る */
+  const lv=(red>=LC[3].red&&allAt(LC[3].met))?3:((red>=LC[2].red&&allAt(LC[2].met))?2:1);
   // 次のレベルまでに足りないもの
   let need=null;
   if(lv<3){
-    const c=LVCOND[lv+1], lack=[];
+    const c=LC[lv+1], lack=[];
     if(red<c.red) lack.push(`CO2削減 あと${r2(c.red-red)}`);
     const sh=METERS.filter(x=>m[x.k]<c.met);
     if(sh.length===METERS.length)
@@ -7494,7 +7537,10 @@ function revYear(y){
           cards:cards, evts:evts, cost:cards.reduce((a,x)=>a+costOf(x.p),0)};
 }
 function review(){
-  const ys=YEARS.map(revYear), t=settle(), mF=mtrs();
+  /* やっていない年は並べない（1年でやめた卓に、2年目3年目の空欄を出さない） */
+  const played = YEARS.filter(y=>{ const c=S.data[y];
+    return !!(c && (c.mon>0 || !isZero(c.v)));   /* 数字が入っている年＝実際にやった年 */ });
+  const ys=(played.length?played:[YEARS[0]]).map(revYear), t=settle(), mF=mtrs();
   const all=doneList().map(r=>({r:r,p:PBY[r.id]})).filter(x=>x.p);
   const y1=PJ.filter(p=>p.yr===1);
   const y1on  =y1.filter(p=>{const r=doneAt(p.id); return !!r && r.year===YEARS[0];});
@@ -7510,10 +7556,13 @@ function review(){
 function revHTML(){
   const R=review(), t=R.t, H=[];
   const nm=p=>`No.${p.id} ${esc(p.n)}`;
-  H.push(`<h4>この${Math.max(1, YEARS.indexOf(S.year)+1)}年でやったこと</h4><ul>`);
+  H.push(`<h4>この${R.ys.length}年でやったこと</h4><ul>`);
   H.push(`<li>完了したカードは <b>${R.all.length}枚</b>（払ったコストの合計 ${R.all.reduce((a,x)=>a+costOf(x.p),0)}）。`
        + `排出量は <b>${R.ys[0].base} → ${t.net}</b>、削減は <b>${t.red}</b> でした。</li>`);
-  H.push(`<li>会社レベルは <b>Lv${t.lv}　${t.lvName}</b>。`
+  H.push(`<li>会社レベルは <b>Lv${t.lv}　${t.lvName}</b>`
+       + `<span class="sub2">（${R.ys.length}年でやったときの基準：`
+       + `Lv2＝削減${lvCondOf()[2].red}・全メーター${lvCondOf()[2].met}／`
+       + `Lv3＝削減${lvCondOf()[3].red}・全メーター${lvCondOf()[3].met}）</span>。`
        + (t.need&&t.need.lack.length
           ? `<br><span class="warn2">${t.need.to}まで足りなかったもの：${t.need.lack.join("／")}</span>`
           : `いちばん上まで行きました。`) + `</li>`);
@@ -7526,7 +7575,7 @@ function revHTML(){
   });
   H.push(`</ul>`);
   const srt=METERS.slice().sort((a,b)=>R.mF[b.k]-R.mF[a.k]);
-  const lo=(t.lv<3 && LVCOND[t.lv+1]) ? LVCOND[t.lv+1].met : null;
+  const lo=(t.lv<3 && lvCondOf()[t.lv+1]) ? lvCondOf()[t.lv+1].met : null;
   const sh=lo!=null ? METERS.filter(x=>R.mF[x.k]<lo) : [];
   H.push(`<h4>担当メーター</h4><ul>`);
   H.push(`<li>最終値：${METERS.map(x=>`${x.n} <b>${R.mF[x.k]}</b>`).join("／")}</li>`);
@@ -8052,7 +8101,8 @@ window.__remote = d=>{
     setTimeout(()=>{ try{ openPj(+qpj); }catch(e){} }, 500); }
   if(d.hist) S.hist=Object.values(d.hist);
   if(d.done){ S.done=d.done;
-    const cu=YEARS.find(y=>!S.done[y]); if(cu && S.done[S.year]) S.year=cu; }
+    /* 年度を終える処理の最中は動かさない（自分の書き込みでもここが同期的に呼ばれる） */
+    if(!ENDING){ const cu=YEARS.find(y=>!S.done[y]); if(cu && S.done[S.year]) S.year=cu; } }
   /* Firebaseは配列を、抜けがあるとオブジェクトの形で返してくる。
      どちらで来ても同じように扱えるようにしてから使う */
   const asArr = v => Array.isArray(v) ? v
