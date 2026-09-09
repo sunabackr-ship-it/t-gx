@@ -876,7 +876,7 @@ body.manual .budman{display:flex}
  70%{box-shadow:0 0 0 11px rgba(63,107,27,0)}100%{box-shadow:0 0 0 0 rgba(63,107,27,0)}}
 #guide .gbt button.pulse{background:var(--gd);color:#fff;border-color:var(--gd);
  animation:gpulse 1.35s ease-out infinite}
-/* ---- サイコロのあと：次にやること＋大きな閉じるボタン ---- */
+/* ---- ルーレットのあと：次にやること＋大きな閉じるボタン ---- */
 .rres small.todo{display:block;background:rgba(255,255,255,.16);border-radius:9px;
  padding:8px 10px;margin-top:9px;font-size:13px;font-weight:800;opacity:1;line-height:1.6}
 .rnext{margin-top:12px}
@@ -1324,7 +1324,7 @@ window.onerror=function(m,src,line,col){
       <div class="skrow"><span id="skillTxt"></span><button class="tbtn" id="skillBtn"></button></div>
     </div>
 
-    <h2 style="margin:18px 0 6px">直近の出目</h2>
+    <h2 style="margin:18px 0 6px">直近の結果</h2>
     <div id="rollLog" class="rlog"></div>
     <button class="btn alt" id="cClose">閉じる</button>
   </div>
@@ -4285,7 +4285,7 @@ function drawIntro(){
   $("#iTag").textContent="Normal";
   $("#iName").textContent=cname(c);
   $("#iDice").textContent=`担当メーター「${t.meter}」　${t.quote1}`;
-  $("#iMove").textContent=`${d.nm}のルーレット　出目 ${Math.min(...d.f)}〜${Math.max(...d.f)} の範囲に移動できる`;
+  $("#iMove").textContent=`${d.nm}のルーレット　${Math.min(...d.f)}〜${Math.max(...d.f)} の範囲に移動できる`;
   $("#iProj").innerHTML = strongOfT(c.t).length
     ? `通常 ${t.r1}%　／　得意分野なら ${upStep(t.r1)}%<br>`
       + `<span style="color:${FIELDS[strongOfT(c.t)[0]].c};font-weight:700">得意：${fnames(strongOfT(c.t))}</span>`
@@ -4336,7 +4336,7 @@ function openChar(){
   $("#cName").textContent = cname(c);
   $("#cBase").textContent = `担当メーター「${t.meter}」`;
   $("#cLvBtn").textContent = up?"通常に戻す":"覚醒させる";
-  $("#cMove").textContent = `${d.nm}のルーレット　出目 ${Math.min(...d.f)}〜${Math.max(...d.f)}`;
+  $("#cMove").textContent = `${d.nm}のルーレット　${Math.min(...d.f)}〜${Math.max(...d.f)}`;
   const rNow = up?t.r2:t.r1;
   $("#cProj").innerHTML = (strongOf(c).length
     ? (upStep(rNow)!==rNow
@@ -4695,7 +4695,7 @@ function rvSpin(box, ang, buzz, done){
   setTimeout(end, GROW+SPIN+1500);
 }
 /* ===== 移動ルーレット =====
-   サイコロの目をそのまま6つの区画にした輪。出る確率は今までと同じ（6分の1ずつ）。
+   もとのサイコロの目をそのまま6つの区画にした輪。出る確率は同じ（6分の1ずつ）。
    卓の全員で「せーの」で回すので、転がる音より「同時に止まる」ほうが見やすい */
 function mvHTML(col, ang, o){
   o=o||{};
@@ -7054,7 +7054,7 @@ function drawTurnBox(){
   if(rs) rs.onclick=()=>{ turnReset(); drawCStrip(); drawTurnBox(); drawGuide(); };
 }
 
-/* サイコロを振り終わったあとの誘導。キャラのシートの、出目のすぐ下に出す */
+/* ルーレットを回し終わったあとの誘導。キャラのシートの、結果のすぐ下に出す */
 function showNextTurn(t){
   const el=$("#rollNext"); if(!el) return;
   const nx=turnNextOf(t);
