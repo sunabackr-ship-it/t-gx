@@ -5211,7 +5211,7 @@ const pushEvt  = ()=> FB && FB.set("evt",  S.evt);
    数値を書くのは操作した端末だけ、という原則は変えない（記録は proj / evt に乗って同期される）。 */
 const recId = x=> (x && typeof x==="object") ? +x.id : +x;
 const recOf = x=> (x && typeof x==="object")
-  ? {id:+x.id, year:(x.year||null), mon:(x.mon==null?null:+x.mon)}
+  ? {id:+x.id, year:(x.year||null), mon:(x.mon==null?null:+x.mon), pay:(x.pay==null?null:+x.pay)}
   : {id:+x, year:null, mon:null};
 const stampNow = id=> ({id:+id, year:S.year, mon:monNow()});
 const doneList = ()=> (S.proj.done||[]).map(recOf);
@@ -5395,7 +5395,35 @@ function payPreview(p){
 }
 function openPjBtns(id){
   const p=PBY[id], done=isDone(id), run=S.proj.run.find(r=>r.id===id);
-  if(done){ $("#pAct").innerHTML=`<p class="note" style="margin:10px 0">このプロジェクトは実行済みです。</p>`; return; }
+  if(done){
+    const rec=doneAt(id)||{};
+    const back = (rec.pay==null) ? null : rec.pay;
+    $("#pAct").innerHTML =
+      `<p class="note" style="margin:10px 0">このプロジェクトは実行済みです。</p>`
+      + `<button class="tbtn" data-undone="1" style="margin-top:4px">完了を取り消して、推進ボードにもどす</button>`
+      + `<p class="note" style="margin:8px 0 0;font-size:11.5px">`
+      + `番号をまちがえて登録したときに使います。`
+      + (back!=null ? `予算 ${back} は戻します。` : `予算がいくら減ったかは残っていないので、手で戻してください。`)
+      + `<b>メーターと排出量は自動では戻りません。</b>下に出るぶんを「手動で調整」から戻してください。</p>`;
+    $("#pAct").querySelector("[data-undone]").onclick=()=>{
+      const fxs=(p.fx||[]).map(e=>e.t||"").filter(Boolean);
+      if(!confirm(`「${p.n}」の完了を取り消します。\n\n`
+        + `・推進ボードに、全段階そろった状態でもどします\n`
+        + (back!=null ? `・予算を ${back} 戻します\n` : `・予算は戻せません（手で直してください）\n`)
+        + `・つぎの効果は自動では戻りません。手で戻してください：\n`
+        + (fxs.length ? "　"+fxs.join("\n　") : "　（なし）")
+        + `\n\nよろしいですか？`)) return;
+      S.proj.done=(S.proj.done||[]).filter(x=>recId(x)!==+id);
+      S.proj.run=S.proj.run||[];
+      if(!S.proj.run.some(r=>r.id===+id)) S.proj.run.push({id:+id, step:p.st});
+      const c0=cell0();
+      if(back!=null && c0.bud!=null) c0.bud=r2(c0.bud+back);
+      save(); pushProj(); if(FB) FB.set(`years/${S.year}/bud`, c0.bud);
+      drawRun(); drawPjList(); drawTeam(); openPj(id);
+      toast(`「${p.n}」の完了を取り消しました。メーターと排出量は手で戻してください。`);
+    };
+    return;
+  }
   if(run && run.step>=p.st){
     const pv=payPreview(p);
     const bud=cell0().bud, short=(bud!=null && bud<pv.cost);
@@ -5426,7 +5454,7 @@ function openPjBtns(id){
       +`<button class="tbtn" data-fin0="1" style="margin-top:8px">支払わずに完了（【大型受注】などのスキル使用時）</button>
        <button class="btn alt" data-drop="1" style="margin-top:10px">このプロジェクトをやめる</button>`;
     $("#pAct").querySelector("[data-fin]").onclick=()=>{
-      if(tutWait.length){ alert("チュートリアルは全員で一巡します。\nあと " + tutWait.length + "人（" + tutWait.map(tname).join("・") + "）が推進してから完了してください。"); return; }
+      if(tutWait.length && !confirm("チュートリアルは全員で一巡します。\nあと " + tutWait.length + "人（" + tutWait.map(tname).join("・") + "）がまだ推進していません。\n\nそれでも完了しますか？")) return;
       if(!(p.tut&&TUTFREE) && short){ alert(`予算が足りません（残 ${bud}／コスト ${pv.cost}）。`); return; }
       finishPj(id, run.by!=null?run.by:null);
     };
@@ -5523,7 +5551,7 @@ function finishPj(id, ci, pay){
     payFx={cost:p.cost, from:null, to:null};
   }
   S.proj.run=S.proj.run.filter(r=>r.id!==id);
-  if(!isDone(id)) S.proj.done.push(stampNow(id));   /* 年と月もいっしょに残す */
+  if(!isDone(id)) S.proj.done.push(Object.assign(stampNow(id), {pay:(pay==="skip"||pay==="tut")?0:p.cost}));
   save();
   if(FB){   /* 予算と進行状況は1回でまとめて書く（set() を並べない） */
     const o={proj:S.proj};
@@ -6567,6 +6595,7 @@ function openBig(id){
    if(!done){
      const st = run
        ? `<p class="note" style="margin:12px 0 0">このカードは推進ボードにあります（${run.step}/${p.st}段階）。推進はキャラクターの画面から行います。</p>`
+         + `<button class="tbtn" id="bcDrop" style="margin-top:8px">推進ボードから下ろす</button>`
        : tutBlock(id)
          ? `<p class="note" style="margin:12px 0 0">チュートリアルで今月やるのは「${tutBlock(id).n}」です。このカードは<b>見るだけ</b>。</p>`
        : (laneBusy(id)
@@ -6576,6 +6605,13 @@ function openBig(id){
            + `以降は「推進」でこのカードを選んで進めます。</p>`);
      $("#bcAct").insertAdjacentHTML("afterbegin", st + `<div style="height:12px"></div>`);
    }}
+  const gd=$("#bcDrop");
+  if(gd) gd.onclick=()=>{
+    if(!confirm(`「${p.n}」を推進ボードから下ろします。進めた段階も消えます。`)) return;
+    S.proj.run=(S.proj.run||[]).filter(r=>r.id!==id); save(); pushProj();
+    drawRun(); drawPjList(); openBig(id);
+    toast(`「${p.n}」を推進ボードから下ろしました。`);
+  };
   const gr=$("#bcRun");
   if(gr) gr.onclick=()=>{
     const tb2=tutBlock(id);
@@ -6662,7 +6698,8 @@ function bigFinish(id, pay, short, bud){
   if(use.b58) delete bn.b58;
   if(use.sales) delete chg.sales;
   if(use.proc) delete chg.proc;
-  if(!isDone(id)) S.proj.done.push(stampNow(id));   /* 年と月もいっしょに残す */
+  /* 取り消せるように、実際にいくら払ったかも残す */
+  if(!isDone(id)) S.proj.done.push(Object.assign(stampNow(id), {pay:(pay==="skip"||pay==="tut")?0:cost}));
   /* ---- 効果の組み立て（#47は選んだ転換元だけ） ---- */
   const acts=[];
   p.fx.forEach((e,i)=>{
