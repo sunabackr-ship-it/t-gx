@@ -5254,9 +5254,11 @@ S.evt  = Object.assign({drawn:[],last:null},        S.evt ||{});
 const pushProj = ()=> FB && FB.set("proj", S.proj);
 /* むずかしさ 低・中・高 は、それぞれ同時に1枚まで（紙の推進ボードの3本の道と同じ）。
    ふさがっていれば、ふさいでいるカードを返す */
+/* 推進ボードに「いま」のっているカード。実行済みが混ざっていても数えない */
+const onBoard = ()=> (S.proj.run||[]).filter(r=>PBY[r.id] && !isDone(r.id));
 function laneBusy(id){
   const p=PBY[id]; if(!p) return null;
-  const r=(S.proj.run||[]).find(x=>x.id!==id && PBY[x.id] && PBY[x.id].d===p.d);
+  const r=onBoard().find(x=>x.id!==id && PBY[x.id].d===p.d);
   return r ? PBY[r.id] : null;
 }
 const pushEvt  = ()=> FB && FB.set("evt",  S.evt);
@@ -5363,7 +5365,7 @@ function drawPjList(){
 }
 function drawRun(){
   if(!$("#runList")) return;
-  const rs=(S.proj.run||[]).filter(r=>PBY[r.id]);
+  const rs=(S.proj.run||[]).filter(r=>PBY[r.id] && !isDone(r.id));   /* 実行済みは出さない */
   $("#runList").innerHTML = rs.length ? rs.map(r=>{
     const p=PBY[r.id], fin=r.step>=p.st;
     return `<button class="runr ${fin?"fin":""}" data-run="${p.id}">
@@ -6773,6 +6775,8 @@ function bigFinish(id, pay, short, bud){
   if(use.b58) delete bn.b58;
   if(use.sales) delete chg.sales;
   if(use.proc) delete chg.proc;
+  /* 完了したカードは推進ボードから外す（外し忘れると、その難度の枠がふさがったままになる） */
+  S.proj.run=(S.proj.run||[]).filter(r=>r.id!==id);
   /* 取り消せるように、実際にいくら払ったかも残す */
   if(!isDone(id)) S.proj.done.push(Object.assign(stampNow(id), {pay:(pay==="skip"||pay==="tut")?0:cost}));
   /* ---- 効果の組み立て（#47は選んだ転換元だけ） ---- */
@@ -7294,10 +7298,8 @@ function phase(){
     }
     if(ev) steps.push(["イベントカードを1枚引く",
                        evGot()?"この月のカードは引き済みです。":"引いたカードの効果は、専務がアプリに反映します。"]);
-    steps.push(["進行役の「せーの」で、全員そろって移動を回す",
-                RT("移動のルーレットを全員で同時に回し、盤上でコマを動かします。","移動のルーレットを全員で同時に回し、リモート卓のボードでコマを動かします。")]);
-    {const free=["低","中","高"].filter(d=>!(S.proj.run||[]).some(r=>PBY[r.id]&&PBY[r.id].d===d));
-     const nrun=(S.proj.run||[]).length;
+    {const free=["低","中","高"].filter(d=>!onBoard().some(r=>PBY[r.id].d===d));
+     const nrun=onBoard().length;
      if(free.length) steps.push([
        nrun ? `新しいプロジェクトを発案する（空いているのは ${free.join("・")}）`
             : `今月やるプロジェクトを発案して、推進ボードにのせる`,
@@ -7307,8 +7309,13 @@ function phase(){
        + (nrun ? `いまは <b>${free.join("・")}</b> が空いています。`
                : `いまは3つとも空いています。`)
        + `<b>のせずに、いま進めているカードに集中してもかまいません。</b>`]);}
+    {const b=onBoard().map(r=>PBY[r.id]);
+     const iki=[...new Set(b.map(p=>FIELDS[p.f].nm))];
+     steps.push(["進行役の「せーの」で、全員そろって移動を回す",
+       RT("移動のルーレットを全員で同時に回し、盤上でコマを動かします。","移動のルーレットを全員で同時に回し、リモート卓のボードでコマを動かします。")
+       + (iki.length ? `<br>いま推進ボードにあるのは <b>${iki.join("・")}</b> のカードです。そのマスを目指します。` : "")]);}
     steps.push(["ひとりずつ、プロジェクトを推進する",
-                "「推進」を押して、推進ボードのカードから1つ選びます。成功すると1段階すすみます。"]);
+                "止まったマスの分野のカードを、「推進」から選びます。成功すると1段階すすみます。"]);
     steps.push(["完了したプロジェクトを、専務がアプリに登録する",
                 "カードの No.（番号）を入れて「完了」。効果はチーム全員のスマホに同時に出ます。"]);
     if(last) steps.push([`${y}の決算をする`,
