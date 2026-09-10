@@ -30,12 +30,22 @@ select{background:#fff;border:none;border-radius:8px;padding:6px 8px;color:var(-
 .ystrip button small{display:block;font-size:10px;font-weight:700;opacity:.95}
 .ystrip button.on{background:#fff;color:var(--gd);opacity:1;font-weight:800}
 .ystrip button.done{opacity:1;background:rgba(255,255,255,.3)}
+#rlTs{position:fixed;left:50%;top:10px;transform:translate(-50%,-14px);z-index:79;
+ background:#26331C;color:#F3F1E6;border-radius:11px;padding:9px 16px;font-size:13.5px;
+ box-shadow:0 8px 24px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;
+ white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
+#rlTs.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+#rlTs span{font-weight:800;color:#FBE7A8;margin-left:4px}
 #rlOv{position:fixed;inset:0;z-index:78;background:rgba(30,36,24,.5);display:flex;align-items:center;justify-content:center}
 #rlOv.hide{display:none !important}
 #rlOv .rlBox{background:#fff;border-radius:18px;padding:20px 22px 18px;text-align:center;max-width:min(92vw,340px);box-shadow:0 18px 50px rgba(0,0,0,.35)}
 #rlOv .rlWho{font-size:15px;font-weight:800;color:var(--ink);margin-bottom:10px}
 #rlOv .rlRes{font-size:16px;font-weight:800;margin-top:10px;min-height:1.4em}
 #rlOv .rlRes small{display:block;font-size:12px;font-weight:700;color:var(--sub);margin-top:3px}
+#qrOv2{position:fixed;inset:0;z-index:76;background:rgba(30,36,24,.45);display:flex;align-items:flex-end;justify-content:center}
+#qrOv2.hide{display:none !important}
+#qrOv2 .sheet{background:#fff;width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px))}
+#qrOv2B svg{width:min(70vw,260px);height:auto;display:block;margin:0 auto}
 #menu,#ysheet,#csheet{position:fixed;inset:0;z-index:75;background:rgba(30,36,24,.45);
  display:flex;align-items:flex-end;justify-content:center}
 #menu.hide,#ysheet.hide,#csheet.hide{display:none !important}
@@ -335,7 +345,7 @@ body.simple #ystrip,
 body.simple .mon .pm,
 body.simple #ldrCh{display:none !important}
 /* 月送り・年度終了は進行役の仕事。ふだんはその人の端末にだけ出す */
-body.simple:not(.ismon) .foot #endYear{display:none !important}
+body:not(.ismon) .foot #endYear{display:none !important}
 body.simple:not(.ismon) .foot #more{flex:1 1 auto}
 /* 年の切り替えを隠すぶん、いまが何年目かを月の欄に出す */
 body.simple .mon .ml{font-weight:800;color:var(--gd)}
@@ -666,6 +676,10 @@ body.manual #rows .val b{text-decoration:underline dotted;text-underline-offset:
  color:var(--gd);font-weight:700;font-size:15px}
 /* ---- 振り返り ---- */
 .revb{text-align:left;font-size:13px;line-height:1.8;color:var(--gd)}
+.revb .revOrd{margin:4px 0 8px;padding-left:22px}
+.revb .revOrd li{margin:3px 0;line-height:1.55}
+.revb .revOrd .rt{display:inline-block;min-width:78px;color:var(--sub);font-size:11.5px;font-weight:700}
+.revb .revOrd .rs2{display:block;color:var(--sub);font-size:11.5px}
 .revb h4{margin:15px 0 4px;font-size:13px;color:var(--gd);border-left:4px solid var(--g);padding-left:8px}
 .revb h4:first-child{margin-top:2px}
 .revb ul{margin:0;padding-left:18px}
@@ -1292,6 +1306,13 @@ window.onerror=function(m,src,line,col){
 </div>
 </div>
 
+<div id="qrOv2" class="hide"><div class="sheet" style="text-align:center">
+  <div class="mt" style="font-size:18px">このチームのQR</div>
+  <p class="note" id="qrOv2T" style="margin:6px 0 10px"></p>
+  <div id="qrOv2B"></div>
+  <p class="note" id="qrOv2U" style="word-break:break-all;font-size:11px;margin:8px 0"></p>
+  <button class="btn alt" id="qrOv2X">閉じる</button>
+</div></div>
 <div id="menu" class="hide">
   <div class="sheet">
     <div class="mt" style="font-size:18px">この年度の操作</div>
@@ -1300,6 +1321,7 @@ window.onerror=function(m,src,line,col){
     <button class="btn alt" id="reset">開始時の値に戻す（いまの数字は消えます）</button>
     <button class="btn alt" id="snap">いまの数字を記録に残す</button>
     <button class="btn alt" id="mRec">年度別の記録・振り返りを見る</button>
+    <button class="btn alt" id="mQR">このチームのQRを出す（画面を閉じた人に）</button>
     <button class="btn alt" id="repick">キャラクターを選び直す</button>
     <button class="btn alt" id="menuClose" style="margin-top:18px">閉じる</button>
   </div>
@@ -4544,6 +4566,7 @@ function doRoll(kind){
     c.last={kind,sum,ok,faces,rate,base:rBase,r0:rZero,ang:rAng,mang:mAng};                 // 画面に出したまま残す
     S.rolls.push(rec); S.rolls=S.rolls.slice(-20);
     save(); pushChars(); FB&&FB.pushRoll(rec);
+    MYROLL_AT=Date.now();   /* 自分が回した時刻。この直後は他人の輪で画面を覆わない */
     /* 同じ輪を全端末で回せるように、止まる角度ごと流す */
     FB && FB.set("rollev", Object.assign({}, rec,
       {seq:Date.now(), dev:S.devId, t:c.t, col:t.move,
@@ -4927,6 +4950,9 @@ $("#menu").onclick=e=>{ if(e.target.id==="menu"||e.target.id==="menuClose") $("#
 $("#ysNo").onclick=()=>$("#ysheet").classList.add("hide");
 $("#endYear").onclick=()=>{
   if(S.done[S.year]) return;
+  /* 年度の終了は進行役だけ。ほかの端末で押されても受け付けない（全員がタップして
+     3年目まで終わった事故があった） */
+  if(!roleOK("mon")){ alert("年度の終了は、進行役の端末から押します。"); return; }
   const c=cur(), b=base(), net=total(c), bg=total(b), d=net-bg;
   const pct = bg ? Math.round(d/bg*1000)/10 : 0;
   const i=YEARS.indexOf(S.year), nx=YEARS[i+1];
@@ -4971,6 +4997,7 @@ let STOPHERE=false;   /* 進行役が「ここで終える」を押したか */
 let ENDING=false;   /* 年度を終える処理中。この間は受信で年を動かさない */
 function endYear(){
   const Y0=S.year;   /* 書き込みの途中で S.year が動くので、最初に控えておく */
+  if(S.done[Y0] || ENDING) return;   /* 二重に走らせない（複数端末・連打） */
   ENDING=true;
   const c=cur(), d=new Date();
   /* 決算でレベルが確定した瞬間も同じ演出（年度の途中で出ていれば、ここでは出ない） */
@@ -5007,6 +5034,18 @@ function endYear(){
 }
 $("#v1").onclick=()=>{S.view="single";save();drawTeam();};
 $("#v2").onclick=()=>{S.view="all";save();drawTeam();};
+$("#mQR") && ($("#mQR").onclick=()=>{
+  $("#menu").classList.add("hide");
+  if(!S.wid || !S.team){ alert("同期していないので、QRは作れません。ワークショップのURLから開いてください。"); return; }
+  const url = teamURL(S.wid, S.team);
+  const q=qrcode(0,"M"); q.addData(url); q.make();
+  $("#qrOv2T").textContent = `${S.team} のスコアシート。画面を閉じてしまった人に、この場で読んでもらえます。`;
+  $("#qrOv2B").innerHTML = q.createSvgTag({cellSize:4,margin:2,scalable:true});
+  $("#qrOv2U").textContent = url;
+  $("#qrOv2").classList.remove("hide");
+});
+$("#qrOv2X") && ($("#qrOv2X").onclick=()=>$("#qrOv2").classList.add("hide"));
+$("#qrOv2")  && ($("#qrOv2").onclick=e=>{ if(e.target.id==="qrOv2") $("#qrOv2").classList.add("hide"); });
 $("#mRec")    && ($("#mRec").onclick   =()=>{ $("#menu").classList.add("hide");
   S.view="all"; save(); drawTeam(); window.scrollTo(0,0); });
 $("#allBack") && ($("#allBack").onclick=()=>{ S.view="single"; save(); drawTeam();
@@ -5069,7 +5108,9 @@ function bumpM(k,d){
   m[k]=Math.max(MLO,Math.min(MHI,r2(m[k]+d)));
   if(m[k]===v0) return;
   const crossed = v0<AWAKE && m[k]>=AWAKE;
-  save(); FB && FB.set(`years/${S.year}/m/${k}`, m[k]);
+  save();
+  /* 手動の±も、サーバーの値を基準に差分を足す */
+  if(FB){ if(FB.meter) FB.meter(k, r2(m[k]-v0), v0); else FB.set(`years/${S.year}/m/${k}`, m[k]); }
   autoAwake();
   const acq=achTake(ach0);                 /* 手で動かして達成したときも同じ演出を出す */
   FB && FB.set(`years/${S.year}/ach`, cell0().ach);
@@ -5277,7 +5318,7 @@ const pushEvt  = ()=> FB && FB.set("evt",  S.evt);
    数値を書くのは操作した端末だけ、という原則は変えない（記録は proj / evt に乗って同期される）。 */
 const recId = x=> (x && typeof x==="object") ? +x.id : +x;
 const recOf = x=> (x && typeof x==="object")
-  ? {id:+x.id, year:(x.year||null), mon:(x.mon==null?null:+x.mon), pay:(x.pay==null?null:+x.pay)}
+  ? {id:+x.id, year:(x.year||null), mon:(x.mon==null?null:+x.mon), pay:(x.pay==null?null:+x.pay), who:(x.who||"")}
   : {id:+x, year:null, mon:null};
 const stampNow = id=> ({id:+id, year:S.year, mon:monNow()});
 const doneList = ()=> (S.proj.done||[]).map(recOf);
@@ -5617,7 +5658,8 @@ function finishPj(id, ci, pay){
     payFx={cost:p.cost, from:null, to:null};
   }
   S.proj.run=S.proj.run.filter(r=>r.id!==id);
-  if(!isDone(id)) S.proj.done.push(Object.assign(stampNow(id), {pay:(pay==="skip"||pay==="tut")?0:p.cost}));
+  if(!isDone(id)) S.proj.done.push(Object.assign(stampNow(id),
+    {pay:(pay==="skip"||pay==="tut")?0:p.cost, who:(ci!=null && S.chars[ci]) ? cname(S.chars[ci]) : ""}));
   save();
   if(FB){   /* 予算と進行状況は1回でまとめて書く（set() を並べない） */
     const o={proj:S.proj};
@@ -5751,7 +5793,12 @@ function applyAndShow(title, acts, meta){
     const y=S.year, o={};
     ents.forEach(e=>{
       if(e.t==="row")         o[`years/${y}/v/${e.k}`] = cur()[e.k];
-      else if(e.t==="meter")  o[`years/${y}/m/${e.k}`] = mtrs()[e.k];
+      else if(e.t==="meter"){
+        /* メーターは差分をトランザクションで足す（この update には入れない） */
+        const d=r2(e.to-e.from);
+        if(FB.meter && d!==0) FB.meter(e.k, d, e.from);
+        else o[`years/${y}/m/${e.k}`] = mtrs()[e.k];
+      }
       else if(e.t==="budget") o[`years/${y}/bg`]       = cell0().bg||0;
     });
     if(cell0().bud!=null) o[`years/${y}/bud`] = cell0().bud;   // 完了時に支払ったコスト
@@ -5898,8 +5945,8 @@ function runShow2(title, ents, meta){
   if(cb){ cb.disabled=true; cb.style.opacity=.35; }
   sndStart();
   const n   = Math.max(1, ents.length);
-  const per = rm ? 150 : 650;
-  const t0  = rm ? 180 : 700;
+  const per = rm ? 150 : 900;
+  const t0  = rm ? 180 : 900;
   ents.forEach((e,i)=> FXT.push(setTimeout(()=>hitEnt(i,e,rm,per), t0+i*per)));
   const endAt = t0 + n*per + (rm?40:140);
   FXT.push(setTimeout(()=>{
@@ -6029,7 +6076,7 @@ function evStage(ph, title, ents, meta, rm){
   /* ---- 2 説明文を1文字ずつ ---- */
   if(ph===1){
     EVSKIP=nx;                          /* 打っている最中でもタップで先へ */
-    evType($("#evDesc"), ev.desc||"", rm, ()=>{ evScroll(); arm(rm?200:900); });
+    evType($("#evDesc"), ev.desc||"", rm, ()=>{ evScroll(); arm(rm?300:2200); });
     return;
   }
   /* ---- 3 うまくいくとこういう効果（判定前なので結果は明かさない） ---- */
@@ -6046,7 +6093,7 @@ function evStage(ph, title, ents, meta, rm){
       const r=document.querySelector(`[data-eve="${i}"]`); if(r) r.classList.add("on");
       sndPikon(i);
     }, i*per)));
-    arm(fl.length*per + (rm?200:1000));
+    arm(fl.length*per + (rm?300:2600));
     return;
   }
   /* ---- 4 「さて、発動条件は……」＝いちばんのためどころ。
@@ -6091,7 +6138,7 @@ function evStage(ph, title, ents, meta, rm){
     }, t0+i*per)));
     const hn=$("#evHint");
     if(hn){ hn.textContent="タップで結果へ"; hn.classList.remove("hide"); }
-    arm(t0 + mk.length*per + (rm?2400:3400));  /* 読む間を取る。押せばすぐ結果へ */
+    arm(t0 + mk.length*per + (rm?2400:6000));  /* 読む間を取る。押せばすぐ結果へ */
     return;
   }
   /* ---- 6 効果発揮／発揮せず（判定そのものは evJudgeOf の結果をそのまま出す） ---- */
@@ -6109,7 +6156,7 @@ function evStage(ph, title, ents, meta, rm){
       +(ev.strong?`<div class="evjn strong">すべて該当：効果が強まる</div>`:"");
     evScroll(); sndAwake();
     const go=()=>{ fxClear(); meta._evj=1; runShow(title, ents, meta); };
-    EVSKIP=go; FXT.push(setTimeout(go, rm?350:1200));
+    EVSKIP=go; FXT.push(setTimeout(go, rm?400:2600));
   }else{
     jd.innerHTML = ev.ok==="warn"
       ? `<div class="evjudge warn">警告</div><div class="evjn">${esc(ev.note||"")}</div>`
@@ -6502,7 +6549,17 @@ function achBroadcast(awc, aw, acq){
 /* ---- ほかの人が回した輪を、この端末でも同じように回す ----
    回した本人の画面にしか出ておらず、進行役が口で結果を伝えていた（12:01）。
    数値は一切いじらない。絵を出すだけ。 */
-let RLSEEN=0, RLINIT=false, RLT=null;
+let RLSEEN=0, RLINIT=false, RLT=null, MYROLL_AT=0, RLTS=null;
+/* 覆わずに知らせる帯（自分の結果を見ているあいだ用） */
+function rlStrip(ev){
+  let el=$("#rlTs");
+  if(!el){ el=document.createElement("div"); el.id="rlTs"; document.body.appendChild(el);
+           el.onclick=()=>el.classList.remove("on"); }
+  const r = ev.kind==="move" ? `${ev.sum}マス` : (ev.ok?"成功":"失敗");
+  el.innerHTML=`<b>${ev.who||""}</b>　${ev.kind==="proj"?"推進":"移動"}　<span>${r}</span>`;
+  el.classList.add("on");
+  clearTimeout(RLTS); RLTS=setTimeout(()=>el.classList.remove("on"), 4000);
+}
 function onRollEv(ev){
   if(!ev || !ev.seq) return;
   if(!RLINIT){ RLINIT=true; RLSEEN=ev.seq; return; }   /* 最初の1回は基準にするだけ */
@@ -6511,6 +6568,9 @@ function onRollEv(ev){
   if(Date.now()-(ev.at2||ev.seq||0) > 90000){ RLSEEN=ev.seq; return; }
   if(FXBUSY){ setTimeout(()=>onRollEv(ev), 800); return; }   /* 別の演出中は待つ */
   RLSEEN=ev.seq;
+  /* 自分の結果を見ている最中は、覆わずに帯で知らせる */
+  const mine = (Date.now()-MYROLL_AT < 8000) || !$("#csheet").classList.contains("hide");
+  if(mine){ rlStrip(ev); return; }
   const ov=$("#rlOv"); if(!ov) return;
   const wheel=ov.querySelector(".rlWheel"), who=ov.querySelector(".rlWho"), res=ov.querySelector(".rlRes");
   who.textContent = `${ev.who||""} の${ev.kind==="proj"?"推進":"移動"}`;
@@ -6788,7 +6848,8 @@ function bigFinish(id, pay, short, bud){
   /* 完了したカードは推進ボードから外す（外し忘れると、その難度の枠がふさがったままになる） */
   S.proj.run=(S.proj.run||[]).filter(r=>r.id!==id);
   /* 取り消せるように、実際にいくら払ったかも残す */
-  if(!isDone(id)) S.proj.done.push(Object.assign(stampNow(id), {pay:(pay==="skip"||pay==="tut")?0:cost}));
+  if(!isDone(id)) S.proj.done.push(Object.assign(stampNow(id),
+    {pay:(pay==="skip"||pay==="tut")?0:cost, who:(ci!=null && S.chars[ci]) ? cname(S.chars[ci]) : ""}));
   /* ---- 効果の組み立て（#47は選んだ転換元だけ） ---- */
   const acts=[];
   p.fx.forEach((e,i)=>{
@@ -7628,6 +7689,16 @@ function revHTML(){
        + (t.need&&t.need.lack.length
           ? `<br><span class="warn2">${t.need.to}まで足りなかったもの：${t.need.lack.join("／")}</span>`
           : `いちばん上まで行きました。`) + `</li>`);
+  /* 進めた順。どの順番でやったかが議論のネタになるように */
+  {const ord=doneList().filter(r=>PBY[r.id]);
+   if(ord.length){
+     H.push(`</ul><h4>進めた順</h4><ol class="revOrd">`);
+     ord.forEach(r=>{ const p=PBY[r.id];
+       H.push(`<li><span class="rt">${r.year||""}${r.mon!=null?` ${r.mon}月`:""}</span>`
+            + `<b>No.${p.id} ${esc(p.n)}</b>`
+            + `<span class="rs2">${p.d}・${FIELDS[p.f].nm}・コスト${r.pay!=null?r.pay:p.cost}${r.who?`・推進 ${esc(r.who)}`:""}</span></li>`); });
+     H.push(`</ol><ul>`);
+   }}
   H.push(`</ul><h4>年ごとの進み</h4><ul>`);
   R.ys.forEach(y=>{
     H.push(`<li><b>${y.y}</b>：カード ${y.cards.length}枚（コスト計 ${y.cost}）／`
@@ -8129,6 +8200,8 @@ function show(mode){
   if(mode==="intro") drawIntro();
   if(mode==="team") drawTeam();
   if(mode==="admin") drawAdmin();
+  /* QRで開いてキャラを選んでから入った端末は、ここで初めて同期を始める */
+  if(mode==="team" && S.wid && S.team && window.__connectTeam) window.__connectTeam(S.wid,S.team);
 }
 // チームに入ったのにキャラ未選択なら、まず選択画面へ
 const toTeam = ()=> show(S.chars.length ? "team" : "pick");
@@ -8244,7 +8317,7 @@ setTimeout(function(){
 const CFG = FIREBASE;
 if(CFG && CFG.databaseURL) try{
   const {initializeApp} = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js");
-  const {getDatabase,ref,onValue,set,push,update} =
+  const {getDatabase,ref,onValue,set,push,update,runTransaction} =
     await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js");
   const db = getDatabase(initializeApp(CFG));
   const S = window.__S();
@@ -8255,6 +8328,13 @@ if(CFG && CFG.databaseURL) try{
     set:(p,v)=> live() && safe(()=> set(ref(db,`workshops/${S.wid}/teams/${S.team}/${p}`), v)),
     pushHist:(i)=> live() && safe(()=> push(ref(db,`workshops/${S.wid}/teams/${S.team}/hist`), i)),
     pushRoll:(r)=> live() && safe(()=> push(ref(db,`workshops/${S.wid}/teams/${S.team}/rolls`), r)),
+    /* メーターはサーバーの値を基準に差分を足す（トランザクション）。
+       古い値のまま戻ってきた端末が絶対値で上書きするのを防ぐ。
+       サーバーにまだ値が無いときは手元の値を基準にする（increment だと0から足してしまう） */
+    meter:(k,d,base)=> live() && safe(()=> runTransaction(
+      ref(db,`workshops/${S.wid}/teams/${S.team}/years/${S.year}/m/${k}`),
+      v=>{ const b=(v==null||isNaN(+v)) ? base : +v;
+           return Math.max(MLO, Math.min(MHI, Math.round((b+d)*10)/10)); })),
     /* 変わったところだけを1回で書く。set() を並べると、その途中で返る古い
        スナップショットに上書きされて2件目以降が書けなくなる */
     upd:(o)=> live() && safe(()=> update(ref(db,`workshops/${S.wid}/teams/${S.team}`), o)),
@@ -8277,6 +8357,8 @@ if(CFG && CFG.databaseURL) try{
 
   window.__connectTeam = (w,t)=>{
     if(!w||!t) return;
+    /* 同じ卓に二重に購読しない（キャラ選択→スコアシートで再度呼ばれる） */
+    const key=w+"/"+t; if(window.__connKey===key) return; window.__connKey=key;
     onValue(ref(db,".info/connected"), s=>
       window.__status(!!s.val(), `${w} ／ ${t}　${s.val()?"同期中":"オフライン"}`));
     onValue(ref(db,`workshops/${w}/teams/${t}`), s=> window.__remote(s.val()));
