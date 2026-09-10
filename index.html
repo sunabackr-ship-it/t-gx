@@ -44,6 +44,15 @@ select{background:#fff;border:none;border-radius:8px;padding:6px 8px;color:var(-
  padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));animation:up .18s ease-out}
 /* ---- キャラクター選択 ---- */
 .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+/* 決定ボタンは画面の下に貼りつける。iOSのツールバーに隠れて押せなくなるため。
+   下の余白は、ホームバー（safe-area）とツールバーのぶんを見込んで多めにとる */
+#pick{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+#pickGo{position:sticky;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:5;
+ box-shadow:0 6px 20px rgba(38,51,28,.28)}
+#pick .pcount{margin-bottom:10px}
+#intro{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+#iNext{position:sticky;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:5;
+ box-shadow:0 6px 20px rgba(38,51,28,.28)}
 .pcard{background:#fff;border:2px solid var(--line);border-radius:14px;padding:12px 10px;
  text-align:center;position:relative;cursor:pointer;user-select:none}
 .pcard.on{border-color:var(--g);background:#F5FAEE}
