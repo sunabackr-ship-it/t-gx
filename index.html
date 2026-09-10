@@ -59,6 +59,11 @@ select{background:#fff;border:none;border-radius:8px;padding:6px 8px;color:var(-
 .pcard img{width:92px;height:104px;object-fit:contain;object-position:bottom;
  filter:drop-shadow(0 2px 5px rgba(0,0,0,.15))}
 .pcard .pn{font-size:15px;font-weight:800;margin-top:4px}
+.pcard .pmng{display:block;margin-top:6px;padding-top:6px;border-top:1px solid var(--line);
+ font-size:10.5px;line-height:1.5;color:var(--sub)}
+.pcard .pmng.heavy{color:#8A4A1E}
+.pcard .pmng.heavy b{color:#8A4A1E}
+.pcard .pmng.none{opacity:.6}
 .pcard .pd{font-size:11px;color:var(--sub);line-height:1.5;margin-top:3px}
 .pcard u{position:absolute;top:8px;right:8px;background:var(--gd);color:#fff;font-style:normal;
  font-size:13px;font-weight:800;border-radius:99px;width:26px;height:26px;line-height:26px}
@@ -1136,7 +1141,8 @@ window.onerror=function(m,src,line,col){
 <div id="pick" class="pane hide">
   <h3>使うキャラクターを選ぶ</h3>
   <p>あなたが動かすキャラクターをタップしてください。複数選べます。<br>
-     もう一度タップすると外れます。</p>
+     もう一度タップすると外れます。<br>
+     <b>専務はアプリの操作がいちばん多い役です。</b>スマホの操作に慣れた方が受け持つと、卓の進みが早くなります。</p>
   <div class="pgrid" id="pgrid"></div>
   <div class="pcount" id="pcount">0人</div>
   <button class="btn" id="pickGo">この編成ではじめる</button>
@@ -4273,7 +4279,11 @@ function drawPick(){
       <div class="pd">${c.meter}<br>成功 ${c.r1}%／移動 ${d.nm}（${d.f.join("・")}）<br>
         ${strongOfT(t).length
           ? `<span style="color:${FIELDS[strongOfT(t)[0]].c}">得意 ${fnames(strongOfT(t))}</span>`
-          : `<span style="color:var(--sub)">得意分野なし</span>`}</div>
+          : `<span style="color:var(--sub)">得意分野なし</span>`}
+        ${(MNGAPP[t]||{}).n
+          ? `<span class="pmng${t==="exec"?" heavy":""}">卓での担当：${MNGAPP[t].n}${
+              t==="exec"?"<br><b>スマホの操作がいちばん多い役です</b>":""}</span>`
+          : `<span class="pmng none">卓での担当なし</span>`}</div>
     </div>`;}).join("");
   $("#pgrid").querySelectorAll("[data-t]").forEach(el=>
     el.onclick=()=>{ PICK[el.dataset.t]=!PICK[el.dataset.t]; drawPick(); });
