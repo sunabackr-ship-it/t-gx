@@ -6973,7 +6973,7 @@ const pushTurn = ()=> FB && FB.set("turn", S.turn);
 const turnMvOK = t=> !!turnD()[t];
 const turnPjOK = t=> !!turnP()[t];
 /* 「済」＝移動も推進も終えた人 */
-const turnOK   = t=> (!needMove() || turnMvOK(t)) && turnPjOK(t);
+const turnOK   = t=> turnMvOK(t) && turnPjOK(t);
 function turnSet(t,on,kind){
   const m=turnFix();
   const box = kind==="pj" ? m.p : m.d;
@@ -6996,10 +6996,7 @@ const turnMvRest = ()=> roster().filter(t=>!turnMvOK(t));
 const canPush = ()=> (S.proj.run||[]).some(r=>PBY[r.id] && r.step<PBY[r.id].st);
 const turnPjRest = ()=> canPush() ? roster().filter(t=>!turnPjOK(t)) : [];
 /* いまどの段階か。移動が全員そろってから推進に移る */
-/* チュートリアルの月は移動を求めない（分野を合わせなくてよい月なので、歩く必要がない） */
-const needMove = ()=> tutFix()==null;
-const turnPhase = ()=> (needMove() && turnMvRest().length) ? "mv"
-                     : (turnPjRest().length ? "pj" : "end");
+const turnPhase = ()=> turnMvRest().length ? "mv" : (turnPjRest().length ? "pj" : "end");
 const turnRest = ()=> turnPhase()==="mv" ? turnMvRest() : turnPjRest();
 const turnAll  = ()=>{ const r=roster(); return r.length>0 && turnPhase()==="end"; };
 /* 振り終わった人の次（キャラ順で、まだ振っていない人） */
@@ -7078,7 +7075,7 @@ function drawTurnBox(){
     box.querySelectorAll("[data-ldr]").forEach(b=>b.onclick=()=>setLeader(b.dataset.ldr));
     return;
   }
-  const goBtn = (L && (iamLeader()||PROXY) && needMove() && turnMvRest().length)
+  const goBtn = (L && (iamLeader()||PROXY) && turnMvRest().length)
     ? `<button class="gobig" id="goSay">&#128227;「せーの」で全員に合図する</button>` : "";
   box.innerHTML = ldrHTML + goBtn +
     `<div class="tbh">
@@ -7086,8 +7083,7 @@ function drawTurnBox(){
           const ph=turnPhase();
           if(ph==="end" && !canPush() && !(S.proj.run||[]).length)
             return "推進ボードにカードがありません。<br>今月やるカードを決めて、のせてください";
-          if(ph==="end") return needMove()
-            ? "✓ 全員が移動と推進を終えました" : "✓ 全員が推進を終えました";
+          if(ph==="end") return "✓ 全員が移動と推進を終えました";
           const nm = ph==="mv" ? "移動" : "推進";
           const done = r.length-rest.length;
           const head = ph==="pj" && turnPjRest().length===r.length
@@ -7272,7 +7268,11 @@ function phase(){
        steps.push([`「${fp.n}」を推進ボードにのせて、全員で一巡して進める`,
                    RT("「カード」タブから開いて「推進ボードにのせる」を押します。",
                       "発案会議室で「このカードで始める」を押します。")
-                   + "そのあと一人ずつ推進のルーレットを回します。コストは本番と同じようにかかります。<br><b>この月は、止まったマスの分野を合わせなくてかまいません。</b>待たずに、順番に回してください。"]);}
+                   + "そのあと「せーの」で全員が移動を回して、コマを動かします。<br>"
+                   + "<b>この月は、止まったマスの分野を合わせなくてかまいません。</b>"
+                   + "どこに止まっても推進を回せるので、遠い人を待つ必要はありません"
+                   + "（分野を合わせるのは6月からの本番です）。<br>"
+                   + "コストは本番と同じようにかかります。"]);}
     {const f=tutFix();
      if(!(f && isDone(f)))
        steps.push(["完了したら、専務がカード番号を入れて登録する",
