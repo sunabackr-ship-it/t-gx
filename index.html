@@ -7268,6 +7268,7 @@ function phase(){
   const y2  = YEARS.indexOf(y)===1;
   const tut = isTut(y,m), ev = isEvM(y,m), last = i===monList().length-1;
   const start2 = y2 && i===0;
+  const start1 = !y2 && m===6;   /* 本番のはじめ（1年目6月）。チュートリアルの次の月 */
   const steps=[];
   if(tut){
     if(ev) steps.push(["イベントカードを1枚引く",
@@ -7297,6 +7298,12 @@ function phase(){
      else if(fin) steps.push(["「この月を終えて次へ」",
                               "チュートリアルの1枚は完了しました。5月はイベントを引く流れを見ます。"]);}
   }else{
+    if(start1){
+      steps.push([RT("1年目デッキ20枚を、分野ごとに配って読み込む","1年目デッキを、分野ごとに受け持つ"),
+                  "設備＝工場長／調達＝購買／広報＝広報／制度＝専務／人材＝営業。"
+                  + RT("自分の分野のカードを読んで、会議で提案する「読み込み係」です。",
+                       "スマホに自分の分野のカードが出ます。読んで、発案会議室で提案します。")]);
+    }
     if(start2){
       steps.push(["2年目デッキ40枚を、分野ごとに配って読み込む",
                   "設備＝工場長／調達＝購買／広報＝広報／制度＝専務／人材＝営業。各自8枚を読む「読み込み係」です。"]);
@@ -7415,8 +7422,8 @@ const MNGAPP = {
          s:"「この月を終えて次へ」で卓の進みを管理します。"},
   plant:{n:null,
          s:"卓の管理担当はありません。プロジェクトの推進に専念します。"},
-  proc: {n:"プロジェクトカード（1年目）",
-         s:"1年目のあいだ預かります（2年目は解除）。"},
+  proc: {n:null,
+         s:"卓の管理担当はありません。調達のカードを読んで、提案と推進に専念します。"},
   exec: {n:"予算（金庫）／アプリの操作・効果の反映",
          s:"カード完了の登録とイベントの反映は、専務がまとめて操作します。"}
 };
@@ -7446,11 +7453,9 @@ function drawRole(){
     const left=dk===2 ? PJ.filter(p=>!p.ext && !p.tut && p.yr===1 && p.f===f
                                    && !isDone(p.id)).length : 0;
     const rate=c.lv===2?t.r2:t.r1;
-    /* ベテラン購買の「プロジェクトカード」は1年目だけ。2年目は全員が分野を持つので解除。
-       紙のシートが無くなって担当が空になったキャラは「なし」と明示する */
+    /* 紙のシートが無くなって担当が空になったキャラは「なし」と明示する */
     const mg = MNGAPP[c.t] || {n:t.mng, s:"通年で預かります。"};
-    const procOff = (c.t==="proc" && y2);
-    const mngOff = procOff || !mg.n;
+    const mngOff = !mg.n;
     const good = isStrong(c,f);
     return `<div class="rlrow">
       <span class="cwrap mini ${aw?"up":""}"><img src="${cimg(c)}" alt=""></span>
@@ -7460,13 +7465,12 @@ function drawRole(){
           <b>${MNAME[k]} ${v}</b>${aw?"（覚醒ずみ）":`／覚醒${AWAKE}まで あと${r2(AWAKE-v)}`}
           ${aw?`<br><span class="sm" style="color:#B4553A">覚醒スキル ${t.s2}</span>`:""}</span></div>
         <div class="rkv"><span class="kk mg">①管理</span><span>${mngOff
-          ? `なし<span class="sm">　${procOff
-              ? "プロジェクトカードの管理は1年目だけ。2年目は各自が分野を持ちます。" : mg.s}</span>`
+          ? `なし<span class="sm">　${mg.s}</span>`
           : `<b>${mg.n}</b><span class="sm">　${mg.s}</span>`}</span></div>
         <div class="rkv"><span class="kk rd">②読み込み係</span><span>
           <b>${FIELDS[f].nm}</b>${y2
             ? `　2年目デッキ ${n}枚を読む${left?`（1年目の残り ${left}枚も場札にあります）`:""}`
-            : `　1年目デッキ ${n}枚（分野ごとの読み込みは2年目から）`}
+            : `　1年目デッキ ${n}枚を読む`}
           <span class="sm">　読んでチームに提案する係です。</span></span></div>
         <div class="rkv"><span class="kk gt">得意</span><span>
           <b>${strongTxt(c)}</b>　推進 ${rate}%${strongOf(c).length?`（得意なら ${upStep(rate)}%）`:"（どの分野でも同じ）"}
