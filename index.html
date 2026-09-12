@@ -399,6 +399,19 @@ body.simple .mon .ml{font-weight:800;color:var(--gd)}
 .lvbox{margin-top:11px;border-top:1px dashed var(--line);padding-top:10px;font-size:13.5px;line-height:1.75}
 .lvbox b{font-weight:800}
 .lvbox .lack{font-size:12px;color:var(--warn)}
+#conDrawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,100vw);background:var(--bg);
+ box-shadow:-8px 0 30px rgba(0,0,0,.28);z-index:80;display:flex;flex-direction:column}
+#conDrawer.hide{display:none !important}
+#conDrawer .cdHead{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px 10px;background:var(--gd);color:#fff}
+#conDrawer .cdHead b{flex:1 1 auto;font-size:15px;min-width:60px}
+#conDrawer .cdHead button{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;
+ padding:5px 10px;font-size:12px;font-weight:800;cursor:pointer}
+#conDrawer .cdHead #cdClose{background:#fff;color:var(--gd)}
+#conDrawer #cdQRBox{background:#fff;text-align:center;padding:10px;border-bottom:1px solid var(--line)}
+#conDrawer #cdQRBox svg{width:180px;height:180px}
+#conDrawer #cdFrame{flex:1 1 auto;width:100%;border:0;background:#fff;min-height:0}
+/* ドロワーが開いているあいだ、一覧はその左に寄せる（広い画面のとき） */
+@media (min-width:1100px){ body.cdopen main{margin-right:440px} }
 .con{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
 .con .tc{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff}
 .con .tc.lag{border-color:#E8B21E}
@@ -1522,6 +1535,15 @@ window.onerror=function(m,src,line,col){
     <button class="btn alt hide" id="nwCancel">やめる（前の画面にもどる）</button>
   </div>
 
+  <div id="conDrawer" class="hide noprint" aria-label="介入">
+    <div class="cdHead"><b id="cdTitle"></b>
+      <button id="cdNext">この卓だけ次の月へ</button>
+      <button id="cdQR">QR</button>
+      <button id="cdOpen">別タブで開く</button>
+      <button id="cdClose">とじる</button></div>
+    <div id="cdQRBox" class="hide"></div>
+    <iframe id="cdFrame" title="卓のスコアシート（ファシリ用）"></iframe>
+  </div>
   <div id="adList">
     <div class="card noprint" id="conCard">
       <h2>各卓のいま</h2>
@@ -8023,6 +8045,31 @@ function conInfo(t){
   const ready = roster.length>0 && !mvRest.length && !pjRest.length && !goal.length && !evPend;
   return {t, a, yy, ms, mi, m, roster, d, p, run, goal, can, mvRest, pjRest, evPend, next, cls, ready};
 }
+/* 介入ドロワー。卓のスコアシート（ファシリ用＝全操作）を右に埋め込む。
+   機能を作り直さず、卓の画面そのものを出す。保存先はURLごとなので一覧と混ざらない */
+let CDT=null;
+function conDrawer(t){
+  const d=$("#conDrawer"), f=$("#cdFrame"); if(!d||!f) return;
+  const url=teamURL(S.wid,t)+"&fac=1";
+  if(CDT!==t){ f.src=url; CDT=t; }
+  $("#cdTitle").textContent=`${t} 卓`;
+  $("#cdQRBox").classList.add("hide");
+  d.classList.remove("hide");
+  document.body.classList.add("cdopen");
+}
+function conDrawerClose(){ const d=$("#conDrawer"); if(d) d.classList.add("hide"); document.body.classList.remove("cdopen"); }
+$("#cdClose") && ($("#cdClose").onclick=conDrawerClose);
+$("#cdOpen")  && ($("#cdOpen").onclick=()=>{ if(CDT) window.open(teamURL(S.wid,CDT)+"&fac=1","_blank"); });
+$("#cdQR")    && ($("#cdQR").onclick=()=>{ const b=$("#cdQRBox"); if(!CDT||!b) return;
+  if(b.classList.contains("hide")){ const url=teamURL(S.wid,CDT), q=qrcode(0,"M"); q.addData(url); q.make();
+    b.innerHTML=q.createSvgTag({cellSize:4,margin:2,scalable:true})+`<div class="note" style="word-break:break-all">${url}</div>`; }
+  b.classList.toggle("hide"); });
+$("#cdNext")  && ($("#cdNext").onclick=()=>{ if(!CDT) return;
+  const x=conInfo(CDT); if(x.mi>=x.ms.length-1){ alert("この卓はもう年度末（3月）です。年度の終了は卓の画面から。"); return; }
+  if(!confirm(`${CDT} 卓だけを ${x.ms[x.mi+1]}月 に進めます。${x.ready?"":"\n（まだ終わっていない人がいます：「"+x.next+"」）"}`)) return;
+  if(FB && FB.setTeam) FB.setTeam(S.wid, CDT, `years/${S.year}/mon`, x.mi+1);
+  const a=S.all[CDT]||(S.all[CDT]={}); const ys=a.years||(a.years={}); const yy=ys[S.year]||(ys[S.year]={}); yy.mon=x.mi+1;
+  save(); drawAdmin(); });
 function drawCon(){
   const box=$("#conGrid"); if(!box) return;
   const ts=teamList();
@@ -8045,9 +8092,10 @@ function drawCon(){
       <div class="ppl">${ppl}</div>
       <div class="lanes">${lanes}</div>
       <div class="kv">削減 <b>${lv.red}</b>　<span class="lvpill l${lv.lv}">Lv${lv.lv}</span>　予算 <b>${x.yy.bud==null?"—":x.yy.bud}</b>${x.yy.bud0!=null?`／${x.yy.bud0}`:""}<br>${mt}</div>
-      <div class="acts"><a class="tbtn" href="${teamURL(S.wid,x.t)}&fac=1" target="_blank" rel="noopener">卓を開く（全操作）</a>
+      <div class="acts"><button class="tbtn" data-condr="${x.t}" style="background:var(--gd);color:#fff;border-color:var(--gd)">介入（全操作）</button>
         <button class="tbtn" data-conqr="${x.t}">QR</button></div>
       <div class="cqr hide" id="cqr_${x.t}"></div></div>`; }).join("");
+  box.querySelectorAll("[data-condr]").forEach(b=>b.onclick=()=>conDrawer(b.dataset.condr));
   box.querySelectorAll("[data-conqr]").forEach(b=>b.onclick=()=>{
     const t=b.dataset.conqr, el=$("#cqr_"+CSS.escape(t)); if(!el) return;
     if(el.classList.contains("hide")){
