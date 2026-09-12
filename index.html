@@ -8039,6 +8039,7 @@ function drawQR(){
       <div class="qbtns noprint">
         <button class="tbtn" data-copy="${url}">URLをコピー</button>
         <button class="tbtn" data-open="${url}">開く</button>
+        <button class="tbtn" data-open="${url}&fac=1" title="全操作できる・投影用">ファシリとして開く</button>
       </div></div>`;
   }).join("") || `<p class="note">ワークショップを作るとQRが出ます。</p>`;
   $("#qrWrap").querySelectorAll("[data-copy]").forEach(b=>
