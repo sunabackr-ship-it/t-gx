@@ -4635,7 +4635,8 @@ function doRoll(kind){
     turnSet(c.t, true, kind==="proj" ? "pj" : "mv");   // 全端末で共有
     drawCStrip(); drawTurnBox(); drawGuide(); drawRollLog();
     /* 結果を読む間をとる。すぐ「つぎは◯◯さん」に切り替わると目が追えない */
-    setTimeout(()=>showNextTurn(c.t), RMOTION()?300:2000);
+    /* 結果を読む間を長めにとる。自動で出すときは画面を動かさない（勝手に切り替わった感じを消す） */
+    setTimeout(()=>{ NEXT_NOSCROLL=true; showNextTurn(c.t); }, RMOTION()?300:5000);
   }
   function resText(){
     const fn = c.field?FIELDS[c.field].nm:"—", st = isStrong(c, c.field);
@@ -5467,7 +5468,11 @@ function drawPjList(){
   /* 年が変わったら既定のタブを合わせる（1年目=1年目デッキだけ／2年目=すべて） */
   /* 1年目は1年目デッキだけ。2年目は1年目の残りも使えるので「すべて」 */
   if(PFY!==S.year){ PFY=S.year; PF.d = YEARS.indexOf(S.year)===0 ? "y1" : "all"; }
+  /* 1年目のあいだは2年目デッキを出さない（実物も2年目のはじめに配る）。タブも隠す */
+  const y1only = yrDeck()===1;
+  if(y1only && (PF.d==="y2"||PF.d==="all"||PF.d==="ext")) PF.d="y1";
   $("#dTabs").innerHTML = [["mine","自分が読む担当"],["y1","1年目デッキ"],["y2","2年目デッキ"],["tut","チュートリアル"],["all","すべて"],["低","難度 低"],["中","難度 中"],["高","難度 高"],["ext","拡張"]]
+    .filter(([k])=>!(y1only && (k==="y2"||k==="all"||k==="ext")))
     .map(([k,n])=>`<button class="ftab ${PF.d===k?"on":""}" data-pd="${k}">${n}</button>`).join("");
   $("#fTabs").innerHTML = [["all","全分野"]].concat(FORDER.map(f=>[f,FIELDS[f].nm]))
     .map(([k,n])=>`<button class="ftab ${PF.f===k?"on":""}" data-pf="${k}" style="${
@@ -5488,6 +5493,7 @@ function drawPjList(){
     }
     if(PF.d==="y1") return p.yr===1;
     if(PF.d==="y2") return p.yr===2;
+    if(yrDeck()===1 && p.yr===2) return false;       /* 1年目は難度で絞っても2年目デッキは出さない */
     return PF.d==="all" || p.d===PF.d;
   });
   if($("#pjCount")){
@@ -7315,6 +7321,7 @@ function drawTurnBox(){
 }
 
 /* ルーレットを回し終わったあとの誘導。キャラのシートの、結果のすぐ下に出す */
+let NEXT_NOSCROLL=false;
 function showNextTurn(t){
   const el=$("#rollNext"); if(!el) return;
   try{ const mb=$("#rollMove"); if(mb && !el.classList.contains("hide")) {} drawRollBtnsSafe(); }catch(e){}
@@ -7340,6 +7347,7 @@ function showNextTurn(t){
      <button class="btn" id="rnGo">${
        ph==="end" ? "閉じて月送りへ"
        : myPush   ? "推進する"
+       : (nx && S.chars.some(x=>x.t===nx)) ? `閉じて ${esc(tname(nx))} さんへ`   /* 次の人がこの端末にいるときは、切り替わることを先に言う */
        : "閉じる"}</button>`;
   const g=$("#rnGo");
   if(g && myPush){ g.onclick=()=>{ el.classList.add("hide"); openPjPick(); }; return; }
@@ -7350,7 +7358,8 @@ function showNextTurn(t){
     if(!nx){ try{ const b=$("#gNext");
       b && b.scrollIntoView({block:"center", behavior:RMOTION()?"auto":"smooth"}); }catch(e){} }
   };
-  try{ el.scrollIntoView({block:"center", behavior:RMOTION()?"auto":"smooth"}); }catch(e){}
+  if(!NEXT_NOSCROLL){ try{ el.scrollIntoView({block:"center", behavior:RMOTION()?"auto":"smooth"}); }catch(e){} }
+  NEXT_NOSCROLL=false;
 }
 
 /* ---- イベントの月のポップアップ ----
