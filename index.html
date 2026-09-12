@@ -7069,7 +7069,23 @@ function drawEvtBox(){
 }
 
 $("#monPrev") && ($("#monPrev").onclick=()=>monMove(-1));
-$("#monNext") && ($("#monNext").onclick=()=>monMove(1));
+/* 月を送る前に、まだ終わっていないものを列挙して聞く。進めると手番の記録は消えるので */
+function monLeft(){
+  const L=[], nm=t=>tname(t);
+  const mv=turnMvRest(), pj=turnPjRest();
+  if(mv.length) L.push(`・移動がまだ：${mv.map(nm).join("・")}`);
+  else if(pj.length) L.push(`・推進がまだ：${pj.map(nm).join("・")}`);
+  const goal=(S.proj.run||[]).filter(r=>PBY[r.id] && r.step>=PBY[r.id].st);
+  if(goal.length) L.push(`・完了の登録待ち：No.${goal.map(r=>r.id).join("・")}（専務）`);
+  if(isEvM(S.year, monNow()) && !evGot()) L.push("・この月のイベントカードをまだ引いていません");
+  return L;
+}
+function monTry(){
+  const L=monLeft();
+  if(L.length && !confirm(`まだ終わっていません：\n${L.join("\n")}\n\nそれでも次の月へ進みますか？\n（進めると、この月の移動・推進の記録は消えます）`)) return;
+  monMove(1);
+}
+$("#monNext") && ($("#monNext").onclick=monTry);
 
 $("#budM") && ($("#budM").onclick=()=>budMove(-1));
 $("#budP") && ($("#budP").onclick=()=>budMove(1));
@@ -7529,7 +7545,7 @@ function drawGuide(){
   on("#gNum", ()=>{ S.view="cards"; save(); drawTeam(); window.scrollTo(0,0);
      setTimeout(()=>{ const el=$("#numIn");
        if(el){ el.focus(); try{ el.scrollIntoView({block:"center"}); }catch(e){} } }, 60); });
-  on("#gNext",()=>{ if(!p.last) monMove(1); });
+  on("#gNext",()=>{ if(!p.last) monTry(); });
   on("#gRoll",()=>{ openChar(); $("#csheet").classList.remove("hide"); });
   on("#gPush",()=>{ openChar(); $("#csheet").classList.remove("hide"); openPjPick(); });
   on("#gPass",()=>{ const me=S.chars[CI]; if(!me) return;
