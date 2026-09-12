@@ -207,6 +207,9 @@ td.big{font-weight:800;font-size:16px}
 .sec{background:#fff;color:var(--gd);border:1px solid var(--line)}
 .note{font-size:12px;color:var(--sub);margin:6px 2px 0}
 #app{padding-bottom:110px}
+/* ファシリのPCをプロジェクターに映す前提。横に伸びすぎないようにして、文字を少し大きく */
+body.fac main{max-width:1040px;margin:0 auto}
+@media (min-width:900px){ body.fac{font-size:17px} body.fac .mtr .mn .t{font-size:16px} }
 /* ---- modal ---- */
 #modal{position:fixed;inset:0;z-index:70;background:rgba(30,36,24,.45);display:flex;align-items:flex-end;justify-content:center}
 #modal.hide{display:none !important}
@@ -4829,6 +4832,7 @@ function applySimple(){
   /* 月送りを受け持つ人かどうか。ふだんの画面では、その人にだけ年度終了を出す */
   let mon=true; try{ mon = roleOK("mon"); }catch(e){}
   document.body.classList.toggle("ismon", !!mon);
+  {let fc=false; try{ fc=!!PROXY; }catch(e){} document.body.classList.toggle("fac", fc);}
   /* 年の切り替えを隠すので、いまが何年目かは月の欄で示す */
   const ml=document.querySelector(".mon .ml");
   if(ml) ml.textContent = SIMPLE ? (S.year||"いまの月") : "いまの月";
@@ -7252,7 +7256,9 @@ const ROLEGATE = {
   mon:  ["pr","exec","sales","plant","proc"],
   bud:  ["exec","pr","sales","plant","proc"]
 };
-let PROXY = false;
+/* ?fac=1 で開いた端末はファシリテーター。はじめから全操作できる（代理操作と同じ） */
+let PROXY = !!Q.get("fac");
+if(PROXY && $("#proxy")) $("#proxy").textContent="代理操作を終える";   /* ボタンの文言を状態に合わせる */
 /* 進行役（プロジェクトリーダー）。卓ではじめに決める。
    「せーの」の合図と月送りを受け持つ。カードの登録は専務のまま。 */
 function leaderOf(){ return (S.lead && CTYPE[S.lead]) ? S.lead : null; }
@@ -8048,7 +8054,9 @@ function drawQR(){
     ? teams.map(t=>`${t}: ${remoteURL(S.wid,t)}`).join("\n")
       + (teams.length?`\n進行役: ${adminURL(S.wid)}`:"")
     : teams.map(t=>`${t}: ${teamURL(S.wid,t)}`).join("\n")
-      + (teams.length?`\n進行役: ${adminURL(S.wid)}`:"");
+      + (teams.length?`\n進行役: ${adminURL(S.wid)}`:"")
+      + (teams.length?`\n\nファシリテーター用（全操作・投影用）\n`
+          + teams.map(t=>`${t}: ${teamURL(S.wid,t)}&fac=1`).join("\n"):"");
 }
 function copyText(txt, btn){
   const done=()=>{ if(!btn) return; const o=btn.textContent;
@@ -8264,11 +8272,12 @@ window.__index = d=>{ S.index=d||{};
   if(S.mode==="team") drawTeam();
   if(S.mode==="admin"){ drawPast(); drawAdmin(); } };
 window.__status=(on,txt)=>{ $("#roomBar").classList.remove("hide");
-  $("#dot").className="dot "+(on?"on":"off"); $("#roomTxt").textContent=txt; };
+  $("#dot").className="dot "+(on?"on":"off");
+  $("#roomTxt").textContent=txt + (PROXY ? "　／ ファシリテーター（全操作できます）" : ""); };
 window.__S = ()=>S;
 
 /* リモート卓から ?ch=... で渡されたキャラを引き継ぐ（選び直しをさせない） */
-{const qc=Q.get("ch");
+{const qc=Q.get("ch") || (Q.get("fac") ? CORDER.join(",") : "");   /* ファシリは5人ぶんを持つ */
  if(qc && !S.chars.length){
    const list=qc.split(",").map(s=>s.trim())
      .filter(t=>CORDER.indexOf(t)>=0).map(t=>({t,lv:1,used:{}}));
