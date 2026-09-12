@@ -104,6 +104,8 @@ select{background:#fff;border:none;border-radius:8px;padding:6px 8px;color:var(-
 .drow{display:flex;gap:10px;padding:5px 0;font-size:13px;line-height:1.5}
 .drow b{flex:0 0 52px;color:var(--sub);font-size:12px;padding-top:1px}
 .dbtns{display:flex;gap:10px;margin-top:14px}
+.dbtns .btn.done{background:#ECEADF;color:#9A968A;border:1px solid var(--line);cursor:default;box-shadow:none}
+.dbtns .btn.alt{background:#fff;color:var(--gd);border:1.5px solid var(--gd)}
 .dbtns .btn small{display:block;font-size:11px;font-weight:700;opacity:.85;margin-top:1px}
 .flabel{font-size:12px;color:var(--sub);margin:16px 0 6px}
 .fields{display:flex;flex-wrap:wrap;gap:6px}
@@ -4464,6 +4466,7 @@ function openChar(){
   }
   showLast();
   drawRollLog();
+  try{ drawRollBtns(); }catch(e){}   /* 手番に合わせたボタン（updRate の初期化より後に） */
   $("#csheet").classList.remove("hide");
 }
 function drawRollLog(){
@@ -4488,6 +4491,7 @@ function drawFields(){
 function updRate(){
   const b=$("#rollProj");
   if(b){ b.disabled=false; b.style.opacity=1; b.innerHTML="推進"; }
+  try{ drawRollBtnsSafe(); }catch(e){}   /* 初期化したあと、手番に合わせて出し分け直す */
 }
 /* ---- 分野の宣言ポップアップ（「推進」を押した瞬間に開く） ----
    シンプル表記5つ。内部キーとの対応：
@@ -4877,6 +4881,44 @@ function showLast(){
               + `<small class="todo">今回は動きません。次の人へ</small>`)}</div>`;
 }
 $("#rollMove").onclick=()=>doRoll("move");
+/* 手番に合わせて出し分ける。済んだものは薄くして押せなくし、
+   移動が済んだあとの「推進」ボタンは「今月は推進せず見送る」に化ける
+   （推進そのものは上の大きな「推進する」から）。数値やルールには関係しない */
+function drawRollBtns(){
+  const mb=$("#rollMove"), pb=$("#rollProj"); if(!mb||!pb) return;
+  const me=S.chars[CI]; if(!me) return;
+  const mv=turnMvOK(me.t), pj=turnPjOK(me.t), can=canPush();
+  const set=(b,txt,cls,fn)=>{ b.textContent=txt; b.className="btn"+(cls?" "+cls:""); b.style.margin="0";
+    b.disabled=(cls==="done"); b.onclick=fn||null; };
+  if(!mv) set(mb,"移動",null,()=>doRoll("move")); else set(mb,"移動済み","done");
+  if(!mv)     set(pb,"推進（移動のあと）","done");
+  else if(pj) set(pb, can?"推進済み":"今月の推進は見送り","done");
+  else {
+    set(pb,"今月は推進せず見送る","alt",passTurn);
+    /* 移動が済んで推進がまだなら、大きな「推進する」を必ず出しておく（閉じて開き直したときも） */
+    const rn=$("#rollNext"); if(rn && rn.classList.contains("hide")) showNextTurn(me.t);
+  }
+}
+/* showNextTurn から呼ぶと再帰するので、ここでは rollNext を出さない版 */
+function drawRollBtnsSafe(){
+  const mb=$("#rollMove"), pb=$("#rollProj"); if(!mb||!pb) return;
+  const me=S.chars[CI]; if(!me) return;
+  const mv=turnMvOK(me.t), pj=turnPjOK(me.t), can=canPush();
+  const set=(b,txt,cls,fn)=>{ b.textContent=txt; b.className="btn"+(cls?" "+cls:""); b.style.margin="0";
+    b.disabled=(cls==="done"); b.onclick=fn||null; };
+  if(!mv) set(mb,"移動",null,()=>doRoll("move")); else set(mb,"移動済み","done");
+  if(!mv)     set(pb,"推進（移動のあと）","done");
+  else if(pj) set(pb, can?"推進済み":"今月の推進は見送り","done");
+  else        set(pb,"今月は推進せず見送る","alt",passTurn);
+}
+function passTurn(){
+  const me=S.chars[CI]; if(!me) return;
+  if(canPush() && !confirm(`${cname(me)} は今月の推進を見送ります。よろしいですか？`)) return;
+  turnSet(me.t, true, "pj");
+  drawCStrip(); drawTurnBox(); drawGuide();
+  toast(`${cname(me)} は今月の推進を見送りました。`);
+  showNextTurn(me.t);
+}
 /* ふだんの画面か、くわしく出すか。端末ごとの好みなので同期はしない */
 let SIMPLE = true;
 try{ SIMPLE = localStorage.getItem(BASE+":simple") !== "0"; }catch(e){}
@@ -7275,12 +7317,13 @@ function drawTurnBox(){
 /* ルーレットを回し終わったあとの誘導。キャラのシートの、結果のすぐ下に出す */
 function showNextTurn(t){
   const el=$("#rollNext"); if(!el) return;
+  try{ const mb=$("#rollMove"); if(mb && !el.classList.contains("hide")) {} drawRollBtnsSafe(); }catch(e){}
   const nx=turnNextOf(t);
   el.classList.remove("hide");
   const left = turnRest().length, ph=turnPhase();
   const me  = S.chars[CI];
   /* 自分の移動が終わって推進がまだなら、次の人よりも先に自分の推進を促す */
-  const myPush = me && turnMvOK(me.t) && !turnPjOK(me.t);
+  const myPush = me && turnMvOK(me.t) && !turnPjOK(me.t) && canPush();   /* 進めるカードが無ければ「推進する」は出さない */
   el.innerHTML =
     `<div class="rnt">${
       ph==="end"
