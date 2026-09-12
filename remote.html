@@ -3234,7 +3234,7 @@ function bindPiece(el){
 let RUN={run:[],done:[]};
 /* 本体アプリの年・月を読むだけ。1年目の4月と5月がチュートリアル（本体の isTut と同じ） */
 let TEAM={years:{}, done:{}};
-const YEARSL=["1年目","2年目"], MONL=[4,5,6,7,8,9,10,11,12,1,2,3];
+const YEARSL=["1年目","2年目","3年目"], MONL=[4,5,6,7,8,9,10,11,12,1,2,3];   /* 本体と同じ3年制 */
 const curYear=()=> YEARSL.find(y=>!(TEAM.done||{})[y]) || YEARSL[0];
 const curMon =()=>{ const r=(TEAM.years||{})[curYear()]||{};
   return MONL[Math.max(0,Math.min(MONL.length-1, +r.mon||0))]; };
