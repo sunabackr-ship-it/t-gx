@@ -134,6 +134,19 @@ select{background:#fff;border:none;border-radius:8px;padding:6px 8px;color:var(-
   100%{transform:translateY(0)     rotate(0deg)  scale(1)}
 }
 .rres.rolling{opacity:.55;font-size:14px;font-weight:600}
+#multiOv{position:fixed;inset:0;z-index:96;background:rgba(30,36,24,.94);overflow:auto;display:flex;align-items:flex-start;justify-content:center}
+#multiOv.hide{display:none !important}
+#multiOv .moIn{width:100%;max-width:520px;padding:14px 12px 30px}
+#multiOv .moH{color:#fff;font-weight:800;font-size:16px;text-align:center;margin:6px 0 12px;line-height:1.5}
+#multiOv .moH small{display:block;font-size:12px;font-weight:600;opacity:.8}
+#multiOv .moG{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#multiOv .moB{background:#fff;border-radius:12px;padding:8px;text-align:center}
+#multiOv .moN{font-weight:800;font-size:13px;margin-bottom:4px}
+#multiOv .moW svg{width:100%;height:auto;display:block}
+#multiOv .rollStop{margin-top:6px;padding:11px 6px;font-size:15px;font-weight:900;background:#F5C518;color:#1A1A1A;border:0;width:100%;
+ animation:gpulse 1.1s ease-out infinite}
+#multiOv .moR{font-weight:800;color:var(--gd);margin-top:6px;font-size:13px;min-height:1.4em}
+#multiOv #moClose{margin-top:14px;width:100%}
 #rollStop{margin:12px auto 0;padding:18px;font-size:21px;font-weight:900;background:#F5C518;color:#1A1A1A;border:0;
  animation:gpulse 1.1s ease-out infinite}
 .rres{font-size:19px;font-weight:800}
@@ -4872,7 +4885,7 @@ function mvSpinHold(box, ang, buzz, done, o){
   const cx=+svg.dataset.cx, cy=+svg.dataset.cy;
   const nd=svg.querySelector(".mvNdl");
   const setN=a=>{ nd && nd.setAttribute("transform",`rotate(${(a%360).toFixed(2)} ${cx} ${cy})`); };
-  const stopBtn=box.querySelector("#rollStop");
+  const stopBtn=o.stopBtn || box.querySelector("#rollStop");
   let fin=false, stopping=false, a=0, last=performance.now(), tick=-1, tmr=null;
   const end=()=>{ if(fin) return; fin=true; clearTimeout(tmr); setN(ang); done(); };
   if(rvRM()){ if(stopBtn) stopBtn.remove(); end(); return; }
@@ -7338,9 +7351,58 @@ function goStart(at){
 }
 /* せーの！の瞬間：この端末のまだ回していない人のルーレットを自動で回す */
 let AUTOSPIN=false;   /* 自動のルーレットが回っている最中か（同時に2つ回さない） */
+/* 移動の結果を記録する（doRoll の settle と同じ内容。同時回しでも1人ずつ同じ形で残す） */
+function recordMove(c, idx, ang, sum){
+  const t=CTYPE[c.t], up=c.lv===2, rBase=up?t.r2:t.r1, rZero=t.r1, d=new Date();
+  const rec={at:`${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`,
+             who:cname(c), kind:"move", faces:[{c:t.move, n:sum, o:0}], sum, ok:false,
+             field:(c.field?FIELDS[c.field].nm:"—")};
+  c.last={kind:"move",sum,ok:false,faces:rec.faces,rate:rateOf(c,c.field),base:rBase,r0:rZero,ang:0,mang:ang};
+  S.rolls.push(rec); S.rolls=S.rolls.slice(-20);
+  save(); pushChars(); FB&&FB.pushRoll(rec);
+  MYROLL_AT=Date.now();
+  FB && FB.set("rollev", Object.assign({}, rec,
+    {seq:Date.now(), dev:S.devId, t:c.t, col:t.move, rate:null, base:rBase, r0:rZero, ang:null, mang:ang}));
+  turnSetMv(c.t, sum);
+}
+/* 1台で複数キャラ：全員ぶんの輪を並べて同時に回す。各自ストップ、6秒で自動停止 */
+function multiSpin(list){
+  if(AUTOSPIN) return; AUTOSPIN=true;
+  let ov=$("#multiOv");
+  if(!ov){ ov=document.createElement("div"); ov.id="multiOv"; document.body.appendChild(ov); }
+  const items=list.map(({c,i})=>{ const t=CTYPE[c.t], idx=Math.floor(Math.random()*6);
+    return {c,i,t,idx,ang:mvLand(idx),sum:DICE[t.move].f[idx]}; });
+  ov.innerHTML=`<div class="moIn">
+    <div class="moH">せーの！　それぞれ「ストップ！」を押してください<small>押さなくても6秒で止まります</small></div>
+    <div class="moG">${items.map((x,k)=>`<div class="moB" data-k="${k}">
+       <div class="moN">${esc(cname(x.c))}</div><div class="moW">${mvHTML(x.t.move,0)}</div>
+       <button class="btn rollStop">ストップ！</button><div class="moR"></div></div>`).join("")}</div>
+    <button class="btn alt" id="moClose" disabled>全員の輪が止まるまで…</button></div>`;
+  ov.classList.remove("hide");
+  const buzz=ms=>{ try{ navigator.vibrate && navigator.vibrate(ms); }catch(e){} };
+  let left=items.length;
+  items.forEach((x,k)=>{
+    const cell=ov.querySelector(`.moB[data-k="${k}"]`), box=cell.querySelector(".moW"), sb=cell.querySelector(".rollStop");
+    mvSpinHold(box, x.ang, buzz, ()=>{
+      box.innerHTML=mvHTML(x.t.move, x.ang, {hit:x.idx});
+      cell.querySelector(".moR").textContent=`${x.sum} マスまで移動できる`;
+      recordMove(x.c, x.idx, x.ang, x.sum);
+      if(--left===0){ const b=$("#moClose"); b.disabled=false; b.textContent="とじる（盤上でコマを動かす）"; b.className="btn"; }
+    }, {timeout:6000, stopBtn:sb});
+  });
+  $("#moClose").onclick=()=>{
+    ov.classList.add("hide"); AUTOSPIN=false;
+    drawCStrip(); drawTurnBox(); drawGuide(); drawRollLog();
+    CI=list[0].i; openChar(); $("#csheet").classList.remove("hide");
+    NEXT_NOSCROLL=true; showNextTurn(list[0].c.t);
+  };
+}
 function goAuto(){
   goClose();
   if(AUTOSPIN) return;
+  /* この端末に回していない人が2人以上いれば、全員ぶんの輪を一画面に並べて同時に回す */
+  const mine=S.chars.map((c,i)=>({c,i})).filter(x=>!turnMvOK(x.c.t));
+  if(mine.length>=2){ multiSpin(mine); return; }
   const i=S.chars.findIndex(c=>!turnMvOK(c.t)); if(i<0) return;
   CI=i; GOTAP=true;
   openChar(); $("#csheet").classList.remove("hide");
