@@ -726,6 +726,9 @@ body.manual #rows .val b{text-decoration:underline dotted;text-underline-offset:
 .revb .revOrd li{margin:3px 0;line-height:1.55}
 .revb .revOrd .rt{display:inline-block;min-width:78px;color:var(--sub);font-size:11.5px;font-weight:700}
 .revb .revOrd .rs2{display:block;color:var(--sub);font-size:11.5px}
+.bcCond{margin:12px 0 8px;padding:8px 10px;border-radius:9px;font-size:13px;font-weight:700;line-height:1.6;background:#E9F2DC;color:#3F6B1B}
+.bcCond.ng{background:#FBE9DC;color:#A6501C}
+.bcCond span{display:inline-block;margin-right:10px}
 .revNext{margin-top:10px;background:#E9F2DC;border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.75;color:#2E3B24}
 .revNext b{display:block;margin-bottom:2px}
 .revNext .lk{display:flex;gap:8px;margin-top:9px}
@@ -6909,7 +6912,9 @@ function openBig(id){
          ? `<p class="note" style="margin:12px 0 0">チュートリアルで今月やるのは「${tutBlock(id).n}」です。このカードは<b>見るだけ</b>。</p>`
        : (laneBusy(id)
          ? `<p class="note" style="margin:12px 0 0;color:var(--warn);font-weight:700">むずかしさ${p.d}は「${laneBusy(id).n}」が推進ボードにあります。完了してからのせられます。</p>`
-         : `<button class="btn" id="bcRun">推進ボードにのせる</button>`
+         : ((p.cond&&p.cond.length)
+              ? `<div class="bcCond ${canStart(p)?"ok":"ng"}">開始条件：${condRows(p).map(r=>`<span>${r.ok?"✓":"✗"} ${esc(r.t)}</span>`).join("")}</div>` : "")
+           + `<button class="btn" id="bcRun">${canStart(p)?"推進ボードにのせる":"推進ボードにのせる（開始条件は未達）"}</button>`
            + `<p class="note" style="margin:8px 0 0">${RT("推進ボードにのせるときに押してください。","発案会議室で決めたカードを、推進ボードにのせます。")}`
            + `以降は「推進」でこのカードを選んで進めます。</p>`);
      $("#bcAct").insertAdjacentHTML("afterbegin", st + `<div style="height:12px"></div>`);
@@ -6940,7 +6945,15 @@ function openBig(id){
     if(tb2){ toast(`チュートリアルで今月やるのは「${tb2.n}」です。`); return; }
     const bz2=laneBusy(id);
     if(bz2){ toast(`むずかしさ${p.d}は「${bz2.n}」が推進ボードにあります。`); return; }
-    if(!canStart(p) && !confirm("開始条件を満たしていません。それでも推進ボードにのせますか？")) return;
+    /* 条件未達は、ダイアログではなくボタン自体を2度押しの確認にする（ダイアログが出ない環境がある） */
+    if(!canStart(p) && !gr.dataset.sure){
+      gr.dataset.sure="1";
+      const ng=condRows(p).filter(r=>!r.ok).map(r=>r.t).join("／");
+      gr.textContent=`「${ng}」を満たしていません。それでも のせる`;
+      gr.style.background="#B4553A"; gr.style.borderColor="#B4553A";
+      toast("開始条件を満たしていません。もう一度押すと、それでも推進ボードにのせます。");
+      return;
+    }
     S.proj.run.push({id, step:0}); save(); pushProj();
     $("#nsheet").classList.add("hide");
     S.view="single"; save(); drawTeam(); window.scrollTo(0,0);
