@@ -93,8 +93,9 @@ select{background:#fff;border:none;border-radius:8px;padding:6px 8px;color:var(-
 .cav.on{position:relative}
 .cav.on::after{content:"";position:absolute;left:8px;right:8px;bottom:-2px;height:3px;
  background:#F4C542;border-radius:99px}
-.cav u{position:absolute;right:2px;top:-2px;background:#F4C542;color:#3A2E00;font-style:normal;
- font-size:10px;font-weight:800;border-radius:5px;padding:0 4px}
+.cav u{position:absolute;left:1px;top:-5px;z-index:3;background:#F4C542;color:#3A2E00;font-style:normal;
+ font-size:12.5px;font-weight:900;border-radius:6px;padding:1px 6px;line-height:1.3;
+ box-shadow:0 1px 3px rgba(0,0,0,.35);text-decoration:none}   /* 左上・最前面。右上は「待機」の場所 */
 .cav s{display:block;text-decoration:none;font-size:9px;color:#fff;opacity:.85;margin-top:2px;
  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chead{display:flex;gap:14px;align-items:flex-start}
