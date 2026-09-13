@@ -726,6 +726,10 @@ body.manual #rows .val b{text-decoration:underline dotted;text-underline-offset:
 .revb .revOrd li{margin:3px 0;line-height:1.55}
 .revb .revOrd .rt{display:inline-block;min-width:78px;color:var(--sub);font-size:11.5px;font-weight:700}
 .revb .revOrd .rs2{display:block;color:var(--sub);font-size:11.5px}
+.revNext{margin-top:10px;background:#E9F2DC;border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.75;color:#2E3B24}
+.revNext b{display:block;margin-bottom:2px}
+.revNext .lk{display:flex;gap:8px;margin-top:9px}
+.revNext .lk a{flex:1;text-align:center;background:var(--gd);color:#fff;border-radius:9px;padding:11px 6px;text-decoration:none;font-weight:800;font-size:14px}
 .revb h4{margin:15px 0 4px;font-size:13px;color:var(--gd);border-left:4px solid var(--g);padding-left:8px}
 .revb h4:first-child{margin-top:2px}
 .revb ul{margin:0;padding-left:18px}
@@ -1310,9 +1314,9 @@ window.onerror=function(m,src,line,col){
       <h2>振り返り</h2>
       <p class="note" style="margin:2px 2px 10px">プレイの記録から自動で作っています。決算の場でそのまま読めます。</p>
       <div id="revBox" class="revb"></div>
-      <button class="btn alt" id="revCopy" style="margin-top:12px">振り返り用のログをコピー</button>
-      <p class="note" style="margin:8px 2px 0">コピーしたテキストをAIに貼ると、振り返りの文章を書かせられます。
-         （アプリからAIには接続していません）</p>
+      <button class="btn alt" id="revCopy" style="margin-top:12px">AIで振り返る（ログをコピー）</button>
+      <p class="note" style="margin:8px 2px 0">押すと記録がコピーされます。ChatGPT や Claude に貼りつけて送るだけで、
+         振り返りの文章が返ってきます（依頼文も一緒に入っています。アプリからAIには接続していません）。</p>
       <textarea id="revTA" class="hide" readonly></textarea>
     </div>
   </div>
@@ -1419,7 +1423,7 @@ window.onerror=function(m,src,line,col){
     <div class="mt" id="ysT" style="font-size:20px"></div>
     <div class="mb" id="ysB"></div>
     <div id="ysRev" class="revb"></div>
-    <button class="tbtn" id="ysRevCopy" style="width:100%;margin:14px 0 4px;padding:11px">振り返り用のログをコピー</button>
+    <button class="tbtn" id="ysRevCopy" style="width:100%;margin:14px 0 4px;padding:11px">AIで振り返る（ログをコピー → 貼るだけ）</button>
     <textarea id="ysTA" class="hide" readonly></textarea>
     <button class="btn" id="ysGo" style="margin-top:10px"></button>
     <button class="btn alt" id="ysNo">やめる</button>
@@ -8053,12 +8057,14 @@ function revText(){
       + "件あります（古い記録のため、実行した月が分かりません）。"); }
   L.push("");
   L.push("--- ログはここまで ---");
-  L.push("");
-  L.push("【AIに渡すときの依頼文の例】");
-  L.push("上は、脱炭素経営の研修ボードゲーム「T!GX」のプレイ記録です。この記録だけをもとに、");
-  L.push("(1) このチームの意思決定の特徴、(2) うまくいった点、(3) もっと早く手をつけるべきだったこと、");
-  L.push("(4) 実際の会社で脱炭素を進めるときの示唆　を、研修の参加者に向けて日本語で400字程度にまとめてください。");
-  return L.join("\n");
+  /* 依頼文は先頭に置く。貼りつけて送るだけで振り返りが返ってくるように */
+  const head=[
+    "下は、脱炭素経営の研修ボードゲーム「T!GX」のプレイ記録です。この記録だけをもとに、",
+    "(1) このチームの意思決定の特徴、(2) うまくいった点、(3) もっと早く手をつけるべきだったこと、",
+    "(4) 実際の会社で脱炭素を進めるときの示唆　を、研修の参加者に向けて日本語で400字程度にまとめてください。",
+    "点数や優劣は付けず、チームが自分たちの判断を振り返れる書き方でお願いします。",
+    ""];
+  return head.join("\n") + "\n" + L.join("\n");
 }
 function drawRev(){
   const b=$("#revBox"); if(!b || S.view!=="all") return;
@@ -8073,7 +8079,18 @@ function revCopy(btn, taSel){
              btn.setAttribute("data-l",t0); btn.textContent="コピーしました";
              setTimeout(()=>{ btn.textContent=t0; }, 2200); }
     if(ta) ta.classList.add("hide");
-    toast("振り返り用のログをコピーしました。AIに貼りつけて使えます。");
+    toast("コピーしました。次は AI に貼りつけて送るだけです。");
+    /* 次にやることを、ボタンのすぐ下に出す（何をすればいいか分からない、という声への対応） */
+    if(btn){
+      let g=btn.parentElement && btn.parentElement.querySelector(".revNext");
+      if(!g){ g=document.createElement("div"); g.className="revNext"; btn.insertAdjacentElement("afterend", g); }
+      g.innerHTML = `<b>コピーできました。次にやること</b>
+        ① 下のボタンで AI を開く（ChatGPT でも Claude でも可）<br>
+        ② 入力欄に <b>貼りつけて送信</b>（依頼文も一緒に入っています）<br>
+        ③ 返ってきた文章を、チームで読んで話す
+        <div class="lk"><a href="https://chatgpt.com/" target="_blank" rel="noopener">ChatGPT を開く</a>
+        <a href="https://claude.ai/new" target="_blank" rel="noopener">Claude を開く</a></div>`;
+    }
   };
   const showTA=()=>{
     if(!ta){ toast("コピーできませんでした。"); return false; }
