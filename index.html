@@ -4954,6 +4954,7 @@ function drawRollBtns(){
   else set(mb,"移動済み","done");
   if(!mv)     set(pb,"推進（移動のあと）","done");
   else if(pj) set(pb, can?"推進済み":"今月の推進は見送り","done");
+  else if(!can) set(pb,"推進（カードをのせてから）","done");   /* 推進ボードに進められるカードが無い */
   else {
     set(pb,"今月は推進せず見送る","alt",passTurn);
     /* 移動が済んで推進がまだなら、大きな「推進する」を必ず出しておく（閉じて開き直したときも） */
@@ -4971,6 +4972,7 @@ function drawRollBtnsSafe(){
   else set(mb,"移動済み","done");
   if(!mv)     set(pb,"推進（移動のあと）","done");
   else if(pj) set(pb, can?"推進済み":"今月の推進は見送り","done");
+  else if(!can) set(pb,"推進（カードをのせてから）","done");
   else        set(pb,"今月は推進せず見送る","alt",passTurn);
 }
 function passTurn(){
@@ -7419,7 +7421,11 @@ function showNextTurn(t){
   el.innerHTML =
     `<div class="rnt">${
       ph==="end"
-        ? `全員が移動と推進を終えました<br><b>この月を終えて次へ →</b> を押してください`
+        ? ((S.proj.run||[]).some(r=>PBY[r.id])
+            ? ((S.proj.run||[]).some(r=>PBY[r.id] && r.step>=PBY[r.id].st) && !canPush()
+                ? `全員が移動を終えました<br>推進ボードに<b>完了の登録待ち</b>のカードがあります（専務）。登録してから次の月へ`
+                : `全員が移動と推進を終えました<br><b>この月を終えて次へ →</b> を押してください`)
+            : `全員が移動を終えました<br>推進ボードに<b>カードがありません</b>。推進したいカードがあれば「カード」タブから<b>推進ボードにのせて</b>推進、無ければこの月を終えて次へ`)
       : myPush
         ? `${RT("盤上で","リモート卓のボードで")}コマを動かしてから、<br><b>プロジェクトを推進</b>してください`
           + `<small style="display:block;margin-top:5px;font-size:11.5px;font-weight:700;opacity:.75">`
@@ -7430,7 +7436,7 @@ function showNextTurn(t){
         ? `つぎは <b>${esc(tname(nx))}</b> さんの${ph==="mv"?"移動":"推進"}です`
         : `${ph==="mv"?"移動":"推進"}の残りは ${left}人です`}</div>
      <button class="btn" id="rnGo">${
-       ph==="end" ? "閉じて月送りへ"
+       ph==="end" ? (monLeft().length ? "閉じる" : "閉じて月送りへ")   /* 登録待ち・イベント未・カード無しのときは月送りを勧めない */
        : myPush   ? "推進する"
        : (nx && S.chars.some(x=>x.t===nx)) ? `閉じて ${esc(tname(nx))} さんへ`   /* 次の人がこの端末にいるときは、切り替わることを先に言う */
        : "閉じる"}</button>`;
