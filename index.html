@@ -5125,7 +5125,7 @@ $("#endYear").onclick=()=>{
      <span style="color:var(--sub);font-size:12px"><br>${yrNo()}年やったときの基準：Lv2 GX推進企業＝削減${lvCondOf()[2].red}以上かつ全メーター${lvCondOf()[2].met}以上／Lv3 GXトップランナー＝削減${lvCondOf()[3].red}以上かつ全メーター${lvCondOf()[3].met}以上</span>
      ${t.need&&t.need.lack.length?`<br><span style="color:#B4553A">${t.need.to}まで：${t.need.lack.join("／")}</span>`:""}</div><br>` +
     (nx ? `<div style="text-align:left;line-height:1.9"><b>${nx}の予算 ${nb}</b><span style="color:var(--sub);font-size:13px"><br>
-           ＝ 繰越 ${t.carry} ＋ 基本 20 ＋ 削減 ${t.red}
+           ＝ 繰越 ${t.carry} ＋ 基本 12 ＋ 削減 ${t.red}
            ＋ 設備8以上 ${t.be} ＋ 市場8以上 ${t.bs}${t.cb?` ＋ カード ${t.cb}`:""}</span><br>
            ${S.year} の数字は記録に残り、あとから見返せます。</div>`
         : `これが最終年度です。数字を記録に残して締めます。`);
@@ -5304,10 +5304,12 @@ function drawMeters(){
 /* ---- 月トラッカー（両年とも4月始まりの12ヶ月。
         イベントは5・8・11・2月の固定月。1年目の4〜5月はチュートリアル（本編は6月開始）、
         1年目の5月イベントはチュートリアルに置き換え＝1年目3回・2年目4回の計7回 ---- */
-const MONTHS={"1年目":[4,5,6,7,8,9,10,11,12,1,2,3],"2年目":[4,5,6,7,8,9,10,11,12,1,2,3],
-              "3年目":[4,5,6,7,8,9,10,11,12,1,2,3]};
-const EVMON=[5,8,11,2];
-const isTut=(y,m)=> y===YEARS[0] && (m===4||m===5);
+/* 1ターン＝2ヶ月。1年は 4・6・8・10・12・2 の6ターン（2ヶ月に1回しか会議できない会社）。
+   1年目の4月はチュートリアル（本番は6月から）。イベントは 6・10・2月 の年3回。
+   予算と会社レベルの基準は シミュレーション/sim_6turn*.py で出した値 */
+const MONTHS={"1年目":[4,6,8,10,12,2],"2年目":[4,6,8,10,12,2],"3年目":[4,6,8,10,12,2]};
+const EVMON=[6,10,2];
+const isTut=(y,m)=> y===YEARS[0] && m===4;
 const isEvM=(y,m)=> EVMON.includes(m);   /* 1年目5月＝チュートリアル中でも引く */
 /* チュートリアルで進めるカード（月の並び順→カード番号）。3枚は見せるが選ばせない */
 const TUTFIX = 90;   /* 社内の照明をすべてLED化。定番の第一歩・SCOPE2 */
@@ -5323,7 +5325,7 @@ function drawMon(){
   const m=ms[i], tut=isTut(S.year,m), ev=isEvM(S.year,m);
   $("#monV").textContent=`${m}月`;
   $("#monV").style.color = ev ? "#B4553A" : "";
-  $("#monS").textContent = `${i+1}／${ms.length}ヶ月目`;
+  $("#monS").textContent = `${i+1}／${ms.length}ターン目（1ターン＝2ヶ月）`;
 }
 function monMove(d){
   const ms=MONTHS[S.year]||[]; const c=cell0(), v0=c.mon||0;
@@ -5338,7 +5340,7 @@ function monMove(d){
 /* ---- 予算（アプリ管理。完了確定で自動支払い） ---- */
 /* 標準の年度予算（スライド準拠：1年目は 本番25＝2500万円 ＋ チュートリアル3＝300万円。
    2年目は決算の計算式で自動セット） */
-const BUD0={"1年目":28};   /* 25（本番ぶん）＋3（チュートリアルの1枚 No.90 のコスト） */
+const BUD0={"1年目":18};   /* 6ターン制の値（余りが3前後になる額。チュートリアルの1枚 No.90 のコスト込み） */
 /* 決算：削減量・会社レベル・来年度予算
    会社レベル（削減量が主・メーターが足切り）
      Lv1 GX着手企業／Lv2 GX推進企業＝削減15以上かつ全メーター5以上
@@ -5350,10 +5352,14 @@ const LVNAME=["","GX着手企業","GX推進企業","GXトップランナー"];
      1年 … Lv1 38% / Lv2 31% / Lv3 31%
      2年 … Lv1 33% / Lv2 35% / Lv3 32%   ← 従来の値そのまま
      3年 … Lv1 26% / Lv2 38% / Lv3 36% */
+/* 6ターン制・予算18／12 での値（sim_6turn_thr.py、各900〜1200ゲーム）
+     1年 … Lv1 32% / Lv2 33% / Lv3 35%
+     2年 … Lv1 32% / Lv2 35% / Lv3 33%
+     3年 … Lv1 37% / Lv2 31% / Lv3 32% */
 const LVBY = {
-  1:[null,null,{red:5, met:4},{red:8, met:5}],
-  2:[null,null,{red:15,met:5},{red:20,met:7}],
-  3:[null,null,{red:35,met:7},{red:48,met:9}]
+  1:[null,null,{red:3, met:3},{red:5, met:4}],
+  2:[null,null,{red:7, met:4},{red:16,met:4}],
+  3:[null,null,{red:11,met:6},{red:18,met:7}]
 };
 /* いま何年目まで終えたか（決算する年を含む） */
 const yrNo = y => Math.max(1, Math.min(3, YEARS.indexOf(y||S.year)+1));
@@ -5380,7 +5386,7 @@ function settle(){
     carry:(cell0().bud!=null?cell0().bud:0), be:(m.equip>=8?5:0), bs:(m.market>=8?5:0),
     cb:(cell0().bg||0) };
 }
-const nextBudget = t => Math.max(0, r2(t.carry + 20 + t.red + t.be + t.bs + t.cb));
+const nextBudget = t => Math.max(0, r2(t.carry + 12 + t.red + t.be + t.bs + t.cb));   /* 6ターン制：基本12 */
 function drawBud(){
   if(!$("#budV")) return;
   const c=cell0();
@@ -7163,7 +7169,7 @@ function drawEvtBox(){
   $("#evtBox").innerHTML =
     `<div class="cnd ${ev?(got?"ok":"ng"):"man"}" style="margin-bottom:10px">${S.year} ${monNow()}月　${
       ev ? (got?"イベントの月：この月のカードは引き済みです。":"イベントの月です。1枚引いてください。")
-         : "イベントの月ではありません（5・8・11・2月に引きます）"}</div>`
+         : "イベントの月ではありません（6・10・2月に引きます）"}</div>`
     + (e ? `<div class="evb"><div class="evbRow">${(typeof EVIMG!=="undefined"&&EVIMG[e.id])?`<img class="evIco" src="${EVIMG[e.id]}" alt="">`:""}<div><div style="font-weight:800">${e.n}</div>
         <div style="font-size:12px;color:var(--sub);line-height:1.6;margin-top:5px">${e.desc}</div></div></div></div>
        <p class="note" style="margin:0">全${EV.length}枚のうち ${S.evt.drawn.length}枚を使いました。</p>`
@@ -7603,7 +7609,7 @@ function phase(){
                          "削減量・会社レベル・来年度の予算が出ます。"]);
   }
   const bits=[];
-  if(tut) bits.push(`チュートリアル ${i+1}／2`);
+  if(tut) bits.push(`チュートリアル`);
   if(start2) bits.push("2年目スタート");
   if(ev) bits.push("イベントの月");
   if(last) bits.push("年度末");
@@ -8108,7 +8114,7 @@ function drawAdMon(){
   AM=Math.max(0,Math.min(f.ms.length-1,AM));
   const m=f.ms[AM];
   $("#amV").textContent = `${m}月`;
-  $("#amS").textContent = `${S.year}　${AM+1}／${f.ms.length}ヶ月目`
+  $("#amS").textContent = `${S.year}　${AM+1}／${f.ms.length}ターン目`
     + (isTut(S.year,m)?"・チュートリアル":(isEvM(S.year,m)?"・イベント":""));
   $("#amGo").textContent = f.ts.length ? `全${f.ts.length}チームを ${m}月 にそろえる` : "チームがありません";
   $("#amGo").style.opacity = f.ts.length?1:.45;

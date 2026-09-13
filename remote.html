@@ -2831,7 +2831,7 @@ const R2APP={"tech": "plant", "supply": "proc", "pr": "pr", "fin": "exec", "hr":
 const AWAKE=7;               /* 覚醒のしきい値（本体から読んだ値） */
 const CH=[{k:"tech",n:"工場長"},{k:"supply",n:"ベテラン購買"},{k:"pr",n:"中堅広報"},
           {k:"fin",n:"専務"},{k:"hr",n:"若手営業"}];
-/* チュートリアルの3枚は読み込み係の手札に混ぜない（4月・5月だけ卓に出る） */
+/* チュートリアルの3枚は読み込み係の手札に混ぜない（1年目の4月だけ卓に出る） */
 const BY={}; CARDS.forEach(c=>{ if(c.tut) return; (BY[c.f]=BY[c.f]||[]).push(c); });
 const CBY={}; CARDS.forEach(c=>CBY[c.id]=c);
 const $=s=>document.querySelector(s);
@@ -2899,7 +2899,7 @@ async function connect(){
       update(ref(db,`workshops/${W}/teams/${T}`), {"proj/run": arr});
     }catch(e){ console.warn("run:", e&&e.message); } };
     /* 本体アプリの「実行中」を読む */
-    /* 年と月を読むだけ（書き込みはしない）。4月・5月はチュートリアルに切り替わる */
+    /* 年と月を読むだけ（書き込みはしない）。1年目の4月はチュートリアルに切り替わる */
     onValue(ref(db,`workshops/${W}/teams/${T}/years`), s=>{
       TEAM.years=s.val()||{}; render(); });
     onValue(ref(db,`workshops/${W}/teams/${T}/done`), s=>{
@@ -3232,13 +3232,13 @@ function bindPiece(el){
 
 /* ===== PC：推進ボード（本体アプリの実行中を映すだけ。書き込みはしない） ===== */
 let RUN={run:[],done:[]};
-/* 本体アプリの年・月を読むだけ。1年目の4月と5月がチュートリアル（本体の isTut と同じ） */
+/* 本体アプリの年・月を読むだけ。1年目の4月がチュートリアル（本体の isTut と同じ） */
 let TEAM={years:{}, done:{}};
-const YEARSL=["1年目","2年目","3年目"], MONL=[4,5,6,7,8,9,10,11,12,1,2,3];   /* 本体と同じ3年制 */
+const YEARSL=["1年目","2年目","3年目"], MONL=[4,6,8,10,12,2];   /* 本体と同じ：3年制・1ターン＝2ヶ月 */
 const curYear=()=> YEARSL.find(y=>!(TEAM.done||{})[y]) || YEARSL[0];
 const curMon =()=>{ const r=(TEAM.years||{})[curYear()]||{};
   return MONL[Math.max(0,Math.min(MONL.length-1, +r.mon||0))]; };
-const isTut  =()=> curYear()===YEARSL[0] && (curMon()===4 || curMon()===5);
+const isTut  =()=> curYear()===YEARSL[0] && curMon()===4;   /* 1年目の4月だけ */
 const tutFix =()=> isTut() ? (TUTFIX||null) : null;
 const LV=[["低","low"],["中","mid"],["高","high"]];
 function laneOf(d){ return (RUN.run||[]).filter(r=>pdif(r.id)===d); }
