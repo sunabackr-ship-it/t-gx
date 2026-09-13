@@ -83,7 +83,14 @@ select{background:#fff;border:none;border-radius:8px;padding:6px 8px;color:var(-
  filter:drop-shadow(0 3px 8px rgba(0,0,0,.18))}
 .istep{text-align:center;font-size:13px;color:var(--sub);margin-top:20px}
 /* ---- キャラクター ---- */
-.cstrip{display:flex;gap:7px;margin-top:9px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.cstrip{display:flex;gap:8px;margin-top:2px;overflow-x:auto;scrollbar-width:none;padding:10px 0 2px;align-items:flex-start}   /* 上の余白はグループのラベルぶん */
+.cgrp{flex:0 0 auto;position:relative;border-radius:12px;padding:14px 6px 4px;border:1.5px solid rgba(255,255,255,.28)}
+.cgrp.mine{border-color:#F4C542;background:rgba(244,197,66,.10)}
+.cgrp.other{border-style:dashed;background:rgba(255,255,255,.04)}
+.cgrp .cgl{position:absolute;top:-8px;left:8px;font-size:9.5px;font-weight:800;letter-spacing:.04em;
+ padding:1px 7px;border-radius:99px;background:#F4C542;color:#3A2E00;white-space:nowrap}
+.cgrp.other .cgl{background:#5E6B57;color:#fff}
+.cgrp .cgr{display:flex;gap:7px}
 .cstrip::-webkit-scrollbar{display:none}
 .cav{flex:0 0 auto;width:52px;background:none;border:none;padding:0;position:relative}
 .cav i{display:block;width:50px;height:50px;margin:0 auto}
@@ -4435,7 +4442,7 @@ function drawCStrip(){
     : (me ? `<em class="tflag now">あなたの番</em>` : `<em class="tflag hid">ー</em>`);
   const mine = S.chars.map(c=>c.t);
   const ghost = roster().filter(t=>mine.indexOf(t)<0);   /* ほかの端末が持っているキャラ */
-  $("#cstrip").innerHTML = S.chars.map((c,i)=>{
+  const mineHTML = S.chars.map((c,i)=>{
     /* この月の移動の出目（全端末で同じ）。推進まで済んだら○×を添える */
     const mn=mvOf(c.t);
     const last = mn!=null
@@ -4446,9 +4453,14 @@ function drawCStrip(){
       me?"tnow":""}" data-c="${i}">
       <i><img src="${cimg(c)}" alt=""></i>${last}${skw}<s>${cname(c)}</s>${flag(c.t,me)}</button>`;
   }).join("")
-  + ghost.map(t=>{ const mn=mvOf(t);
+  ;
+  const ghostHTML = ghost.map(t=>{ const mn=mvOf(t);
       return `<span class="cav ghost ${turnOK(t)?"tdone":""}">
       <i><img src="${CIMG[t+"1"]}" alt=""></i>${mn!=null?`<u>${mn}</u>`:""}<s>${esc(tname(t))}</s>${flag(t,false)}</span>`; }).join("");
+  /* 「あなた」と「ほかの人」で枠を分ける。自分の端末で動かすキャラだけが「あなた」 */
+  $("#cstrip").innerHTML =
+    `<div class="cgrp mine"><span class="cgl">あなた${S.chars.length>1?`（${S.chars.length}人）`:""}</span><div class="cgr">${mineHTML}</div></div>`
+    + (ghost.length ? `<div class="cgrp other"><span class="cgl">ほかの人のスマホ</span><div class="cgr">${ghostHTML}</div></div>` : "");
   $("#cstrip").querySelectorAll("[data-c]").forEach(b=>
     b.onclick=()=>{ CI=+b.dataset.c; drawCStrip(); openChar(); });
 }
