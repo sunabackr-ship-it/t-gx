@@ -7283,10 +7283,17 @@ function turnSet(t,on,kind){
   if(on) box[t]=1; else delete box[t];
   /* 移動を取り消したら、推進も取り消す（順番が逆になるのを防ぐ） */
   if(!on && kind!=="pj") delete m.p[t];
-  save(); pushTurn();
+  save();
+  /* 自分のぶんだけを書く。全体を上書きすると、同時に回した他の人のぶんを消してしまう */
+  if(FB && FB.upd){
+    const o={"turn/k":m.k}; o[`turn/${kind==="pj"?"p":"d"}/${t}`] = on ? 1 : null;
+    if(!on && kind!=="pj") o[`turn/p/${t}`]=null;
+    FB.upd(o);
+  } else pushTurn();
 }
 /* 移動の出目も手番に持たせる（{n:出目}）。真偽だけ見ている所はそのまま動く */
-function turnSetMv(t,n){ const m=turnFix(); m.d[t]={n:n}; save(); pushTurn(); }
+function turnSetMv(t,n){ const m=turnFix(); m.d[t]={n:n}; save();
+  if(FB && FB.upd){ const o={"turn/k":m.k}; o[`turn/d/${t}`]={n:n}; FB.upd(o); } else pushTurn(); }
 const mvOf = t=>{ const v=turnD()[t]; return (v && typeof v==="object" && v.n!=null) ? v.n : null; };
 /* 「せーの」が必須の卓か：共有していて進行役が決まっていれば、移動は合図で回る。
    進行役とファシリだけは自分で回せる（合図が届かなかったときの逃げ道） */
