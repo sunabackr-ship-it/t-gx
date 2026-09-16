@@ -4658,7 +4658,7 @@ function doRoll(kind, opt){
   function settle(){
     if(kind==="proj" && ok && RUN && RP){
       RUN.step = Math.min(RP.st, RUN.step+1);
-      RUN.by = CI;
+      RUN.by = CI; RUN.byT = c.t;
       save(); pushProj(); drawRun();
     }
     if(kind==="proj"){
@@ -7058,10 +7058,14 @@ function bigFinish(id, pay, short, bud){
   if(use.sales) delete chg.sales;
   if(use.proc) delete chg.proc;
   /* 完了したカードは推進ボードから外す（外し忘れると、その難度の枠がふさがったままになる） */
+  const BF_RUN=(S.proj.run||[]).find(r=>r.id===id);   /* 外す前に、誰が進めたかを控える */
   S.proj.run=(S.proj.run||[]).filter(r=>r.id!==id);
   /* 取り消せるように、実際にいくら払ったかも残す */
+  /* 誰が進めたか：最後に推進に成功した人（run.byT）。無ければこの端末で選んでいるキャラ */
+  const BF_WHO = (BF_RUN && BF_RUN.byT && CTYPE[BF_RUN.byT]) ? CTYPE[BF_RUN.byT].n1
+                : (S.chars[CI] ? cname(S.chars[CI]) : "");
   if(!isDone(id)) S.proj.done.push(Object.assign(stampNow(id),
-    {pay:(pay==="skip"||pay==="tut")?0:cost, who:(ci!=null && S.chars[ci]) ? cname(S.chars[ci]) : ""}));
+    {pay:(pay==="skip"||pay==="tut")?0:cost, who:BF_WHO}));
   /* ---- 効果の組み立て（#47は選んだ転換元だけ） ---- */
   const acts=[];
   p.fx.forEach((e,i)=>{
