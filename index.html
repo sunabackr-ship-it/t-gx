@@ -7496,6 +7496,7 @@ function drawTurnBox(){
   const lc=$("#ldrCh");
   if(lc) lc.onclick=()=>{ if(confirm("進行役を決め直しますか？")) setLeader(null); };
   const gs=$("#goSay"); if(gs) gs.onclick=goSend;
+  box.querySelectorAll("[data-ldr]").forEach(b=>b.onclick=()=>setLeader(b.dataset.ldr));
   box.querySelectorAll("[data-tt]").forEach(b=>b.onclick=()=>{
     const t=b.dataset.tt, ph=b.dataset.tp;
     turnSet(t, ph==="pj" ? !turnPjOK(t) : !turnMvOK(t), ph);
