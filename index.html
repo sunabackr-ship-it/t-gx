@@ -1176,6 +1176,19 @@ body.manual .budman{display:flex}
   .mtr .mbar{max-width:none}
 }
 @media (min-width:1600px){ main{max-width:1560px} }
+
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body.hsm header{padding:5px 10px;display:flex;align-items:center;gap:8px}
+body.hsm header h1,body.hsm #ystrip,body.hsm #roomBar,body.hsm .cgrp .cgl,body.hsm .cav s{display:none !important}
+body.hsm .hrow{order:2;flex:0 0 auto}
+body.hsm .hrow .seg button{padding:6px 10px;font-size:13px}
+body.hsm .cstrip{order:1;flex:1 1 auto;min-width:0;margin:0;padding:4px 0 2px}
+body.hsm .cgrp{padding:3px 4px 2px}
+body.hsm .cav{width:40px}
+body.hsm .cav i{width:34px;height:34px}
+body.hsm .cav.tnow::before{height:38px}
+body.hsm .cav em.tflag{font-size:7.5px;margin-top:1px;line-height:1.25;padding:1px 0;text-overflow:clip;letter-spacing:-.02em}
+body.hsm .cav u{font-size:11px;padding:0 4px;top:-3px}
 </style>
 </head>
 <body>
@@ -4432,6 +4445,13 @@ const cimg = c=> CIMG[c.t + c.lv];
 const cname = c=> CTYPE[c.t][c.lv===2?"n2":"n1"];
 const pushChars = ()=> FB && FB.set(`chars/${S.devId}`, S.chars);
 
+/* 下へスクロールしたらヘッダーを畳む。行き来でガタつかないよう、畳む位置と戻す位置をずらす */
+(function(){ let on=false;
+  const f=()=>{ const y=window.scrollY||0;
+    if(!on && y>140){ on=true; document.body.classList.add("hsm"); }
+    else if(on && y<10){ on=false; document.body.classList.remove("hsm"); } };
+  window.addEventListener("scroll", f, {passive:true});
+})();
 function drawCStrip(){
   $("#cstrip").classList.toggle("hide", !S.chars.length);
   if(CI>=S.chars.length) CI=0;                 /* 選び直しで人数が減ったときの保険 */
