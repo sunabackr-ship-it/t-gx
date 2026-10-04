@@ -1282,11 +1282,73 @@ header .hrow h1::after{content:"1台版";margin-left:8px;font-size:10px;font-wei
 @media (min-width:760px) and (min-height:620px){
  #pjOv .moIn{max-width:920px;padding:18px 16px 24px} #pjOv .moH{font-size:24px} #pjOv .moH small{font-size:15px}
  .pjRow{padding:10px 14px;gap:14px;align-items:center} .pjRow .pjF{flex-basis:84px} .pjRow .pjF img{width:64px;height:64px}
- .pjRow .pjF span{font-size:14px} .pjRow .pjC{flex-direction:row;flex-wrap:wrap}
+ .pjRow .pjF span{font-size:14px} .pjRow .pjC{flex-direction:row}
  .slCol.skip .slW{font-size:20px}
- .pjOpt{width:auto;flex:1 1 240px;font-size:17px;padding:12px 14px} .pjOpt em{font-size:17px} .pjOpt.pass{flex:0 0 170px;padding:12px 14px}
+ .pjOpt{width:auto;flex:1 1 170px;font-size:16px;padding:11px 12px} .pjOpt em{font-size:16px} .pjOpt.pass{flex:0 0 132px;padding:11px 10px;font-size:14px}
+ .pjRow .pjC{flex-wrap:nowrap}
  #pjOv .pjBtns .btn{font-size:20px;padding:16px} .slBar i{height:11px} .slK{font-size:13px} #pjOv .pjDone{font-size:18px}
 }
+
+/* 1台版では「あなた」という言い方をしない。1人ずつの推進ボタンは「まとめて回す」に一本化 */
+.cav em.tflag.now{display:none}
+#gPush,#gPass{display:none !important}
+body.pc header{position:static;padding:8px 20px;display:flex;align-items:center;gap:16px;box-shadow:none}
+body.pc header .hrow{flex:1 1 auto;flex-wrap:nowrap}
+body.pc header h1{display:block !important;font-size:18px}
+body.pc header #roomBar{margin:0;order:3}
+body.pc main{max-width:1280px;padding:10px 16px 8px}
+body.pc #single{display:flex;flex-wrap:wrap;gap:0 12px;align-items:flex-start}
+body.pc #single>*{flex:1 1 100%;min-width:0}
+body.pc #single>#pcL{flex:1.6 1 0} body.pc #single>#pcR{flex:1 1 0}
+body.pc .gbt{flex-wrap:nowrap;margin-top:8px} body.pc .gbt button{flex:1 1 0 !important;min-height:42px;padding:8px 6px}
+body.pc #runList{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+body.pc #runList .runr{margin:0;flex-wrap:wrap;gap:4px 8px;padding:8px 10px}
+body.pc #runList .runr .rn{flex:1 1 100%}
+body.pc #runList .runNo{grid-column:1/-1}
+body.pc .mtr{padding:5px 0}
+body.pc #scard{display:grid;grid-template-columns:3fr 1.25fr;gap:6px 8px;align-items:stretch}
+body.pc #scard>*{grid-column:1/-1}
+body.pc #scard .tot{grid-column:1} body.pc #scard .tot div{padding:6px 4px}
+body.pc #scard .grand{grid-column:2;grid-row:1;margin:0;border:0;padding:5px 8px;background:var(--gd);color:#fff;border-radius:10px;
+ flex-direction:column;align-items:center;justify-content:center;gap:0}
+body.pc #scard .grand>span:first-child{font-size:11px;opacity:.9}
+body.pc #scard .grand b{font-size:28px;line-height:1.1;color:#fff}
+body.pc #scard .sub{font-size:12px;padding:0 2px}
+body.pc #scard .sub:nth-of-type(2){grid-column:1} body.pc #scard .sub:nth-of-type(3){grid-column:2}
+body.pc #rowsTg{padding:5px;font-size:12px;margin-top:0}
+body.pc .mtr{padding:3px 0}
+body.pc .lvbox{margin-top:6px;padding-top:6px;line-height:1.5}
+body.pc #pcChars{padding:8px 10px}
+body.pc #pcChars:has(#cstrip.hide){display:none}
+body.pc .mon{padding:0 0 6px;margin-bottom:6px}
+body.pc #dtlTg{width:auto;padding:6px 14px;font-size:12px;margin:0 0 8px auto;display:block}
+body.pc .card{margin-bottom:10px}
+/* キャラ5人を大きなタイルで */
+body.pc .cstrip{margin:0;padding:0;overflow:visible}
+body.pc .cgrp{flex:1 1 auto;border:0;background:none;padding:0}
+body.pc .cgrp .cgl{display:none}
+body.pc .cgrp .cgr{gap:8px}
+body.pc .cav{flex:1 1 0;width:auto;background:#F4F2E8;border-radius:12px;padding:6px 4px 7px;cursor:pointer}
+body.pc .cav i{width:54px;height:54px}
+body.pc .cav i img{opacity:1}
+body.pc .cav s{color:var(--ink);font-size:13px;font-weight:800;opacity:1}
+body.pc .cav u{font-size:19px;left:6px;top:5px;padding:1px 9px}
+body.pc .cav u::before{content:"移動 ";font-size:10px;font-weight:700}
+body.pc .cav.on::after,body.pc .cav.tnow::before{display:none}
+body.pc .cav em.tflag{font-size:11px;width:max-content;margin:3px auto 0;padding:1px 8px}
+body.pc .cav em.tflag.hid{display:none}
+/* いまやること */
+body.pc .gobig{font-size:22px;padding:14px 10px;border-radius:16px;margin-bottom:8px}
+body.pc .mon .mv b{font-size:28px;line-height:1.1}
+/* 下の固定バーはやめて、右下に小さく置く。年度終了は最後のターンだけ目立たせる */
+body.pc .foot{position:static;flex:0 0 auto;order:4;background:none;border:0;padding:0;gap:6px;backdrop-filter:none}
+body.pc .foot #more{flex:0 0 auto;padding:8px 16px}
+body.pc .foot #endYear{flex:0 0 auto;padding:8px 14px;font-size:13px}
+body.pc .foot #more{background:rgba(255,255,255,.16);color:#fff}
+body.pc:not(.lastturn) .foot #endYear{background:rgba(255,255,255,.16);color:#fff;font-weight:600}
+body.pc.lastturn .foot #endYear{background:#F4C542;color:#3A2E00}
+body.pc #app{padding-bottom:0}
+body.pc #dtlTg{margin:0 0 8px}
 </style>
 </head>
 <body>
@@ -4577,7 +4639,7 @@ function drawCStrip(){
       <i><img src="${CIMG[t+"1"]}" alt=""></i>${mn!=null?`<u>${mn}</u>`:""}<s>${esc(tname(t))}</s>${flag(t,false)}</span>`; }).join("");
   /* 「あなた」と「ほかの人」で枠を分ける。自分の端末で動かすキャラだけが「あなた」 */
   $("#cstrip").innerHTML =
-    `<div class="cgrp mine"><span class="cgl">あなた${S.chars.length>1?`（${S.chars.length}人）`:""}</span><div class="cgr">${mineHTML}</div></div>`
+    `<div class="cgrp mine"><span class="cgl">この卓${S.chars.length>1?`（${S.chars.length}人）`:""}</span><div class="cgr">${mineHTML}</div></div>`
     + (ghost.length ? `<div class="cgrp other"><span class="cgl">ほかの人のスマホ</span><div class="cgr">${ghostHTML}</div></div>` : "");
   $("#cstrip").querySelectorAll("[data-c]").forEach(b=>
     b.onclick=()=>{ CI=+b.dataset.c; drawCStrip(); openChar(); });
@@ -7533,7 +7595,7 @@ function slotSpin(list){
   let left=items.length, tm=null;
   const stopOne=k=>{ const x=items[k]; if(x.st) return; x.st=true;
     const col=cols[k], s=col.querySelector(".slS");
-    const CH=s.firstElementChild.getBoundingClientRect().height || 56;
+    const CH=s.firstElementChild.offsetHeight || 56;   /* 拡大（zoom）していても、拡大前の寸法で数える */
     const goal=-(6*2+x.idx-1)*CH;            /* 真ん中の段に出目が来る位置 */
     const fin=()=>{ if(x.fin) return; x.fin=true;
       s.style.transition="none"; s.style.transform=`translateY(${goal}px)`;
@@ -7656,7 +7718,7 @@ function pjAll(){
     };
     const stopOne=k=>{ const x=items[k]; if(!x || x.skip || x.st) return; x.st=true;
       const col=ov.querySelector(`.slCol[data-k="${k}"]`), s=col.querySelector(".slS");
-      const CH=s.firstElementChild.getBoundingClientRect().height || 56;
+      const CH=s.firstElementChild.offsetHeight || 56;   /* 拡大（zoom）していても、拡大前の寸法で数える */
       const goal=-(12*2+x.idx-1)*CH;
       const fin=()=>{ if(x.fin) return; x.fin=true;
         s.style.transition="none"; s.style.transform=`translateY(${goal}px)`;
@@ -8024,7 +8086,39 @@ function phase(){
 }
 function toCards(d,f){ PF.d=d; if(f!==undefined) PF.f=f; S.view="cards"; save(); drawTeam();
   window.scrollTo(0,0); }
+/* 1台版：PC幅ならダッシュボードに組み替える。キャラ列を上の帯から本体へ移し、全体を拡大する */
+function pcSync(){
+  const pc = window.innerWidth>=1000 && window.innerHeight>=560;
+  document.body.classList.toggle("pc", pc);
+  const cs=$("#cstrip"), sg=$("#single"), hd=document.querySelector("#app header");
+  if(cs && sg && hd){
+    let L=$("#pcL"), R=$("#pcR"), box=$("#pcChars");
+    const gc=sg.querySelector(".gcard"), put=(par,ids)=>ids.forEach(e=>{ if(e && e.parentNode!==par) par.appendChild(e); });
+    if(pc){
+      if(!L){ L=document.createElement("div"); L.id="pcL"; R=document.createElement("div"); R.id="pcR";
+              sg.insertBefore(R, sg.firstChild); sg.insertBefore(L, R); }
+      if(!box){ box=document.createElement("div"); box.id="pcChars"; box.className="card"; }
+      if(cs.parentNode!==box) box.appendChild(cs);
+      if(box.parentNode!==L) L.insertBefore(box, L.firstChild);
+      put(L,[gc||$("#pcL .gcard"), $("#runCard")]);
+      put(R,[$("#scard"), $("#mcard"), $("#dtlTg")]);
+      {const ft=document.querySelector("#app .foot"); if(ft && ft.parentNode!==hd) hd.appendChild(ft);}
+    } else if(L){
+      /* もとの並びに戻す */
+      if(cs.parentNode!==hd) hd.insertBefore(cs, $("#ystrip"));
+      const order=[L.querySelector(".gcard"), $("#runCard"), $("#mcard"), $("#roleCard"), $("#scard"), $("#rows"), $("#dtlTg")];
+      order.forEach(e=>{ if(e) sg.appendChild(e); });
+      L.remove(); R.remove();
+      {const ft=document.querySelector("#app .foot"); if(ft && ft.parentNode===hd) $("#app").appendChild(ft);}
+    }
+  }
+  const z = pc ? Math.max(1, Math.min(1.7, window.innerWidth/1280, window.innerHeight/700)) : 1;
+  document.body.style.zoom = (z>1.01) ? z.toFixed(3) : "";
+  try{ const ms=MONTHS[S.year]||[]; document.body.classList.toggle("lastturn", (cell0().mon||0)>=ms.length-1); }catch(e){}
+}
+window.addEventListener("resize", ()=>{ try{ pcSync(); }catch(e){} });
 function drawGuide(){
+  try{ pcSync(); }catch(e){}
   const g=$("#guide"); if(!g) return;
   const p=phase(), b=[];
   /* 濃い色（go）はいちばん先にやることだけ。押す順番が見た目でわかるようにする */
