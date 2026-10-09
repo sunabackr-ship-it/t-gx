@@ -1357,6 +1357,29 @@ body:not(.lastturn) .foot #endYear{display:none !important}
 #roomBar .dot{display:none}
 #csheet #rollMove,#csheet #rollProj,#csheet #rollNext{display:none !important}
 .gbt button[disabled]{opacity:.45;cursor:default}
+
+.ys3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.ys3>div{background:#F4F2E8;border-radius:12px;padding:10px 6px;text-align:center}
+.ys3 small{display:block;font-size:11px;color:var(--sub);font-weight:700}
+.ys3 b{display:block;font-size:34px;line-height:1.15;color:var(--gd)}
+.ys3 span{display:block;font-size:11px;color:var(--sub);line-height:1.4;margin-top:2px}
+.ysbars{margin:12px 0 4px}
+.ysbr{display:flex;align-items:center;gap:8px;font-size:12px;margin:4px 0}
+.ysbr>span{flex:0 0 64px;text-align:right;color:var(--sub)}
+.ysbr i{flex:1 1 auto;height:14px;background:#EFEDE0;border-radius:99px;overflow:hidden;display:block}
+.ysbr i b{display:block;height:100%;background:#B9B29A;border-radius:99px}
+.ysbr i b.on{background:var(--gd)}
+.ysbr em{flex:0 0 36px;font-style:normal;font-weight:800;text-align:right}
+#ysB h4{margin:14px 0 4px;font-size:13.5px;color:var(--gd)}
+.ysl{margin:0;padding-left:20px;font-size:13.5px;line-height:1.6}
+.ysl li b{display:block}
+.ysl li span{font-size:12px;color:var(--sub)}
+.ysq li{margin:2px 0}
+.ysn{margin:0;font-size:13px;color:var(--sub)}
+.ysDet{margin-top:12px;border-top:1px dashed var(--line);padding-top:8px}
+.ysDet summary{cursor:pointer;font-weight:800;font-size:13px;color:var(--gd)}
+body.pc #ysheet{align-items:center}
+body.pc #ysheet .sheet{max-width:760px;border-radius:18px}
 </style>
 </head>
 <body>
@@ -5341,21 +5364,8 @@ $("#endYear").onclick=()=>{
   const i=YEARS.indexOf(S.year), nx=YEARS[i+1];
   $("#ysT").textContent = `${S.year} を終了します`;
   const t=settle(), nb=nextBudget(t);
-  $("#ysB").innerHTML =
-    `<div style="text-align:left;line-height:2">
-     <b style="font-size:24px">初期 ${bg} → 実質 ${net}</b>
-     <span class="${cls(d)}" style="font-weight:700">（${sgn(d)}${bg?` / ${d>0?"+":""}${pct}%`:""}）</span><br>
-     CO2削減量 <b>${t.red}</b><br>
-     ${METERS.map(x=>`${x.n} <b>${t.m[x.k]}</b>`).join("／")}<br>
-     会社レベル <b>Lv${t.lv}　${t.lvName}</b>
-     <span style="color:var(--sub);font-size:12px"><br>${yrNo()}年やったときの基準：Lv2 GX推進企業＝削減${lvCondOf()[2].red}以上かつ全メーター${lvCondOf()[2].met}以上／Lv3 GXトップランナー＝削減${lvCondOf()[3].red}以上かつ全メーター${lvCondOf()[3].met}以上</span>
-     ${t.need&&t.need.lack.length?`<br><span style="color:#B4553A">${t.need.to}まで：${t.need.lack.join("／")}</span>`:""}</div><br>` +
-    (nx ? `<div style="text-align:left;line-height:1.9"><b>${nx}の予算 ${nb}</b><span style="color:var(--sub);font-size:13px"><br>
-           ＝ 繰越 ${t.carry} ＋ 基本 12 ＋ 削減 ${t.red}
-           ＋ 設備8以上 ${t.be} ＋ 市場8以上 ${t.bs}${t.cb?` ＋ カード ${t.cb}`:""}</span><br>
-           ${S.year} の数字は記録に残り、あとから見返せます。</div>`
-        : `これが最終年度です。数字を記録に残して締めます。`);
-  $("#ysRev") && ($("#ysRev").innerHTML = revHTML());
+  $("#ysB").innerHTML = ysBodyONE(t, nb, nx, {bg, net, d, pct});
+  $("#ysRev") && ($("#ysRev").innerHTML = `<details class="ysDet"><summary>明細をひらく（メーター・年ごとの進み・進めた順・イベント）</summary>${revHTML()}</details>`);
   $("#ysTA")  && $("#ysTA").classList.add("hide");
   $("#ysRevCopy") && ($("#ysRevCopy").onclick = function(){ revCopy(this,"#ysTA"); });
   $("#ysGo").textContent = nx ? `終了して ${nx} へ` : "終了する";
@@ -7814,6 +7824,42 @@ function subBtnsHTML(){
        + `<button id="gEv" class="${(!p.ev||evGot())?"done":""}"${!p.ev?" disabled":""}>${evTxt}</button>`
        + `<button id="gNext"${p.last?" disabled":""}>${p.last?"これが最後の月です":"次の月へ →"}</button>`;
 }
+/* 年度末シートの本体（1台版）。山場なので、まず数字3つ。明細は折りたたみ */
+function ysBodyONE(t, nb, nx, x){
+  const R=review(), ys=R.ys, y0=ys[0]?ys[0].base:x.bg;
+  let mine=doneList().filter(r=>r.year===S.year).map(r=>({r,p:PBY[r.id]})).filter(q=>q.p);
+  if(!mine.length) mine=doneList().filter(r=>!r.year).map(r=>({r,p:PBY[r.id]})).filter(q=>q.p);
+  const eff=q=>{ let co2=0, mt=[];
+    (q.p.fx||[]).forEach(e=>(e.a||[]).forEach(a=>{
+      if(a.kind==="row"&&a.d<0) co2+=-a.d;
+      if(a.kind==="meter"&&a.d>0) mt.push(`${MNAME[a.k]||a.k}＋${a.d}`); }));
+    return {co2:r2(co2), mt}; };
+  const ranked=mine.map(q=>Object.assign({},q,eff(q)))
+    .sort((a,b)=>(b.co2-a.co2)||(b.mt.length-a.mt.length)).slice(0,3);
+  const lack=[]; if(t.need) t.need.lack.forEach(s=>lack.push(s));
+  const zero=FORDER.filter(f=>!mine.some(q=>q.p.f===f));
+  if(mine.length && zero.length) lack.push(`手つかずの分野：${zero.map(f=>FIELDS[f].nm).join("・")}`);
+  const flat=METERS.filter(m=>t.m[m.k]<=M0);
+  if(flat.length && flat.length<METERS.length) lack.push(`初期値のまま：${flat.map(m=>m.n).join("・")}`);
+  const maxV=Math.max(y0, x.net, 1, ...ys.map(y=>y.net));
+  const bar=(label,v,on)=>`<div class="ysbr"><span>${label}</span><i><b style="width:${Math.round(v/maxV*100)}%" class="${on?"on":""}"></b></i><em>${v}</em></div>`;
+  const bars=[bar("開始時",y0,false)]
+    .concat(ys.filter(y=>y.y!==S.year).map(y=>bar(`${y.y}末`,y.net,false)))
+    .concat([bar(`${S.year}末`,x.net,true)]).join("");
+  const qs=["いちばん効いた施策は、なぜそれを選びましたか？","選ばなかったカードで、惜しかったのはどれですか？","自分の会社なら、何が障壁になりますか？"];
+  const budS = nx ? `繰越${t.carry}＋12＋削減${t.red}${t.be?"＋設備5":""}${t.bs?"＋市場5":""}${t.cb?"＋カード"+t.cb:""}` : "これが最終年度";
+  return `<div class="ys3">
+    <div><small>CO2削減</small><b>${t.red}</b><span>${x.bg} → ${x.net}</span></div>
+    <div><small>会社レベル</small><b>Lv${t.lv}</b><span>${esc(t.lvName)}</span></div>
+    <div><small>${nx?nx+"の予算":"予算"}</small><b>${nx?nb:"—"}</b><span>${budS}</span></div></div>
+  <div class="ysbars">${bars}</div>
+  <h4>効いた施策</h4>${ranked.length
+    ? `<ol class="ysl">${ranked.map(q=>`<li><b>No.${q.p.id} ${esc(q.p.n)}</b><span>${q.co2?`排出 −${q.co2}`:""}${(q.co2&&q.mt.length)?"・":""}${q.mt.join("・")}${(!q.co2&&!q.mt.length)?"数値の効果なし":""}</span></li>`).join("")}</ol>`
+    : `<p class="ysn">この年に登録したカードはありません。</p>`}
+  <h4>足りなかったもの${t.need?`（${esc(t.need.to)}まで）`:""}</h4>${lack.length
+    ? `<ul class="ysl">${lack.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>` : `<p class="ysn">いちばん上まで行きました。</p>`}
+  <h4>卓で話すこと</h4><ol class="ysl ysq">${qs.map(s=>`<li>${s}</li>`).join("")}</ol>`;
+}
 function multiSpin(list){
   if(AUTOSPIN) return; AUTOSPIN=true;
   let ov=$("#multiOv");
@@ -8507,8 +8553,10 @@ function revHTML(){
   const sh=lo!=null ? METERS.filter(x=>R.mF[x.k]<lo) : [];
   H.push(`<h4>担当メーター</h4><ul>`);
   H.push(`<li>最終値：${METERS.map(x=>`${x.n} <b>${R.mF[x.k]}</b>`).join("／")}</li>`);
-  H.push(`<li>いちばん伸ばしたのは <b>${srt[0].n}（${R.mF[srt[0].k]}）</b>、`
-       + `置き去りになったのは <b>${srt[srt.length-1].n}（${R.mF[srt[srt.length-1].k]}）</b>。</li>`);
+  {const hi=R.mF[srt[0].k], lo2=R.mF[srt[srt.length-1].k];
+   if(hi===lo2) H.push(`<li>担当メーターは全部同じ <b>${hi}</b> でした（差はありません）。</li>`);
+   else { const tops=METERS.filter(x=>R.mF[x.k]===hi).map(x=>x.n).join("・"), lows=METERS.filter(x=>R.mF[x.k]===lo2).map(x=>x.n).join("・");
+     H.push(`<li>いちばん伸ばしたのは <b>${tops}（${hi}）</b>、置き去りになったのは <b>${lows}（${lo2}）</b>。</li>`); } }
   if(sh.length) H.push(`<li class="warn2">${t.need?t.need.to:""}の条件（全メーター${lo}以上）に届かなかったのは `
        + sh.map(x=>`${x.n}（${R.mF[x.k]}）`).join("／") + `。</li>`);
   H.push(`</ul>`);
