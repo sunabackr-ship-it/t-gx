@@ -1349,6 +1349,14 @@ body.pc:not(.lastturn) .foot #endYear{background:rgba(255,255,255,.16);color:#ff
 body.pc.lastturn .foot #endYear{background:#F4C542;color:#3A2E00}
 body.pc #app{padding-bottom:0}
 body.pc #dtlTg{margin:0 0 8px}
+
+.stBox{margin:0 0 8px}
+.stBox .gobig{margin-bottom:6px}
+.stBox .stAlt{display:block;margin:0 auto 6px;background:none;border:0;color:var(--gd);text-decoration:underline;font-size:13px;font-weight:700;cursor:pointer}
+body:not(.lastturn) .foot #endYear{display:none !important}
+#roomBar .dot{display:none}
+#csheet #rollMove,#csheet #rollProj,#csheet #rollNext{display:none !important}
+.gbt button[disabled]{opacity:.45;cursor:default}
 </style>
 </head>
 <body>
@@ -1380,7 +1388,7 @@ window.onerror=function(m,src,line,col){
   if(String(m).indexOf("dynamically imported module")>=0 ||
      String(m).indexOf("firebase")>=0){
     var st=document.getElementById("roomTxt");
-    if(st){ st.textContent="同期に接続できません（この端末のみで動作中）"; }
+    if(st){ st.textContent="この端末だけで記録しています"; }
     return;
   }
   e.style.display="block";
@@ -1569,6 +1577,7 @@ window.onerror=function(m,src,line,col){
     <button class="btn alt" id="snap">いまの数字を記録に残す</button>
     <button class="btn alt" id="mRec">年度別の記録・振り返りを見る</button>
     <button class="btn alt" id="mQR">このチームのQRを出す（画面を閉じた人に）</button>
+    <button class="btn alt" id="mEndYear">年度を途中で終える（時間切れのとき）</button>
     <button class="btn alt" id="repick">キャラクターを選び直す</button>
     <button class="btn alt" id="menuClose" style="margin-top:18px">閉じる</button>
   </div>
@@ -5315,6 +5324,7 @@ $("#proxy") && ($("#proxy").onclick=()=>{
   alert(PROXY ? "この端末ですべての操作ができます。担当が戻ったら「代理操作を終える」を押してください。"
               : "代理操作を終わりました。");
 });
+$("#mEndYear") && ($("#mEndYear").onclick=()=>{ $("#menu").classList.add("hide"); $("#endYear").onclick(); });
 $("#repick").onclick=()=>{ $("#menu").classList.add("hide");
   PICK={sales:false,pr:false,plant:false,proc:false,exec:false};
   S.chars.forEach(c=>PICK[c.t]=true); show("pick"); };
@@ -5325,6 +5335,7 @@ $("#endYear").onclick=()=>{
   /* 年度の終了は進行役だけ。ほかの端末で押されても受け付けない（全員がタップして
      3年目まで終わった事故があった） */
   if(!roleOK("mon")){ alert("年度の終了は、進行役の端末から押します。"); return; }
+  {const L=monLeft(); if(L.length && !confirm(`まだ終わっていません：\n${L.join("\n")}\n\nそれでも年度を終了しますか？`)) return;}
   const c=cur(), b=base(), net=total(c), bg=total(b), d=net-bg;
   const pct = bg ? Math.round(d/bg*1000)/10 : 0;
   const i=YEARS.indexOf(S.year), nx=YEARS[i+1];
@@ -5749,7 +5760,8 @@ function drawPjList(){
   /* 1年目のあいだは2年目デッキを出さない（実物も2年目のはじめに配る）。タブも隠す */
   const y1only = yrDeck()===1;
   if(y1only && (PF.d==="y2"||PF.d==="all"||PF.d==="ext")) PF.d="y1";
-  $("#dTabs").innerHTML = [["mine","自分が読む担当"],["y1","1年目デッキ"],["y2","2年目デッキ"],["tut","チュートリアル"],["all","すべて"],["低","難度 低"],["中","難度 中"],["高","難度 高"],["ext","拡張"]]
+  if(PF.d==="mine") PF.d="y1";
+  $("#dTabs").innerHTML = [["y1","1年目デッキ"],["y2","2年目デッキ"],["tut","チュートリアル"],["all","すべて"],["低","難度 低"],["中","難度 中"],["高","難度 高"],["ext","拡張"]]
     .filter(([k])=>!(y1only && (k==="y2"||k==="all"||k==="ext")))
     .map(([k,n])=>`<button class="ftab ${PF.d===k?"on":""}" data-pd="${k}">${n}</button>`).join("");
   $("#fTabs").innerHTML = [["all","全分野"]].concat(FORDER.map(f=>[f,FIELDS[f].nm]))
@@ -5805,9 +5817,9 @@ function drawRun(){
     const p=PBY[r.id], fin=r.step>=p.st;
     return `<button class="runr ${fin?"fin":""}" data-run="${p.id}">
       <span class="rn"><b>${esc(p.n)}</b>
-        <span>No.${p.id}　${FIELDS[p.f].nm}　${fin?`完了待ち　コスト${p.cost}`:`${r.step}/${p.st}段階`}</span></span>
+        <span>No.${p.id}　${FIELDS[p.f].nm}　${fin?`完成・未登録　コスト${p.cost}で登録`:`推進中　${r.step}／${p.st}段階`}</span></span>
       <span class="rs">${Array.from({length:p.st},(_,j)=>`<s class="${j<r.step?"on":""}"></s>`).join("")}</span>
-      <span class="rg">${fin?"確定":"ひらく"}</span></button>`;}).join("")
+      <span class="rg">${fin?"登録へ":"ひらく"}</span></button>`;}).join("")
     : `<p class="runNo">まだありません。カードを推進ボードにのせるときに、番号を読み込んでください。</p>`;
   $("#runList").querySelectorAll("[data-run]").forEach(b=>b.onclick=()=>openPj(+b.dataset.run));
 }
@@ -7100,7 +7112,7 @@ function openBig(id){
     </div>`;}).join("") || `<p class="note" style="margin:0">数値の効果はありません。</p>`;
   const bud=cell0().bud, short=(bud!=null && bud<p.cost);
   $("#bcAct").innerHTML = done
-    ? `<p class="note" style="margin:14px 0 0">このカードは実行済みです。効果はすでに反映されています。</p>`
+    ? `<p class="note" style="margin:14px 0 0">このカードは登録済みです。効果は反映されています。</p>`
     : ((p.tut && TUTFREE)
         ? `<button class="btn" id="bcGo">完了する（コスト ${p.cost}・<b>免除</b>）</button>`
           + `<p class="note" style="margin:8px 0 0;color:var(--g);font-weight:700">チュートリアルのためコストは免除されます。予算は減りません。</p>`
@@ -7126,6 +7138,12 @@ function openBig(id){
            + `<p class="note" style="margin:8px 0 0">${RT("推進ボードにのせるときに押してください。","発案会議室で決めたカードを、推進ボードにのせます。")}`
            + `以降は「推進」でこのカードを選んで進めます。</p>`);
      $("#bcAct").insertAdjacentHTML("afterbegin", st + `<div style="height:12px"></div>`);
+   }}
+  {const r=(S.proj.run||[]).find(r=>r.id===id);
+   if(!done && !(r && r.step>=p.st)){
+     ["#bcGo","#bcGo0"].forEach(s=>{ const b=$(s); if(b) b.remove(); });
+     if(r) $("#bcAct").insertAdjacentHTML("beforeend",
+       `<p class="note" style="margin:8px 0 0">完了の登録は、推進で全段階（${p.st}段階）そろってからできます（いま ${r.step}／${p.st}）。</p>`);
    }}
   const gd=$("#bcDrop");
   if(gd) gd.onclick=()=>{
@@ -7414,7 +7432,7 @@ function monLeft(){
   if(mv.length) L.push(`・移動がまだ：${mv.map(nm).join("・")}`);
   else if(pj.length) L.push(`・推進がまだ：${pj.map(nm).join("・")}`);
   const goal=(S.proj.run||[]).filter(r=>PBY[r.id] && r.step>=PBY[r.id].st);
-  if(goal.length) L.push(`・完了の登録待ち：No.${goal.map(r=>r.id).join("・")}（専務）`);
+  if(goal.length) L.push(`・完成して未登録：No.${goal.map(r=>r.id).join("・")}（登録しないと効果が出ず、予算も払われません）`);
   if(isEvM(S.year, monNow()) && !evGot()) L.push("・この月のイベントカードをまだ引いていません");
   return L;
 }
@@ -7744,6 +7762,58 @@ function pjAll(){
   };
   pick();
 }
+/* いまの段階。ここだけが「次に何をするか」を決める。案内文・進行バー・主ボタン・年度終了の可否はすべてこれを見る */
+function oneStage(){
+  const m=monNow(), tutM=isTut(S.year,m), f=tutM?tutFix():null;
+  const run=(S.proj.run||[]).filter(r=>PBY[r.id]);
+  const goal=run.filter(r=>r.step>=PBY[r.id].st && !isDone(r.id));
+  const live=run.some(r=>r.step<PBY[r.id].st);
+  const mv=turnMvRest().length, pj=turnPjRest().length;
+  const moved = roster().length>0 && !mv;
+  const waiting = S.chars.some(c=>!turnPjOK(c.t));
+  const last = monIdx()===monList().length-1;
+  if(tutM && f && !isDone(f) && !run.some(r=>r.id===f)) return {k:"tut",n:0,f};
+  if(!tutM && !live && !goal.length && !moved) return {k:"board",n:0};
+  if(mv) return {k:"move",n:1};
+  if(pj) return {k:"push",n:2};
+  if(!tutM && !live && !goal.length && waiting) return {k:"board2",n:0};
+  if(goal.length) return {k:"finish",n:3,goal};
+  if(last) return {k:"year",n:4};
+  return {k:"next",n:4};
+}
+function stageBtnHTML(){
+  const st=oneStage(); let b="", alt="";
+  const big=(id,txt)=>`<button class="gobig" id="${id}">${txt}</button>`;
+  switch(st.k){
+    case "tut":    b=big("stTut","チュートリアルのカードを見る"); break;
+    case "board":  b=big("stBoard","カードを決めて、推進ボードにのせる");
+                   alt=`<button class="stAlt" id="stMoveAlt">カードはのせずに移動へ（せーの）</button>`; break;
+    case "move":   b=big("goSay","&#128227; せーの！（全員のルーレットを回す）"); break;
+    case "push":   b=big("pjAllGo",`&#127919; 推進をまとめて回す（${S.chars.filter(c=>!turnPjOK(c.t)).length}人）`); break;
+    case "board2": b=big("stBoard","推進するカードを、推進ボードにのせる");
+                   alt=`<button class="stAlt" id="stNextAlt">今月は推進せず、次の月へ</button>`; break;
+    case "finish": b=st.goal.map(r=>`<button class="gobig" data-fin="${r.id}">No.${r.id}「${esc(PBY[r.id].n)}」を完了する（コスト ${PBY[r.id].cost}）</button>`).join(""); break;
+    case "year":   b=big("stYear",`${S.year}を終了して決算`); break;
+    default:       b=big("stNext","この月を終えて次へ →");
+  }
+  return `<div class="stBox">${b}${alt}</div>`;
+}
+function bindStage(box){
+  const on=(sel,fn)=>{ const el=box.querySelector(sel); if(el) el.onclick=fn; };
+  on("#stTut",()=>toCards("tut","all"));
+  on("#stBoard",()=>toCards(yrDeck()===1?"y1":"all","all"));
+  on("#stMoveAlt",goSend); on("#stNextAlt",monTry); on("#stNext",monTry);
+  on("#stYear",()=>$("#endYear").onclick());
+  box.querySelectorAll("[data-fin]").forEach(b=>b.onclick=()=>openBig(+b.dataset.fin));
+}
+/* 主ボタンの下に置く、場所の決まった3つ：カード／イベント／次の月 */
+function subBtnsHTML(){
+  const p=phase();
+  const evTxt = !p.ev ? "イベントの月ではありません" : (evGot()?"イベント引き済み":"イベントカードを引く");
+  return `<button id="gCards">カードを探す・のせる</button>`
+       + `<button id="gEv" class="${(!p.ev||evGot())?"done":""}"${!p.ev?" disabled":""}>${evTxt}</button>`
+       + `<button id="gNext"${p.last?" disabled":""}>${p.last?"これが最後の月です":"次の月へ →"}</button>`;
+}
 function multiSpin(list){
   if(AUTOSPIN) return; AUTOSPIN=true;
   let ov=$("#multiOv");
@@ -7811,11 +7881,7 @@ function drawTurnBox(){
     box.querySelectorAll("[data-ldr]").forEach(b=>b.onclick=()=>setLeader(b.dataset.ldr));
     return;
   }
-  const goBtn = (L && (iamLeader()||PROXY) && turnMvRest().length)
-    ? `<button class="gobig" id="goSay">&#128227; せーの！（全員のルーレットを回す）</button>` : "";
-  const pjN = S.chars.filter(c=>!turnPjOK(c.t)).length;
-  const pjBtn = (L && turnPhase()==="pj" && pjN)
-    ? `<button class="gobig" id="pjAllGo">&#127919; 推進をまとめて回す（${pjN}人）</button>` : "";
+  const goBtn="", pjBtn = L ? stageBtnHTML() : "";
   box.innerHTML = ldrHTML + goBtn + pjBtn +
     `<div class="tbh">
        <span class="tbt ${all?"ok":""}">${(()=>{
@@ -7854,7 +7920,7 @@ function drawTurnBox(){
   const lc=$("#ldrCh");
   if(lc) lc.onclick=()=>{ if(confirm("進行役を決め直しますか？")) setLeader(null); };
   const gs=$("#goSay"); if(gs) gs.onclick=goSend;
-  {const pa=$("#pjAllGo"); if(pa) pa.onclick=pjAll;}
+  {const pa=$("#pjAllGo"); if(pa) pa.onclick=pjAll; bindStage(box);}
   box.querySelectorAll("[data-ldr]").forEach(b=>b.onclick=()=>setLeader(b.dataset.ldr));
   box.querySelectorAll("[data-tt]").forEach(b=>b.onclick=()=>{
     const t=b.dataset.tt, ph=b.dataset.tp;
@@ -7991,7 +8057,7 @@ function evPopCheck(){
   S.evpop[k]=1; save();
   const t=$("#esT"); if(t) t.textContent = `今月（${monNow()}月）はイベントの月です`;
   const w=$("#esWho");
-  if(w) w.textContent = `${tname(who)}を選んでいるこの端末に出しています。あとで引くこともできます。`;
+  if(w) w.textContent = `${tname(who)}あとで引くこともできます。`;
   $("#esheet").classList.remove("hide");
 }
 $("#esGo")   && ($("#esGo").onclick  =()=>{ $("#esheet").classList.add("hide"); drawEvent(); });
@@ -8153,7 +8219,7 @@ function drawGuide(){
     const ph=turnPhase(), can=canPush();
     const rolled=r.filter(t=>turnMvOK(t)).length, pushed=r.filter(t=>turnPjOK(t)).length;
     const goal=(S.proj.run||[]).filter(x=>PBY[x.id] && x.step>=PBY[x.id].st).length;
-    const stage = ph==="mv" ? (rolled?1:0) : ph==="pj" ? 2 : (goal?3:4);
+    const stage = oneStage().n;
     const meMv = me && ph==="mv" && !turnMvOK(me.t);
     const mePj = me && ph==="pj" && !turnPjOK(me.t);
     const items=[
@@ -8168,8 +8234,9 @@ function drawGuide(){
   g.innerHTML = pbar +
     `<div class="gt"><span class="gph ${p.tcls}">卓でやること</span><span class="gmm">${p.tag}</span></div>
      <ol class="gl">${p.steps.map(s=>`<li>${s[0]}<span class="sm">${s[1]}</span></li>`).join("")}</ol>
-     <div class="gbt">${btns.join("")}</div>`;
+     <div class="gbt">${subBtnsHTML()}</div>`;
   const on=(sel,fn)=>{ const el=$(sel); if(el) el.onclick=fn; };
+  on("#gCards", ()=>toCards(yrDeck()===1?"y1":"all","all"));
   on("#gTut", ()=>toCards("tut","all"));
   on("#gDeck",()=>toCards("all","all"));
   on("#gEv",  ()=>{ if(evGot() && !confirm("この月のイベントカードはもう引いています。もう1枚引きますか？")) return;
@@ -9212,7 +9279,7 @@ if(CFG && CFG.databaseURL) try{
   };
   if(S.mode==="team" && S.wid && S.team) window.__connectTeam(S.wid,S.team);
   if(S.mode==="admin" && S.wid) api.watchAll(S.wid, d=> window.__all(d));
-}catch(e){ console.error(e); window.__status(false,"同期に接続できません（この端末のみ）"); }
+}catch(e){ console.error(e); window.__status(false,"この端末だけで記録しています"); }
 </script>
 </body>
 </html>
